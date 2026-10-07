@@ -42,7 +42,7 @@ for(const entry of entries){
   const label=entry.slug==='00-preface'?'前言':entry.slug==='appendix-sources'?'附录':`第 ${parseInt(entry.slug,10)} 章`;
   const body=`<main id="main" class="book" data-chapter="${entry.slug}"><div class="eyebrow">${label}</div>${toc}<article class="content">${html}</article>${pager}</main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div>`;
   writeFileSync(join(outChapters,entry.slug+'.html'),layout(entry.title,body,'../'));
-  searchDocs.push({title:entry.title,slug:entry.slug,text:md.replace(/<figure[\s\S]*?<\/figure>/g,' ').replace(/<[^>]+>/g,' ').replace(/```[\s\S]*?```/g,' ').replace(/[#*`>|\[\]()_-]/g,' ').replace(/\s+/g,' ').trim()});
+  searchDocs.push({title:entry.title,slug:entry.slug,text:md.replace(/```[\s\S]*?```/g,' ').replace(/<figure[\s\S]*?<\/figure>/g,' ').replace(/<\/?[A-Za-z][^>]*>/g,' ').replace(/[#*`>|\[\]()_-]/g,' ').replace(/\s+/g,' ').trim()});
 }
 writeFileSync(join(out,'assets','search-index.json'),JSON.stringify(searchDocs));
 const searchBody=`<main id="main" class="search"><div class="eyebrow">全书检索</div><h1 class="chapter-title">搜索</h1><input class="search-input" type="search" autofocus placeholder="输入概念、项目或机制" aria-label="搜索电子书"><div id="results"></div></main>`;

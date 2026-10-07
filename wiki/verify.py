@@ -89,6 +89,14 @@ for slug in entries:
 index = ROOT / 'assets' / 'search-index.json'
 if not index.exists() or len(json.loads(index.read_text())) != len(entries):
     errors.append('search index mismatch')
+else:
+    indexed = {item['slug']: item['text'] for item in json.loads(index.read_text())}
+    for slug in entries:
+        teaching = (BOOK / 'chapters' / f'{slug}.md').read_text().split('<details class="implementation-notes">')[0]
+        for heading in re.findall(r'^## (.+)$', teaching, re.M):
+            normalized = ' '.join(re.sub(r'[#*`>|\[\]()_-]', ' ', heading).split())
+            if normalized not in indexed.get(slug, ''):
+                errors.append(f'heading missing from search index: {slug}: {heading}')
 if errors:
     print('\n'.join(errors))
     sys.exit(1)
