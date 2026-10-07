@@ -46,6 +46,15 @@ for slug in entries:
         errors.append(f'expected one optional implementation section: {slug}')
     if md.count('<details') != md.count('</details>'):
         errors.append(f'unbalanced optional sections: {slug}')
+    teaching = md.split('<details class="implementation-notes">')[0]
+    visible = re.sub(r'<details class="source-example">.*?</details>', '', teaching, flags=re.S)
+    for title, section in re.findall(r'^## ([^\n]+)\n(.*?)(?=^## |\Z)', visible, re.M | re.S):
+        if title == '动手检查':
+            continue
+        for project in ('Mem0', 'Graphiti'):
+            examples = re.findall(rf'^{project}：(.+)$', section, re.M)
+            if len(examples) != 1 or len(examples[0]) > 180:
+                errors.append(f'expected one short visible {project} example: {slug}: {title}')
     if md.count('## 本章对照结论') != 1:
         errors.append(f'expected one closing comparison: {slug}')
     elif not re.search(r'^\|.+\|$', md.split('## 本章对照结论')[1], re.M):
@@ -100,4 +109,4 @@ else:
 if errors:
     print('\n'.join(errors))
     sys.exit(1)
-print(f'OK: {len(entries)} tutorials/exercises, optional notes, closing tables, accessible SVGs, links/images and search index verified')
+print(f'OK: {len(entries)} tutorials/exercises, short project examples, optional notes, closing tables, accessible SVGs, links/images and search index verified')

@@ -13,6 +13,13 @@ rg -n '_search_vector_store|_compute_entity_boosts' \
 
 搜索会告诉你定义和调用的位置。打开函数后，先看输入的 query 和 filters，再追向量候选、关键词或实体信号、最终排序和返回。遇到辅助函数，只追会改变候选集合或分数的部分，不必立即理解每个异常和配置类。
 
+Mem0：带着“默认中文”读写入代码，只记录它先变成哪条文字、最终写到哪里。再读搜索，看返回正文是否相同，不必先记所有类名。
+
+Graphiti：带着“Atlas 由平台组维护”读代码，记录原文、两个对象和维护关系分别在哪里生成。沿来源编号回查，确认关系仍有原文支持。
+
+<details class="source-example">
+<summary>源码与边界（选读）</summary>
+
 初读只追一个问题：“这句原话最后存成什么？”Mem0 从 add 的输入走到卡片正文，Graphiti 从原材料走到对象与关系。遇到函数名，先看它收什么、返回什么，再回到 Atlas 示例给变量填值；不必一开始读完模型客户端、数据库连接和全部异常处理。
 
 ### Mem0：从实际函数与提示双向核对
@@ -23,6 +30,8 @@ rg -n '_search_vector_store|_compute_entity_boosts' \
 
 [主流程](../../sources/repos/graphiti/graphiti_core/graphiti.py) 的 `add_episode()` 编排抽取、解析和保存；[边维护](../../sources/repos/graphiti/graphiti_core/utils/maintenance/edge_operations.py) 展开重复候选与时间关闭逻辑。先记返回的 resolved、invalidated、new 三集合，再核对它们如何写回。
 
+</details>
+
 ## 用纸笔记录三个集合
 
 把“向量命中的 ID”“关键词命中的 ID”“最终返回的 ID”分别写下来。如果代码只遍历向量候选做加分，池外关键词记录没有入口；如果代码把两组 ID 合并，再补取正文，行为就不同。
@@ -30,6 +39,13 @@ rg -n '_search_vector_store|_compute_entity_boosts' \
 随后看 MCP 的 `storage/mixins/hybrid.py`，观察全文、向量、hash 合并和正文补取。不要只凭它们都叫 hybrid 认定同一个算法。读完后，你应该能用一条漏召回案例预测两种路径的差别，而不仅是记住函数名。
 
 这种追踪方法也适用于 A-MEM 的 links 追加与最终 k 截断、Letta 的文件提交与后续编译、Memobase 的写入与 flush。追最后真正被读取的状态，才能验证前面处理有没有影响结果。
+
+Mem0：纸上写“初选 A、B，最后返回 B”。追查正确记录 C 时，立即知道它在初选前就漏了，不必先分析最后排名。
+
+Graphiti：纸上写“文字找到 A、C，向量找到 B、C，合并 A、B、C”。再看最后保留哪些关系，就能区分遗漏发生在搜索还是合并之后。
+
+<details class="source-example">
+<summary>源码与边界（选读）</summary>
 
 Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集合。Mem0 需要核对两者是否相同；Graphiti 需要核对文字榜、向量榜和最终编号并集。用 A、B、C 手记每一步即可：哪一步第一次出现 C，哪一步去掉 C，比只阅读一个复杂评分函数更容易定位漏项。
 
@@ -41,6 +57,8 @@ Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集�
 
 [搜索实现](../../sources/repos/graphiti/graphiti_core/search/search.py) 的 `edge_search()` 汇集多路列表，再构造 edge_uuid_map。RRF 用名次，cross-encoder 先截断再读 fact。对照[配方](../../sources/repos/graphiti/graphiti_core/search/search_config_recipes.py)，确认本次到底启用了哪些路。
 
+</details>
+
 ## 用论文学习机制，再核对当前代码
 
 读 HippoRAG 论文，可以先找问题设定、索引图、查询种子和传播流程。把“Atlas → 平台组 → 批准人”的教学例子放进去，看看每一处需要什么节点或证据。再读实验，确认作者固定了哪个 reader、比较什么基线。
@@ -48,6 +66,13 @@ Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集�
 之后打开当前 `HippoRAG.py`，看事实与段落种子怎样组合。论文第一版和后续实现可能不同，不能把图示的每个细节都套到当前目录。Graphiti 的时间论文、MemoryOS 的提升论文和 MemOS 的模型资源论文也应这样读。
 
 不懂术语时，先找它在数据路径里的作用：输入什么、改什么、返回什么。知道作用之后，再研究公式和配置，比先记一页缩写更容易。
+
+Mem0：论文介绍记忆更新，你用“默认测试→默认预发布”检查当前代码。若普通写入仍留下两条，就把这个观察记下来，别用论文图替代实际调用行为。
+
+Graphiti：论文讲时间关系，你用“18 日换批准人”检查日期字段和查询条件。保存日期与正确筛出 15 日的关系，都要分别核对。
+
+<details class="source-example">
+<summary>源码与边界（选读）</summary>
 
 论文帮助理解为什么将聊天压成短事实或为关系保留时间，代码决定当前调用是否真正这么做。Mem0 论文中的某种写入决策，不保证与这个快照的批量追加相同；Graphiti 的时间字段，也不表示每个查询默认使用它。把机制意图、当前分支和实测范围分别记录，读者就不会把介绍当成保证。
 
@@ -59,11 +84,20 @@ Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集�
 
 时间论文解释为什么保留历史，[边定义](../../sources/repos/graphiti/graphiti_core/edges.py) 明确具体字段，[过滤实现](../../sources/repos/graphiti/graphiti_core/search/search_filters.py) 决定查询怎样使用它们。字段存在只支持模型表达，仍要实际测试当前与历史视图，不能把论文目标当作每个接口保证。
 
+</details>
+
 ## 给自己的结论留一个可复查的小注释
 
 可以写成：“在这个 commit 和后端下，候选来自某集合；依据是这个函数；尚未运行所有后端。”实验结论再另写数据、参数与运行输出。
 
 本书下列索引保留源码、论文和 2026-09-21 快照，便于复查机制，不把代码阅读当作全项目性能复现。托管服务宣称、开源代码行为和你的运行结果要分别标注，以后版本变化时才知道哪条结论需要重查。
+
+Mem0：笔记写“本版本关键词只给初选记录加分”，附版本和评分函数位置。升级后用那条漏掉的 E42 记录再试，检查结论是否仍成立。
+
+Graphiti：笔记写“本次基础搜索未自动补第二段批准链”，附版本、入口和测试材料。以后更换查询方式时，能复查变化，而不是只留一句“图会多跳”。
+
+<details class="source-example">
+<summary>源码与边界（选读）</summary>
 
 Provider 是提供模型或存储服务的具体实现，driver 是访问存储的程序。笔记可以写“Mem0 普通提取分支，某向量后端，仅核对源码”；Graphiti 则写“边搜索，启用哪些找法，使用哪个 driver”。这些条件解释结论适用范围，换服务或配置后需重新验证，而不是把同一项目名当作固定行为。
 
@@ -74,6 +108,8 @@ Provider 是提供模型或存储服务的具体实现，driver 是访问存储�
 ### Graphiti：记录配置、driver 与对象粒度
 
 结论如“基础 search 采用 edge RRF，未自动启用 BFS”应指向 recipe 和入口分支；晚到日期实验注明 search_filter。针对 remove_episode 记录共享来源和摘要检查结果。源码观察、教学推演和运行结论各自标明证据类型。
+
+</details>
 
 ## 动手检查
 
