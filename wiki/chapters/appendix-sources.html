@@ -1,0 +1,299 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>源码与论文索引 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="appendix-sources"><div class="eyebrow">附录</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#从一个问题开始读源码">从一个问题开始读源码</a></li><li><a href="#用纸笔记录三个集合">用纸笔记录三个集合</a></li><li><a href="#用论文学习机制-再核对当前代码">用论文学习机制，再核对当前代码</a></li><li><a href="#给自己的结论留一个可复查的小注释">给自己的结论留一个可复查的小注释</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="源码与论文索引">源码与论文索引</h1><h2 id="从一个问题开始读源码">从一个问题开始读源码</h2><p>读源码不必从第一个文件开始逐行浏览。你已经理解第 5 章的候选池区别，可以带一个问题进去：“Mem0 的关键词命中，会不会把语义池外记录补回来？”</p>
+<p>在项目根目录运行：</p>
+<pre tabindex="0"><code class="hljs">rg -n <span class="hljs-string">&#x27;_search_vector_store|_compute_entity_boosts&#x27;</span> \
+  sources/repos/mem0/mem0/memory/main.py</code></pre><p>搜索会告诉你定义和调用的位置。打开函数后，先看输入的 query 和 filters，再追向量候选、关键词或实体信号、最终排序和返回。遇到辅助函数，只追会改变候选集合或分数的部分，不必立即理解每个异常和配置类。</p>
+<h3 id="mem0-从实际函数与提示双向核对">Mem0：从实际函数与提示双向核对</h3><p><a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/main.py">主流程</a> 从 <code>add()</code> 进入 <code>_add_to_vector_store()</code>，读取普通追加和过程摘要两个分支；<a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/storage.py">历史存储</a> 核对消息与变更表。不要停在 docstring 的自动 CRUD 描述，正文解释以函数实际写操作为准。</p>
+<h3 id="graphiti-从-orchestration-追-maintenance">Graphiti：从 orchestration 追 maintenance</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/graphiti.py">主流程</a> 的 <code>add_episode()</code> 编排抽取、解析和保存；<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/utils/maintenance/edge_operations.py">边维护</a> 展开重复候选与时间关闭逻辑。先记返回的 resolved、invalidated、new 三集合，再核对它们如何写回。</p>
+<h2 id="用纸笔记录三个集合">用纸笔记录三个集合</h2><p>把“向量命中的 ID”“关键词命中的 ID”“最终返回的 ID”分别写下来。如果代码只遍历向量候选做加分，池外关键词记录没有入口；如果代码把两组 ID 合并，再补取正文，行为就不同。</p>
+<p>随后看 MCP 的 <code>storage/mixins/hybrid.py</code>，观察全文、向量、hash 合并和正文补取。不要只凭它们都叫 hybrid 认定同一个算法。读完后，你应该能用一条漏召回案例预测两种路径的差别，而不仅是记住函数名。</p>
+<p>这种追踪方法也适用于 A-MEM 的 links 追加与最终 k 截断、Letta 的文件提交与后续编译、Memobase 的写入与 flush。追最后真正被读取的状态，才能验证前面处理有没有影响结果。</p>
+<h3 id="mem0-semantic-集合决定-candidate-身份">Mem0：semantic 集合决定 candidate 身份</h3><p>分别记录后端 search、keyword_search 和 entity boost 的 ID，随后看 candidates 是否只遍历 semantic results。源码显示后两者给分，而非无条件补入新身份。explain 提供已评分记录的分项，没有覆盖池外遗漏，复查时要保存原始集合。</p>
+<h3 id="graphiti-uuid-并集与各路名次同时保留">Graphiti：UUID 并集与各路名次同时保留</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search.py">搜索实现</a> 的 <code>edge_search()</code> 汇集多路列表，再构造 edge_uuid_map。RRF 用名次，cross-encoder 先截断再读 fact。对照<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_config_recipes.py">配方</a>，确认本次到底启用了哪些路。</p>
+<h2 id="用论文学习机制-再核对当前代码">用论文学习机制，再核对当前代码</h2><p>读 HippoRAG 论文，可以先找问题设定、索引图、查询种子和传播流程。把“Atlas → 平台组 → 批准人”的教学例子放进去，看看每一处需要什么节点或证据。再读实验，确认作者固定了哪个 reader、比较什么基线。</p>
+<p>之后打开当前 <code>HippoRAG.py</code>，看事实与段落种子怎样组合。论文第一版和后续实现可能不同，不能把图示的每个细节都套到当前目录。Graphiti 的时间论文、MemoryOS 的提升论文和 MemOS 的模型资源论文也应这样读。</p>
+<p>不懂术语时，先找它在数据路径里的作用：输入什么、改什么、返回什么。知道作用之后，再研究公式和配置，比先记一页缩写更容易。</p>
+<h3 id="mem0-论文路线与当前-batch-实现分开记">Mem0：论文路线与当前 batch 实现分开记</h3><p>论文可能描述较早的提取与更新算法，当前源码已有 additive prompt、批量 embedding 和实体链接。读实验时记数据、reader、候选粒度及 OSS 或 managed 交付物。算法思想相近不证明当前本地后端复现了同一分数。</p>
+<h3 id="graphiti-时间思想要核对字段和过滤">Graphiti：时间思想要核对字段和过滤</h3><p>时间论文解释为什么保留历史，<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/edges.py">边定义</a> 明确具体字段，<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_filters.py">过滤实现</a> 决定查询怎样使用它们。字段存在只支持模型表达，仍要实际测试当前与历史视图，不能把论文目标当作每个接口保证。</p>
+<h2 id="给自己的结论留一个可复查的小注释">给自己的结论留一个可复查的小注释</h2><p>可以写成：“在这个 commit 和后端下，候选来自某集合；依据是这个函数；尚未运行所有后端。”实验结论再另写数据、参数与运行输出。</p>
+<p>本书下列索引保留源码、论文和 2026-09-21 快照，便于复查机制，不把代码阅读当作全项目性能复现。托管服务宣称、开源代码行为和你的运行结果要分别标注，以后版本变化时才知道哪条结论需要重查。</p>
+<h3 id="mem0-记录分支-provider-与已验证范围">Mem0：记录分支、provider 与已验证范围</h3><p>可以写“在普通 infer=True 同步路径，候选由语义池构造；未测试所有 vector stores”。同时注明 commit、模型和 backend，真实实验另保存源数据与输出。delete history 残留等观察也限定到实际函数，不宣称所有托管版本行为相同。</p>
+<h3 id="graphiti-记录配置-driver-与对象粒度">Graphiti：记录配置、driver 与对象粒度</h3><p>结论如“基础 search 采用 edge RRF，未自动启用 BFS”应指向 recipe 和入口分支；晚到日期实验注明 search_filter。针对 remove_episode 记录共享来源和摘要检查结果。源码观察、教学推演和运行结论各自标明证据类型。</p>
+<h2 id="动手检查">动手检查</h2><p>任选一个“会学习”“支持图”或“可删除”的描述，把它改写成一条能追代码、能运行检查的具体问题。</p>
+<p>答案提示：“A-MEM 建了链接后，池外邻居最终是否返回？”比“它的图记忆好不好”更可操作；“删掉 source 后哪些摘要还含原文？”比“有 delete API 吗”更接近删除责任。</p>
+<details class="implementation-notes">
+<summary>完整源码路径、论文清单与证据索引（选读）</summary>
+
+<h2 id="本地源码">本地源码</h2><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>本地目录</th>
+<th>重点入口</th>
+<th>License</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Mem0</td>
+<td><code>sources/repos/mem0</code></td>
+<td><code>mem0/memory/main.py</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>Letta Code</td>
+<td><code>sources/repos/letta-code</code></td>
+<td><code>src/agent/prompts/letta_root_memfs.md</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>Graphiti</td>
+<td><code>sources/repos/graphiti</code></td>
+<td><code>graphiti_core/graphiti.py</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>Cognee</td>
+<td><code>sources/repos/cognee</code></td>
+<td><code>cognee/api/v1/{remember,recall,improve}</code></td>
+<td>Apache-2.0（核对模块）</td>
+</tr>
+<tr>
+<td>MemOS</td>
+<td><code>sources/repos/memos</code></td>
+<td><code>src/memos/memories/</code>, <code>mem_os/</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>MemoryOS</td>
+<td><code>sources/repos/memoryos</code></td>
+<td><code>memoryos-pypi/{memoryos,updater,retriever,mid_term}.py</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>A-MEM</td>
+<td><code>sources/repos/a-mem</code></td>
+<td><code>agentic_memory/memory_system.py</code></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>HippoRAG</td>
+<td><code>sources/repos/hipporag</code></td>
+<td><code>src/hipporag/HippoRAG.py</code></td>
+<td>见仓库</td>
+</tr>
+<tr>
+<td>Memobase</td>
+<td><code>sources/repos/memobase</code></td>
+<td><code>src/server/</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>Hippo Memory</td>
+<td><code>sources/repos/hippo-memory</code></td>
+<td><code>src/</code>, <code>benchmarks/</code>, <code>docs/evals/</code></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>Basic Memory</td>
+<td><code>sources/repos/basic-memory</code></td>
+<td><code>src/basic_memory/</code></td>
+<td>AGPL-3.0</td>
+</tr>
+<tr>
+<td>MCP Memory Service</td>
+<td><code>sources/repos/mcp-memory-service</code></td>
+<td><code>src/mcp_memory_service/</code></td>
+<td>Apache-2.0</td>
+</tr>
+<tr>
+<td>Agent Beacon</td>
+<td><code>sources/repos/agent-beacon</code></td>
+<td><code>endpoint/</code>, <code>docs/</code></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>TencentDB Agent Memory</td>
+<td><code>sources/repos/tencent-agent-memory</code></td>
+<td><code>MemoryCore/</code>, <code>MemoryKnowledge/</code></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td>Hermes Jev Skills</td>
+<td><code>sources/repos/hermes-jev-skills</code></td>
+<td><code>jevkit/</code>, <code>skills/jev-memory/</code></td>
+<td>MIT</td>
+</tr>
+</tbody></table>
+<p><code>letta-ai/letta</code> 也保留在本地，但只用于证明主仓迁移，不应作为当前源码入口。因此共有 16 个仓库，当前详解覆盖 15 个实现/工具和 Letta 的历史来源。</p>
+<h2 id="本次扩写的机制证据">本次扩写的机制证据</h2><p>以下路径均相对于 <code>sources/repos/</code>。详细章节保留可点击的源码链接；README/MDX 路径作为源码定位使用，不转换成 wiki 页面。</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>已核对的关键函数或文件</th>
+<th>对应讲解</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Mem0</td>
+<td><code>mem0/memory/main.py</code>：<code>_add_to_vector_store</code>、<code>_search_vector_store</code>、<code>_compute_entity_boosts</code></td>
+<td>ADD-only batch、局部 hash 去重、语义候选池与多信号评分</td>
+</tr>
+<tr>
+<td>Memobase</td>
+<td><code>src/server/api/memobase_server/controllers/buffer.py</code>、<code>controllers/modal/chat/</code></td>
+<td>flush 状态、并发限制、profile/event 处理、原 blob 保留开关</td>
+</tr>
+<tr>
+<td>Graphiti</td>
+<td><code>graphiti_core/graphiti.py</code>、<code>edges.py</code></td>
+<td>entity/edge resolution、episode 引用、有效与系统时间</td>
+</tr>
+<tr>
+<td>Cognee</td>
+<td><code>cognee/api/v1/remember/remember.py</code>、<code>recall/recall.py</code></td>
+<td>管线路由、配置、后台任务与数据集边界</td>
+</tr>
+<tr>
+<td>HippoRAG</td>
+<td><code>src/hipporag/HippoRAG.py</code>：<code>graph_search_with_fact_entities</code>、<code>run_ppr</code></td>
+<td>fact 与 passage seeds、无向加权 PPR、manifest</td>
+</tr>
+<tr>
+<td>MemoryOS</td>
+<td><code>memoryos-pypi/updater.py</code>、<code>retriever.py</code>、<code>mid_term.py</code>、<code>memoryos.py</code></td>
+<td>page/session 提升、heat、LFU、长期分析与并行读取</td>
+</tr>
+<tr>
+<td>MemOS</td>
+<td><code>src/memos/mem_cube/general.py</code>、<code>mem_scheduler/</code></td>
+<td>可选 memory modules、load/dump/schema、调度结构</td>
+</tr>
+<tr>
+<td>Hippo</td>
+<td><code>src/memory.ts</code>、<code>physics.ts</code>、<code>consolidate.ts</code>、<code>rerankers/jev.ts</code></td>
+<td>strength/outcome、粒子评分、sleep、40 候选重排与本地回退</td>
+</tr>
+<tr>
+<td>A-MEM</td>
+<td><code>agentic_memory/memory_system.py</code>：<code>process_memory</code>、<code>search_agentic</code></td>
+<td>演化动作、邻居修改、links 与 k 截断</td>
+</tr>
+<tr>
+<td>Letta / Letta Code</td>
+<td>旧仓 <code>README.md</code>；新仓 <code>src/agent/prompts/letta_root_memfs.md</code></td>
+<td>迁移、索引格式、commit 与 recompile 生效边界</td>
+</tr>
+<tr>
+<td>Basic Memory</td>
+<td><code>src/basic_memory/markdown/entity_parser.py</code>、<code>services/context_service.py</code></td>
+<td>文件解析、URI 与关系上下文</td>
+</tr>
+<tr>
+<td>MCP Memory Service</td>
+<td><code>src/mcp_memory_service/storage/mixins/hybrid.py</code>、<code>consolidation/consolidator.py</code></td>
+<td>weighted/RRF、候选补取、horizon 与巩固阶段</td>
+</tr>
+<tr>
+<td>Agent Beacon</td>
+<td><code>docs/architecture/architecture.mdx</code>、<code>system-architecture.mdx</code></td>
+<td>采集方式、事件 fidelity、JSONL 边界、OSS/managed 范围</td>
+</tr>
+<tr>
+<td>TencentDB</td>
+<td><code>MemoryCore/README_CN.md</code>、<code>MemoryProxy/README_CN.md</code></td>
+<td>Core/Knowledge 分工、生成溯源、Proxy 高层注入与工具读取</td>
+</tr>
+<tr>
+<td>Hermes Jev Skills</td>
+<td><code>jevkit/rerank.py</code>、<code>search.py</code>、<code>memo.py</code></td>
+<td>截断/隐私/注入判别、unjudged 回退、sufficiency、exact-match memo</td>
+</tr>
+</tbody></table>
+<p>这里只表示源码与官方说明核对，不表示所有后端已经运行或 benchmark 已独立复现。扩写保持原有 2026-09-21 快照，不把本次文稿更新当成重新获取上游维护数据。</p>
+<h2 id="论文原文">论文原文</h2><p>PDF 位于 <code>sources/papers/pdf/</code>，可搜索文本位于 <code>sources/papers/text/</code>。</p>
+<ol>
+<li>Packer et al. <strong>MemGPT: Towards LLMs as Operating Systems</strong>. arXiv:2310.08560.</li>
+<li>Maharana et al. <strong>LoCoMo: Evaluating Very Long-Term Conversational Memory of LLM Agents</strong>. arXiv:2402.17753.</li>
+<li>Gutiérrez et al. <strong>HippoRAG: Neurobiologically Inspired Long-Term Memory for LLMs</strong>. arXiv:2405.14831.</li>
+<li>Wu et al. <strong>LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory</strong>. arXiv:2410.10813.</li>
+<li>Rasmussen et al. <strong>Zep: A Temporal Knowledge Graph Architecture</strong>. arXiv:2501.13956.</li>
+<li>Xu et al. <strong>A-MEM: Agentic Memory for LLM Agents</strong>. arXiv:2502.12110.</li>
+<li>Gutiérrez et al. <strong>From RAG to Memory: Non-Parametric Continual Learning for LLMs</strong>. arXiv:2502.14802.</li>
+<li>Chhikara et al. <strong>Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory</strong>. arXiv:2504.19413.</li>
+<li>Markovic et al. <strong>Optimizing the Interface Between Knowledge Graphs and LLMs for Complex Reasoning</strong>. arXiv:2505.24478.</li>
+<li>Kang et al. <strong>Memory OS of AI Agent</strong>. arXiv:2506.06326.</li>
+<li>Li et al. <strong>MemOS: A Memory OS for AI System</strong>. arXiv:2507.03724.</li>
+</ol>
+<h2 id="证据使用约定">证据使用约定</h2><ul>
+<li>论文结果引用论文；项目新增功能和最新数字引用对应 README/评测目录。</li>
+<li>README 自报结果不视为独立复现。</li>
+<li>本书没有把不同指标、数据切分和 reader 的分数混成排行榜。</li>
+<li>Git 活跃度是 2026-09-21 的快照，不代表未来维护状态。</li>
+<li>任何项目上线前都应重新检查主仓、release、security advisory 与许可证。</li>
+</ul>
+<h2 id="进一步阅读顺序">进一步阅读顺序</h2><ol>
+<li><strong>心智模型</strong>：MemGPT → Mem0。</li>
+<li><strong>时间图谱</strong>：Zep/Graphiti → HippoRAG 1/2。</li>
+<li><strong>生命周期</strong>：MemOS → MemoryOS → Hippo 源码与负面评测。</li>
+<li><strong>评测</strong>：LoCoMo → LongMemEval，再对照项目 benchmark harness。</li>
+<li><strong>工程</strong>：Mem0 <code>Memory</code>、Graphiti <code>add_episode/search</code>、Cognee <code>remember/recall/improve/forget</code>、Letta MemFS prompts。</li>
+</ol>
+<h2 id="按技术问题复核-而不是只读-readme">按技术问题复核，而不是只读 README</h2><p>检索比较应从 public API 追到最终 candidate set、过滤和截断：Mem0 的 keyword boost 与 MCP 的候选并集不同，Hippo graph stream 与 graph-recall 不同，Graphiti 的 configuration 决定 RRF/MMR/cross-encoder。只看到函数名或接口介绍不足以作结论。</p>
+<p>演化比较应追到具体写操作：MemoryOS 的 heap/heat 与 profile update，A-MEM 的邻居属性变化与 index refresh，Hippo strength/outcome 与 sleep，MCP decay/forgetting 的 action，Cognee improve 的 gate/watermark，TencentDB L1 dedup/Skill version，MemOS scheduler，Letta commit/recompile。副作用之后是否读取新状态也要核对。</p>
+<p>接入比较应画出原文与派生副本：Basic 文件与索引，Beacon JSONL 与 forwarding，Memobase blob/profile/event，Graphiti episode/fact，HippoRAG passage/fact，TencentDB Core/Knowledge/Proxy。许可证、auth、删除或性能属于不同证据问题，不能用论文或宣传分数替当前部署证明。</p>
+</details>
+
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/appendix-sources.svg" alt="源码、实验和部署三种结论分别追踪到 commit/config、协议和实际运行记录" loading="lazy"><figcaption>图：证据类型不同，支持的结论范围也不同；本次仍是本地快照审阅。</figcaption></figure>
+
+<details class="comparison-reference">
+<summary>项目对照速查（选读）</summary>
+
+<h2 id="本章对照结论">本章对照结论</h2><table>
+<thead>
+<tr>
+<th>技术问题</th>
+<th>需要比较的项目</th>
+<th>优先证据</th>
+<th>本次能支持/不能支持</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>事实/画像写入</td>
+<td>Mem0、Memobase、MemoryOS、TencentDB、Letta、MemOS</td>
+<td>提取/提升/编译代码及 prompt</td>
+<td>解释数据流；未独立测所有模型</td>
+</tr>
+<tr>
+<td>候选/排序</td>
+<td>Mem0、MCP、Hippo、Graphiti、Cognee、HippoRAG、Hermes</td>
+<td>candidate/fusion/rerank 与配置</td>
+<td>区分池边界；未复现统一质量排名</td>
+</tr>
+<tr>
+<td>图/来源</td>
+<td>Graphiti、Cognee、HippoRAG、Basic、A-MEM、Hippo、MCP、TencentDB、MemOS</td>
+<td>graph/node/edge/source 及读取</td>
+<td>区分连接语义；未保证全部删除链</td>
+</tr>
+<tr>
+<td>演化/遗忘</td>
+<td>Hippo、MCP、MemoryOS、A-MEM、Cognee、Memobase、Graphiti、TencentDB、MemOS、Letta</td>
+<td>状态写操作、反馈、gate、版本</td>
+<td>描述机制；未证明长期任务提升</td>
+</tr>
+<tr>
+<td>接入/副本</td>
+<td>Beacon、Basic、MCP、TencentDB、Letta、MemOS、Hippo 与 SDK 框架</td>
+<td>事件 schema、transport、sync、auth</td>
+<td>说明审计点；非生产安全认证</td>
+</tr>
+<tr>
+<td>历史与实验</td>
+<td>MemGPT/旧 Letta、各论文和 benchmark</td>
+<td>archive commit、数据/reader/judge</td>
+<td>限定原协议；非当前产品背书</td>
+</tr>
+</tbody></table>
+</details>
+
+</article><nav class="pager" aria-label="章节导航"><a href="17-selection.html"><small>上一章</small>选型与演进路线</a><a href="../index.html"><small>读完了</small>返回目录</a></nav></main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div></div><script src="../assets/wiki.js"></script></body></html>

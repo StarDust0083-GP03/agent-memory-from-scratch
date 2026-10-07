@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 455" role="img" aria-labelledby="title desc"><title id="title">主动读记忆与提交后生效</title><desc id="desc">读取补充本轮证据，编辑和提交则在后续编译改变核心上下文。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">MemGPT</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">当前 query / core</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">搜索外部记忆</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">工具证据 / 回答</text>
+<text x="12" y="135" font-weight="600">Letta 读取</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">core / MEMORY 索引</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">详细文件 / recall</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">本轮上下文</text>
+<text x="12" y="235" font-weight="600">Letta 写入</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">经历 / 纠正</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">文件编辑 / commit</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">后续 recompile</text>
+<text x="12" y="335" font-weight="600">Skill</text>
+<rect x="12" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="380" text-anchor="middle">触发摘要</text>
+<path d="M237 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="380" text-anchor="middle">读取完整步骤</text>
+<path d="M487 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="380" text-anchor="middle">受控执行 / 验收</text>
+<text x="12" y="450" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

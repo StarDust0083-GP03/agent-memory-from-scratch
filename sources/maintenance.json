@@ -1,0 +1,178 @@
+[
+  {
+    "project": "a-mem",
+    "head_date": "2025-12-12",
+    "commits_30d": 0,
+    "commits_90d": 0,
+    "active_days_30d": 0,
+    "authors_30d": 0,
+    "commits_sampled": 31,
+    "head": "ceffb86",
+    "remote": "https://github.com/agiresearch/A-mem.git"
+  },
+  {
+    "project": "agent-beacon",
+    "head_date": "2026-09-21",
+    "commits_30d": 644,
+    "commits_90d": 1088,
+    "active_days_30d": 27,
+    "authors_30d": 8,
+    "commits_sampled": 1390,
+    "head": "4d5ff80",
+    "remote": "https://github.com/Asymptote-Labs/agent-beacon.git"
+  },
+  {
+    "project": "basic-memory",
+    "head_date": "2026-09-15",
+    "commits_30d": 301,
+    "commits_90d": 301,
+    "active_days_30d": 16,
+    "authors_30d": 11,
+    "commits_sampled": 301,
+    "head": "3bf2d52",
+    "remote": "https://github.com/basicmachines-co/basic-memory.git"
+  },
+  {
+    "project": "cognee",
+    "head_date": "2026-09-19",
+    "commits_30d": 793,
+    "commits_90d": 2367,
+    "active_days_30d": 30,
+    "authors_30d": 40,
+    "commits_sampled": 8587,
+    "head": "663a2dc15",
+    "remote": "https://github.com/topoteretes/cognee.git"
+  },
+  {
+    "project": "graphiti",
+    "head_date": "2026-09-21",
+    "commits_30d": 34,
+    "commits_90d": 107,
+    "active_days_30d": 15,
+    "authors_30d": 10,
+    "commits_sampled": 301,
+    "head": "0de2993",
+    "remote": "https://github.com/getzep/graphiti.git"
+  },
+  {
+    "project": "hermes-jev-skills",
+    "head_date": "2026-09-21",
+    "commits_30d": 52,
+    "commits_90d": 52,
+    "active_days_30d": 4,
+    "authors_30d": 2,
+    "commits_sampled": 52,
+    "head": "7022efa",
+    "remote": "https://github.com/kerpopule/hermes-jev-skills.git"
+  },
+  {
+    "project": "hippo-memory",
+    "head_date": "2026-09-21",
+    "commits_30d": 63,
+    "commits_90d": 107,
+    "active_days_30d": 11,
+    "authors_30d": 1,
+    "commits_sampled": 509,
+    "head": "c9eb2c3",
+    "remote": "https://github.com/kitfunso/hippo-memory.git"
+  },
+  {
+    "project": "hipporag",
+    "head_date": "2026-09-03",
+    "commits_30d": 6,
+    "commits_90d": 20,
+    "active_days_30d": 4,
+    "authors_30d": 4,
+    "commits_sampled": 162,
+    "head": "1438aba",
+    "remote": "https://github.com/OSU-NLP-Group/HippoRAG.git"
+  },
+  {
+    "project": "letta",
+    "head_date": "2026-09-10",
+    "commits_30d": 3,
+    "commits_90d": 10,
+    "active_days_30d": 2,
+    "authors_30d": 2,
+    "commits_sampled": 3103,
+    "head": "5bcdd177",
+    "remote": "https://github.com/letta-ai/letta.git"
+  },
+  {
+    "project": "letta-code",
+    "head_date": "2026-09-21",
+    "commits_30d": 301,
+    "commits_90d": 301,
+    "active_days_30d": 28,
+    "authors_30d": 19,
+    "commits_sampled": 301,
+    "head": "0b5f2cc",
+    "remote": "https://github.com/letta-ai/letta-code.git"
+  },
+  {
+    "project": "mcp-memory-service",
+    "head_date": "2026-09-20",
+    "commits_30d": 291,
+    "commits_90d": 470,
+    "active_days_30d": 23,
+    "authors_30d": 30,
+    "commits_sampled": 735,
+    "head": "60f5fab",
+    "remote": "https://github.com/doobidoo/mcp-memory-service.git"
+  },
+  {
+    "project": "mem0",
+    "head_date": "2026-09-18",
+    "commits_30d": 36,
+    "commits_90d": 289,
+    "active_days_30d": 15,
+    "authors_30d": 15,
+    "commits_sampled": 301,
+    "head": "a39a802",
+    "remote": "https://github.com/mem0ai/mem0.git"
+  },
+  {
+    "project": "memobase",
+    "head_date": "2026-01-11",
+    "commits_30d": 0,
+    "commits_90d": 0,
+    "active_days_30d": 0,
+    "authors_30d": 0,
+    "commits_sampled": 301,
+    "head": "358c16b",
+    "remote": "https://github.com/memodb-io/memobase.git"
+  },
+  {
+    "project": "memoryos",
+    "head_date": "2026-07-07",
+    "commits_30d": 0,
+    "commits_90d": 2,
+    "active_days_30d": 0,
+    "authors_30d": 0,
+    "commits_sampled": 272,
+    "head": "587ed77",
+    "remote": "https://github.com/BAI-LAB/MemoryOS.git"
+  },
+  {
+    "project": "memos",
+    "head_date": "2026-09-21",
+    "commits_30d": 87,
+    "commits_90d": 325,
+    "active_days_30d": 14,
+    "authors_30d": 11,
+    "commits_sampled": 2173,
+    "head": "12acdad6",
+    "remote": "https://github.com/MemTensor/MemOS.git"
+  },
+  {
+    "project": "tencent-agent-memory",
+    "head_date": "2026-09-21",
+    "commits_30d": 29,
+    "commits_90d": 46,
+    "active_days_30d": 14,
+    "authors_30d": 19,
+    "commits_sampled": 46,
+    "head": "5017e2b",
+    "remote": "https://github.com/TencentCloud/TencentDB-Agent-Memory.git"
+  }
+]

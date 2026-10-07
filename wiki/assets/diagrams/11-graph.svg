@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 455" role="img" aria-labelledby="title desc"><title id="title">显式扩展与图扩散的差别</title><desc id="desc">查询 Atlas 可沿平台组找到批准人的证据，但各项目使用的连接和排名方式不同。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">Graphiti</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">episode / entity</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">时变事实边 / BFS</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">可核对的关系</text>
+<text x="12" y="135" font-weight="600">Cognee</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">schema / 文档块</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">图与向量检索器</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">来源块 / 答案</text>
+<text x="12" y="235" font-weight="600">HippoRAG</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">Atlas / 平台组种子</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">PPR 传播相关性</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">批准人 passage</text>
+<text x="12" y="335" font-weight="600">Basic / Hippo</text>
+<rect x="12" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="380" text-anchor="middle">显式关系 / 种子</text>
+<path d="M237 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="380" text-anchor="middle">限深邻域 / 图排名</text>
+<path d="M487 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="380" text-anchor="middle">连接笔记 / memory</text>
+<text x="12" y="450" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

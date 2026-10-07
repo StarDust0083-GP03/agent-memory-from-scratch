@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 355" role="img" aria-labelledby="title desc"><title id="title">把结论追到可复现证据</title><desc id="desc">源码说明实现，论文说明实验，配置与运行记录说明部署行为，三者不能互相替代。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">实现结论</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">源码 / 函数</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">本地 commit / 配置</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">实际分支与字段</text>
+<text x="12" y="135" font-weight="600">实验结论</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">论文 / benchmark</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">切分 / reader / judge</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">有限可比数字</text>
+<text x="12" y="235" font-weight="600">部署结论</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">端点 / 后端</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">运行记录 / 故障测试</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">可复现行为</text>
+<text x="12" y="350" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 455" role="img" aria-labelledby="title desc"><title id="title">接入方式如何决定数据与信任边界</title><desc id="desc">服务、文件、遥测和请求代理使用不同入口，最终应只有一个上下文组装出口。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">MCP Service</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">MCP / REST 客户端</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">认证 / 统一存储</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">候选交给 assembler</text>
+<text x="12" y="135" font-weight="600">Basic Memory</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">文件 / MCP 编辑</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">解析与同步索引</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">URI / 关系上下文</text>
+<text x="12" y="235" font-weight="600">Beacon</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">hook / OTLP / poll</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">归一事件 / JSONL</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">下游审查与提炼</text>
+<text x="12" y="335" font-weight="600">TencentDB</text>
+<rect x="12" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="380" text-anchor="middle">请求代理 / Adapter</text>
+<path d="M237 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="380" text-anchor="middle">资产 ACL / 检索</text>
+<path d="M487 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="380" text-anchor="middle">高层注入 / 低层工具</text>
+<text x="12" y="450" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

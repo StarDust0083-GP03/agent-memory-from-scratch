@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 355" role="img" aria-labelledby="title desc"><title id="title">三种架构在何处选择上下文</title><desc id="desc">事实库在读取时筛选，图在关系中扩展，Agent 自管理架构在编译和工具读取时选择。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">事实库</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">消息</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">短事实 / 画像</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">查询筛选</text>
+<text x="12" y="135" font-weight="600">图路线</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">文档 / episode</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">实体 / 关系</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">关联证据</text>
+<text x="12" y="235" font-weight="600">Agent 原生</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">经历 / 反馈</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">core / 外部文件</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">编译 / 主动读取</text>
+<text x="12" y="350" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

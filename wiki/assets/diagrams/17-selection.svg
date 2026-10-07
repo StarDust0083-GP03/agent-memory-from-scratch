@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 455" role="img" aria-labelledby="title desc"><title id="title">由失败类型选择下一项机制</title><desc id="desc">只有测到当前失败，才从简单事实库升级检索、生命周期、图或资产权限。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">偏好易漏</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">字段读错</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">profile / 直接读</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">字段正确率</text>
+<text x="12" y="135" font-weight="600">第二跳缺失</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">证据不在 top-k</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">图扩展 / PPR</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">多跳证据命中</text>
+<text x="12" y="235" font-weight="600">旧规则误用</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">时间 / 冲突不清</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">validity / lifecycle</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">当前与历史正确</text>
+<text x="12" y="335" font-weight="600">团队共享</text>
+<rect x="12" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="380" text-anchor="middle">可见性或版本混乱</text>
+<path d="M237 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="380" text-anchor="middle">ACL / Loadout</text>
+<path d="M487 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="380" text-anchor="middle">零泄漏 / 撤销生效</text>
+<text x="12" y="450" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

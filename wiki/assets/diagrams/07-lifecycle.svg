@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 455" role="img" aria-labelledby="title desc"><title id="title">层级提升、寿命调整与笔记演化</title><desc id="desc">三种演化分别改变驻留层、价值寿命和关联描述，不等于训练基础模型。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="12" y="35" font-weight="600">MemoryOS</text>
+<rect x="12" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="80" text-anchor="middle">近期问答</text>
+<path d="M237 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="80" text-anchor="middle">主题 page / heat</text>
+<path d="M487 74h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="50" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="80" text-anchor="middle">长期画像 / 知识</text>
+<text x="12" y="135" font-weight="600">Hippo</text>
+<rect x="12" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="180" text-anchor="middle">episode / 使用结果</text>
+<path d="M237 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="180" text-anchor="middle">strength / outcome</text>
+<path d="M487 174h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="150" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="180" text-anchor="middle">sleep / 语义记忆</text>
+<text x="12" y="235" font-weight="600">MCP Service</text>
+<rect x="12" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="280" text-anchor="middle">时间窗口内记忆</text>
+<path d="M237 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="280" text-anchor="middle">衰减 / 聚类 / 压缩</text>
+<path d="M487 274h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="250" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="280" text-anchor="middle">受控遗忘 / 报告</text>
+<text x="12" y="335" font-weight="600">A-MEM</text>
+<rect x="12" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="122" y="380" text-anchor="middle">新笔记 + 邻居</text>
+<path d="M237 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="262" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="372" y="380" text-anchor="middle">evolution decision</text>
+<path d="M487 374h19m-6-5 6 5-6 5" fill="none" stroke-width="1.5"/>
+<rect x="512" y="350" width="220" height="48" rx="4" fill="none" stroke-opacity=".6"/><text x="622" y="380" text-anchor="middle">links / context / tags</text>
+<text x="12" y="450" style="font-size:12px">概念图：箭头表示数据或控制流，不表示所有步骤默认启用。</text></svg>

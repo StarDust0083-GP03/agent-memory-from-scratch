@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 475" role="img" aria-labelledby="title desc"><title id="title">维护快照中的活跃天数</title><desc id="desc">截至二〇二六年九月二十一日的近三十天活跃天数，只表示采样维护信号，不表示准确率。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:15px}rect,line,path{stroke:currentColor} @media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style>
+<text x="10" y="40">Cognee</text><rect x="330" y="25" width="355" height="22" fill="currentColor" stroke="none"/><text x="695" y="42" style="font-variant-numeric:tabular-nums">30 天</text>
+<text x="10" y="82">Letta Code</text><rect x="330" y="67" width="331.3333333333333" height="22" fill="currentColor" stroke="none"/><text x="695" y="84" style="font-variant-numeric:tabular-nums">28 天</text>
+<text x="10" y="124">Agent Beacon</text><rect x="330" y="109" width="319.5" height="22" fill="currentColor" stroke="none"/><text x="695" y="126" style="font-variant-numeric:tabular-nums">27 天</text>
+<text x="10" y="166">MCP Memory Service</text><rect x="330" y="151" width="272.1666666666667" height="22" fill="currentColor" stroke="none"/><text x="695" y="168" style="font-variant-numeric:tabular-nums">23 天</text>
+<text x="10" y="208">Basic Memory</text><rect x="330" y="193" width="189.33333333333334" height="22" fill="currentColor" stroke="none"/><text x="695" y="210" style="font-variant-numeric:tabular-nums">16 天</text>
+<text x="10" y="250">Graphiti / Mem0</text><rect x="330" y="235" width="177.5" height="22" fill="currentColor" stroke="none"/><text x="695" y="252" style="font-variant-numeric:tabular-nums">15 天</text>
+<text x="10" y="292">MemOS / TencentDB</text><rect x="330" y="277" width="165.66666666666666" height="22" fill="currentColor" stroke="none"/><text x="695" y="294" style="font-variant-numeric:tabular-nums">14 天</text>
+<text x="10" y="334">Hippo</text><rect x="330" y="319" width="130.16666666666666" height="22" fill="currentColor" stroke="none"/><text x="695" y="336" style="font-variant-numeric:tabular-nums">11 天</text>
+<text x="10" y="376">HippoRAG</text><rect x="330" y="361" width="47.333333333333336" height="22" fill="currentColor" stroke="none"/><text x="695" y="378" style="font-variant-numeric:tabular-nums">4 天</text>
+<text x="10" y="418">MemoryOS / Memobase / A-MEM</text><rect x="330" y="403" width="0" height="22" fill="currentColor" stroke="none"/><text x="695" y="420" style="font-variant-numeric:tabular-nums">0 天</text>
+<text x="12" y="470" style="font-size:12px">维护快照，不是质量排名；同名组合行仅表示相同活跃天数。</text></svg>
