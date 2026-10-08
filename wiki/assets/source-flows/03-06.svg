@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 610" role="img" aria-labelledby="title desc"><title id="title">文件和工具事件怎样进入这条管线：两条案例流程</title><desc id="desc">Mem0：日志包含密码和迁移失败 → 应用清洗后用 infer=False 保存 → 只保存已审核教训和来源；Graphiti：清洗后的工具报告 → 作为 episode 提取项目与关系 → 核对关系并保留报告来源。检查点：infer=False 跳过提取，不负责去秘密；提交 Graphiti 的日志仍会进入抽取流程。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:16px}rect{stroke-opacity:.6}@media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style><text x="12" y="26" font-weight="600">Mem0</text>
+<rect x="12" y="42" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="67">1. 日志包含密码和迁移失败</text>
+<path d="M180 105v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="127" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="152">2. 应用清洗后用 infer=False 保存</text>
+<path d="M180 190v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="212" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="237">3. 只保存已审核教训和来源</text>
+<text x="12" y="309" font-weight="600">Graphiti</text>
+<rect x="12" y="325" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="350">1. 清洗后的工具报告</text>
+<path d="M180 388v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="410" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="435">2. 作为 episode 提取项目与关系</text>
+<path d="M180 473v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="495" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="520">3. 核对关系并保留报告来源</text>
+<text x="12" y="592" font-size="13">教学推演；“应用”步骤需自行实现。</text></svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 610" role="img" aria-labelledby="title desc"><title id="title">用集合算一次召回率：两条案例流程</title><desc id="desc">Mem0：需要 A、B，返回 A、C → 命中的必要记录只有 A → 召回率为 1/2；Graphiti：批准链需 A 维护边与 B 批准边 → 实际只有 A，缺 B → 必要关系也只找到一半。检查点：计算前要统一证据单位；返回很多无关记录或关系不能补缺少的必要证据。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:16px}rect{stroke-opacity:.6}@media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style><text x="12" y="26" font-weight="600">Mem0</text>
+<rect x="12" y="42" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="67">1. 需要 A、B，返回 A、C</text>
+<path d="M180 105v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="127" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="152">2. 命中的必要记录只有 A</text>
+<path d="M180 190v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="212" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="237">3. 召回率为 1/2</text>
+<text x="12" y="309" font-weight="600">Graphiti</text>
+<rect x="12" y="325" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="350">1. 批准链需 A 维护边与 B 批准边</text>
+<path d="M180 388v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="410" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="435">2. 实际只有 A，缺 B</text>
+<path d="M180 473v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="495" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="520">3. 必要关系也只找到一半</text>
+<text x="12" y="592" font-size="13">教学推演；“应用”步骤需自行实现。</text></svg>

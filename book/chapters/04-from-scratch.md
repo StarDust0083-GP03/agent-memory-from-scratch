@@ -34,6 +34,10 @@ Graphiti：给它一份“Atlas 由平台组维护”的文档，检查整理出
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/04-01.svg)
+
+源码对照：
+
 本章程序直接把你写好的教训存入 SQLite，不请模型猜怎样总结。Mem0 的直接保存模式也可以跳过事实提取，但仍要配置生成向量等依赖，不能把它当成纯标准库实验。Graphiti 的普通材料写入还需提取对象与关系，所以“跟做本章成功”尚不能证明两套服务已搭好。
 
 ### Mem0：零模型实验可以映射到直接保存路径
@@ -71,6 +75,10 @@ Graphiti：一份文档保存原话，两个对象保存 Atlas 和平台组，�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/04-02.svg)
+
+源码对照：
+
 在最小程序里，一行可以保存编号、正文、用户和时间。接 Mem0 后，还要区分事实后端中的卡片与历史 SQLite 中的消息和变化。Graphiti 则至少区分原材料、谈论对象及事实关系，并保存相互引用。看到一个数据库文件存在，只证明某种状态可能保留，不证明这些不同对象都已写齐。
 
 ### Mem0：历史 SQLite 与事实后端不是同一职责
@@ -97,6 +105,10 @@ Graphiti：问“谁负责 Atlas”，文字搜索可能找到“Atlas”，按�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/04-03.svg)
+
+源码对照：
 
 玩具程序认出共享词语，是为了让结果能手算。Mem0 用真实向量衡量意思接近，再参考词和对象关联；Graphiti 可比较关系正文向量，也可按配置找对象摘要或材料。换一种候选单位，分数就比较另一种文字，不能把“节点很相关”直接理解成“批准关系已找到”。
 
@@ -134,6 +146,10 @@ Graphiti：长期默认确实改变时，核对旧环境关系的结束日期和
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/04-04.svg)
+
+源码对照：
+
 最小程序用“新记录取代旧记录”表达业务规则，这个字段不会因为换后端而自动存在。接 Mem0 时，需要应用维护取代关系或显式更新；接 Graphiti 时，可核对新旧默认关系与有效时间。程序应能解释为什么保留旧历史、为什么当前选择新值，而不是只比较哪条最后写入。
 
 ### Mem0：不要调用不存在的 supersedes 语义
@@ -166,6 +182,10 @@ Graphiti：问批准人，只把维护关系、批准关系及必要原文片段
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/04-05.svg)
+
+源码对照：
+
 返回五条记录，如果每条都是长文，仍可能塞不进模型。Mem0 的 top_k 和 Graphiti 的 num_results 表示最多返回多少项，不是输入长度预算。应用可以先选少量短事实，必要时再取原文，最后计算总长度；一条有来源的关键教训往往比五段重复背景更适合当前任务。
 
 ### Mem0：limit 限制结果，不保证最终 token
@@ -196,6 +216,10 @@ Graphiti：沿着“读维护文档→认出 Atlas 和平台组→保存关系�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/04-06.svg)
+
+源码对照：
 
 追一次 Mem0 调用，可在纸上记“输入消息→候选正文→保存字段→返回正文→模型消息”。追 Graphiti 则记“原材料→对象编号→关系两端→来源编号→回答证据”。每个箭头都写下当前值，发现“这里仍是原句，那里已改成强规则”时，才知道错误在哪一步出现。
 
@@ -319,10 +343,10 @@ SQL 先用 user/time 缩小范围，再逐条算分，解释了“过滤”和�
 | 示例机制 | 使用相近技术的项目 | 实际工作差异 | 升级前需要验证 |
 |---|---|---|---|
 | SQLite 与 scope | Hippo、MCP、TencentDB standalone、Basic 索引 | 表/文件/资产模型不同 | 权限、并发与索引重建 |
-| lexical + hash cosine | Mem0、MCP、Hippo、Graphiti、MemOS 插件、TencentDB | 真实 embedding/FTS/图与不同池边界 | 中文分词、候选 recall、模型版本 |
-| 显式 supersede | Graphiti、Hippo、MCP；文件版本另见 Letta/Basic | 自动关系失效或显式替代，不都支持同一 as_of | valid time 与事务时间 |
+| 词匹配与哈希向量比较 | Mem0、MCP、Hippo、Graphiti、MemOS 插件、TencentDB | 真实项目用模型向量、全文索引或图，初选范围也不同 | 中文分词、必要证据能否找到、模型版本 |
+| 明确替代旧记录 | Graphiti、Hippo、MCP；文件版本另见 Letta/Basic | 有的自动处理关系失效，有的显式替代；历史查询接口不同 | 现实生效日和系统记录日 |
 | 近似预算打包 | Hippo、Letta、TencentDB、Hermes；其他框架由应用控制 | token budget、core 常驻、工具读取、字符截断 | 全文本 tokenizer 与漏证据 |
-| recall 强化 | Hippo；MemoryOS 有访问/heat | strength 延寿或热段 promotion | 无帮助误召回不能算成功 |
+| 搜到后强化记录 | Hippo；MemoryOS 也记录访问热度 | 延长记录寿命，或触发长期知识整理 | 搜到却没帮上忙，不能算成功使用 |
 | 指数衰减与 dry-run | Hippo、MCP 巩固 | half-life/outcome 或 retention/quality | 保护项、归档与恢复 |
 | 不含自动提取 | 对照 Mem0、Graphiti、Memobase、MemoryOS、A-MEM、Cognee、MemOS、TencentDB | 模型提取或提升会产生额外误差 | 写入 precision、成本、失败重试 |
 | 不含图/采集/决策服务 | HippoRAG、Beacon、Hermes 分别补关联、trace、判别 | 与数据库替换无关 | 先证明是哪一层瓶颈 |

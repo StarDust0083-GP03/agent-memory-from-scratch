@@ -6,6 +6,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/09-01.svg" alt="找到了项目，先确认它要替你做哪件事：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：下载代码或引入 SDK 不表示模型与数据库已可用；先验证自己的运行路径。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>SDK 是接进自己程序的工具包，托管平台是别人替你运行的服务，assembler 是应用里把证据组织成消息的代码。使用 Mem0 或 Graphiti 库，通常仍要配置模型、存储和组装；不能因看到一张完整产品页面，就认为安装开源包已经提供同样的部署、权限与评估功能。</p>
 <h3 id="mem0-先区分-sdk-平台与业务-assembler">Mem0：先区分 SDK、平台与业务 assembler</h3><p>本地 <code>Memory</code> 入口负责事实处理和存取，应用管理登录身份与模型输入。即使 README 同时讨论 managed memory，也应追本地 factory 和实际 provider。一个能力若只在平台接口出现，不能通过配置本地 <code>Memory</code> 自动获得。</p>
 <h3 id="graphiti-框架负责建图与搜索-不等于完整托管服务">Graphiti：框架负责建图与搜索，不等于完整托管服务</h3><p>本地 <code>Graphiti</code> 提供 episode ingestion、关系维护和配置化查询。用户线程、团队授权、请求代理和生产 SLA 需看实际部署。判断能否替代现有组件，应先明确你缺的是时间边还是一整套上下文服务。</p>
@@ -19,6 +22,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/09-02.svg" alt="用 Letta 的迁移练习找对仓库：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：教程、宣传与本地快照可能不同；以真实入口和状态变化核对能力。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一本旧教程说写入会更新旧默认，新版代码却主要追加卡片，接入就会得到不同状态。核对 Mem0 要看当前 add 真正执行什么；核对 Graphiti 要看使用的是基本 search 还是高级 search_。接口名称像书的目录，实际代码才决定步骤；后文行为只对应本书锁定提交。</p>
 <h3 id="mem0-版本核对要追真实函数体">Mem0：版本核对要追真实函数体</h3><p><code>add()</code> 的旧式说明仍提 ADD、UPDATE、DELETE，而本地普通推断函数已经是分阶段追加。用 commit 固定证据，比较函数体与提示，而非凭 docstring 判断策略。异步 <code>AsyncMemory</code> 是另一实现，采用它时还应核对相应函数的差异。</p>
 <h3 id="graphiti-接口迁移也会影响阅读路线">Graphiti：接口迁移也会影响阅读路线</h3><p>当前 <code>_search()</code> 标记为 deprecated，转向 <code>search_()</code>。基础 <code>search()</code> 与高级接口的默认配方不同，因此旧教程的函数名和默认值不能直接沿用。记录所用 API、搜索配置和 driver，才能解释一次升级造成的结果变化。</p>
@@ -32,6 +38,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/09-03.svg" alt="把维护数字还原成日常问题：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：后端在支持名单里，不表示所有接口和配置都已验证；逐步验实际动作。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>“后端”指真正保存事实或图的数据库服务，driver 是访问它的连接代码。Mem0 换后端后要检查筛选和词搜索是否一致；Graphiti 换 driver 后要检查同一关系能否写入与查回。提交频率高不能代替这些试验，具体依赖决定故障时你要维护哪一层。</p>
 <h3 id="mem0-维护应覆盖多后端的一致行为">Mem0：维护应覆盖多后端的一致行为</h3><p>工厂可以切换向量库，但关键词能力、分值和 list 上限可能不同。查维护时关注批量写入、实体清理和删除分页的测试与修复，不能只数总提交。失败恢复涉及事实库与 SQLite 历史，两者一致性也是采用成本。</p>
 <h3 id="graphiti-模型输出与-driver-都是维护面">Graphiti：模型输出与 driver 都是维护面</h3><p>实体抽取、日期解析和关系失效依赖结构化输出，图后端还有索引与查询差异。维护风险应包括 schema 变更、模型 provider 兼容和 group 隔离。一次图搜索测试通过，不足以证明 ingestion 与删除在其他 driver 下也安全。</p>
@@ -44,6 +53,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/09-04.svg" alt="再检查“开源支持”具体指什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：开源能力与托管宣传要分开；有历史数据与按日期正确查询也要分开。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>OSS 指开源版本。宣传支持历史，不意味着开源 Mem0 的每个搜索参数都能直接问某日状态。Graphiti 有关系时间字段，也需要正确的查询筛选。拿“15 日是谁批准”这一题，检查存了什么、参数被哪里使用、返回哪些记录，比只核对是否有“历史记忆”功能名更可靠。</p>
 <h3 id="mem0-oss-的时间参数有明确边界">Mem0：OSS 的时间参数有明确边界</h3><p>本地支持 <code>expiration_date</code>，但 <code>add(timestamp=...)</code> 会抛错，提示该时间能力不在 OSS 参数契约内。托管算法分数也不能归到本地实现。能力调查应逐项写“可调用参数、对应分支、所用后端”，不要笼统写全部时间记忆已支持。</p>
 <h3 id="graphiti-时间图与业务历史-api-分开验证">Graphiti：时间图与业务历史 API 分开验证</h3><p>本地边保存有效与系统时间，<code>SearchFilters</code> 提供日期比较，框架确有时间维护逻辑。但完整历史视图、权限服务与托管延迟不能从这些字段推得。给晚到事件实际查看字段和过滤输出，才是采用本地框架的证据。</p>
@@ -57,6 +69,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/09-05.svg" alt="读源码时，怎样把一个宣传词拆成实际动作：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：用一条可预测的漏召回例子检查宣传词，不只看“混合检索”的名字。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>看到“混合检索”，可以把问题缩成：词搜索独自找到 C 后，C 能否出现在结果里？Mem0 要追最终候选来自哪个列表；Graphiti 要追当前配方启动了哪几种搜索以及如何合并。配方是搜索配置组合，不是效果保证；最终编号集合能直接验证这个宣传词对应的动作。</p>
 <h3 id="mem0-从输入条件追到最后候选循环">Mem0：从输入条件追到最后候选循环</h3><p>检查 <code>infer</code>、<code>agent_id</code> 和 <code>memory_type</code> 分支，再追普通批处理；读 search 时追 candidates 循环，而非停在 keyword_search 调用。这样可以预测某个错误码只被关键词找到时会怎样，而不仅知道项目出现了 BM25 字样。</p>
 <h3 id="graphiti-从配方追到实际任务列表">Graphiti：从配方追到实际任务列表</h3><p><code>SearchConfig</code> 写着 BFS，不代表所有调用都选这个 config。<code>edge_search()</code> 按枚举创建任务，再汇集 UUID 和重排。核对基础接口的 recipe、实际 enabled methods 与返回对象，能把“支持图遍历”变成具体可验证行为。</p>
@@ -69,6 +84,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/09-06.svg" alt="维护风险要与自己的接管能力一起看：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：这是建议执行的故障实验，不是本书已测过所有后端；接管能力需要自己验证。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>在测试环境让提取模型失败、让存储中断、让旧默认被补录，再检查原文与派生结果。Mem0 需要核对卡片、历史和对象关联；Graphiti 需要核对材料、节点、关系和时间变化。故障之后你能解释并修复哪些状态，才决定项目复杂度是否适合自己的团队。</p>
 <h3 id="mem0-小故障实验揭示你要补的状态管理">Mem0：小故障实验揭示你要补的状态管理</h3><p>令提取 provider 超时，核对异常与原文是否已由入口保存；令批量插入失败，核对逐条回退后事实、历史和实体链接。应用能否区分无新事实与依赖错误，直接决定重试和用户状态提示是否可信。</p>
 <h3 id="graphiti-测试失败之后图有没有部分变化">Graphiti：测试失败之后图有没有部分变化</h3><p>在抽取、解析和保存阶段分别制造故障，检查 episode、节点、旧边有效时间与索引。框架抛出异常说明调用失败，不等于所有外部状态已恢复。决定接管时，应理解 driver 保存范围与事件重放方式，而非只会重新执行整次请求。</p>
@@ -80,7 +98,7 @@
 <summary>维护快照、项目全景与比较依据（选读）</summary>
 
 <h2 id="评分原则">评分原则</h2><p>本书把维护信号放在首位。数据来自截至 <strong>2026-09-21 UTC</strong> 的本地 Git 历史：最近提交、近 30/90 天提交、30 天活跃天数、作者数；源码快照见 <code>sources/maintenance.json</code>。</p>
-<p>本章的 A/B/C 是定性投入优先级，维护因素占判断的大部分；“约 60% 维护、40% 其他”仅表达取舍倾向，没有逐项归一化公式和可复现加权分数，不能称为精确量化评分。其他因素包括开源完整度、架构独特性、测试/评测、生产能力和许可证。commit 数只作参考：Cognee、Beacon 等高频仓可能包含自动化；单人项目即使活跃，bus factor 仍低；论文仓低频并不代表论文价值低。</p>
+<p>本章的 A/B/C 是定性投入优先级，维护因素占判断的大部分；“约 60% 维护、40% 其他”仅表达取舍倾向，没有逐项归一化公式和可复现加权分数，不能称为精确量化评分。其他因素包括开源完整度、架构独特性、测试/评测、生产能力和许可证。commit 数只作参考：Cognee、Beacon 等高频仓可能包含自动化；单人项目即使活跃，也可能在唯一维护者离开后无人接手；论文仓低频并不代表论文价值低。</p>
 <h2 id="维护优先的推荐顺序">维护优先的推荐顺序</h2><table>
 <thead>
 <tr>
@@ -205,7 +223,7 @@
 <p>下面的图仅展示活跃天数，合并行只因为数值相同，不合并项目能力，也不将 commit 数折成模型正确率。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/09-landscape.svg" alt="近三十天活跃天数：Cognee 30、Letta 28、Beacon 27、MCP 23，其他项目逐项展示" loading="lazy"><figcaption>图：2026-09-21 快照的维护信号。浅克隆、机器人与作者集中度仍需另查。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/09-landscape.svg" alt="近三十天活跃天数：Cognee 30、Letta 28、Beacon 27、MCP 23，其他项目逐项展示" loading="lazy"><figcaption>图：2026-09-21 快照的维护信号。浅克隆、机器人与作者集中度仍需另查。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -245,21 +263,21 @@
 </tr>
 <tr>
 <td>Letta Code / 旧 Letta</td>
-<td>canonical migration 与 harness 协议</td>
-<td>commit/recompile 和当前 API</td>
+<td>主仓迁移与运行环境的记忆协议</td>
+<td>提交后是否生效，接口是否仍可用</td>
 <td>旧仓统计等于当前维护</td>
 </tr>
 <tr>
 <td>Basic、MCP、TencentDB</td>
 <td>文件同步、共享服务、资产安全</td>
-<td>许可证、scope、撤销与删除</td>
+<td>许可证、可读范围、撤销与删除</td>
 <td>活跃度等于配置安全</td>
 </tr>
 <tr>
 <td>Beacon、Hermes</td>
-<td>采集 coverage、判别工具/API</td>
-<td>fidelity、外发/超时回退</td>
-<td>trace/rerank 等于 memory QA 分数</td>
+<td>动作有没有漏采，判别接口是否可靠</td>
+<td>直接观察还是推断、数据外发和超时处理</td>
+<td>日志覆盖或排序分数等于答题正确率</td>
 </tr>
 </tbody></table>
 </details>

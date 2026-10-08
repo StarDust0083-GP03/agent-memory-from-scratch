@@ -6,6 +6,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-01.svg" alt="用你的失败，决定下一步学哪种技术：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：升级要对应实际断点；短记录能解决的问题不必先引入复杂关系系统。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>如果失败是几天后忘了迁移教训，Mem0 的短记录存取就值得先试；如果失败是维护团队、批准人和变更日期分散在多份材料，Graphiti 的关系与时间更贴题。先说明要避免哪种具体错误，再挑机制，才能知道试用时应查看哪种中间结果。</p>
 <h3 id="mem0-选择-sdk-的理由应落在事实管线上">Mem0：选择 SDK 的理由应落在事实管线上</h3><p>适合希望现有应用增加短事实提取与搜索的场景。先核对提取质量、语义池边界、scope 与 provider 成本。稳定语言丢失可能只需直接读取，不必更换框架；当前时间状态复杂则要明确外层版本责任。</p>
 <h3 id="graphiti-选择时间图的理由应落在关系失败上">Graphiti：选择时间图的理由应落在关系失败上</h3><p>同名消歧、跨来源关系和晚到变更是更直接的采用理由。需要结构化抽取、driver、索引与时间过滤，运维负担比简单事实库多。先用批准链和历史默认证明收益，不为“图更先进”而增加组件。</p>
@@ -18,6 +21,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-02.svg" alt="起步：把你能解释的数据路径跑通：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：这是建议执行的最小验证路径；存取测试不等于生产运行和所有后端验证。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Baseline 是比较新方案之前的简单对照。给 Mem0 直接保存几条审核文字，再查是否正确返回；给 Graphiti 只输入维护与批准两份材料，核对对象、边与来源。小到能手工解释每个结果，之后增加提取、重排或时间变化，才看得清哪里开始出错。</p>
 <h3 id="mem0-用直接保存建立最短-baseline">Mem0：用直接保存建立最短 baseline</h3><p>审核文本走 infer=False，用户和 source 由业务确定，查询采用 filters。之后再开启普通推断，比较正文是否丢条件。显式 update、delete、history 的语义先跑清楚，尤其验证删除历史残留，不把 API 名当隐私保证。</p>
 <h3 id="graphiti-从极小-episode-集验证关系模型">Graphiti：从极小 episode 集验证关系模型</h3><p>先加入两份批准材料和一次批准人变化，查看实体 UUID、边来源和时间字段，再查询当前与历史。先限制类型和搜索配方，不同时启用全部社区与复杂重排。运行需要真实模型与图配置，教学伪调用不能代替部署验证。</p>
@@ -30,6 +36,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-03.svg" alt="第二个问题：记了，但找不准：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：漏候选、错排名和错日期不是同一个问题；先修现有路径再增加组件。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>同样没返回 A，可能是 Mem0 第一批未找到它，也可能找到后被排低。Graphiti 可能只找到 Atlas 节点，却缺批准关系。先检查候选单位与编号，再试词搜索、额外查询或邻域扩展；不必一看到漏项就换整个数据库，更不能只调最后的排序权重。</p>
 <h3 id="mem0-先定位-a-是池外还是排低">Mem0：先定位 A 是池外还是排低</h3><p>原文正确却不返回，检查 semantic results、keyword results 与 entity boosts。池外记录无法被外层 reranker 补回，可尝试扩大池或第二次受限查询。配置重排后还需 <code>rerank=True</code>，并记录错误回退是否发生。</p>
 <h3 id="graphiti-先固定边搜索-再增加扩展">Graphiti：先固定边搜索，再增加扩展</h3><p>比较 edge BM25、cosine 与 RRF，必要时启用 BFS 补第二跳。若规范节点错误，增加遍历会放大问题，应修 ingestion。正确候选已经返回却没进 prompt 时，继续更换图查询没有收益。</p>
@@ -43,6 +52,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-04.svg" alt="第三个问题：需要关系、历史或长期整理：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：当前值与历史问题的成本不同；是否引入图要看实际关系和历史需求。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>问当前默认环境，几张审核卡与明确读取规则可能足够；问 15 日批准人，则需要历史有效性。Mem0 可以由应用另存版本并查询，Graphiti 提供关系时间与解析，但也要过滤正确日期。比较的是写入、纠正和查询整条链要承担多少工作，不是哪个项目字段更多。</p>
 <h3 id="mem0-长期版本可由外层补-成本需明确">Mem0：长期版本可由外层补，成本需明确</h3><p>metadata 能保存 source 与生效信息，但必须实现读取策略，ADD-only 不自动维护唯一当前值。若关系较少，事实表加显式版本可能更简单；若应用自己要补大量消歧、边查询和时间裁决，就应与图框架做成本比较。</p>
 <h3 id="graphiti-时间字段与关系解析形成完整链的一部分">Graphiti：时间字段与关系解析形成完整链的一部分</h3><p>reference_time 辅助抽取，resolution 更新边，SearchFilters 控制读取，episode 回查来源。缺一个环节仍可能答错。长期巩固、半衰期和 Skill 审核不是因此全部内置，应另用宿主策略治理。</p>
@@ -55,6 +67,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-05.svg" alt="多人共享时，先建立可见范围：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：多人使用前要验证所有读取路径；不只检查最终回答有没有说出秘密。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>多人共享时，先列哪些用户能读哪个项目、关系和原文，再实现查询入口。Mem0 自定义 metadata 字段能承载项目名，却不会自动认证它；Graphiti group 能分区，却不证明调用者属于组。服务端将真实权限转成筛选条件，才能避免模型或客户端自行选中别人的资料。</p>
 <h3 id="mem0-共享范围不能用任意客户端-metadata-代替">Mem0：共享范围不能用任意客户端 metadata 代替</h3><p>应用验证身份并选择私有、项目或团队事实集合，按 ID 操作也核验对象。一个客户端可读并不代表另一个可读，scope 设计要匹配共享政策。独立记录权限撤销与缓存清理，避免跨会话便利成为串线理由。</p>
 <h3 id="graphiti-组分区与共享策略一起设计">Graphiti：组分区与共享策略一起设计</h3><p>独立团队可使用不同 group，共享资料通过授权查询或审核导入，不随意合并两个同名项目节点。即使配置支持多 group 查询，也先确定 caller 可读集合。查询后的原文展开同样受到这个集合限制。</p>
@@ -67,6 +82,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-06.svg" alt="给试用设一个能否通过的条件：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：验收条件要可失败、可复测，包含授权和故障边界，不能只看平均回答效果。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>试用通过可以要求：正确教训能被当前输入使用，单次例外不改默认，越权查询得不到资料，模型失败后原文可重试。Mem0 另外核对卡片与历史一致，Graphiti 另外核对对象合并、旧关系结束和来源回查。把条件写成可检查结果，不用“效果不错”代替验收。</p>
 <h3 id="mem0-试用合同涵盖普通与失败路径">Mem0：试用合同涵盖普通与失败路径</h3><p>检查默认和例外提取、同义重复、精确错误码池外遗漏、更新实体清理、删除 history 残留，以及 LLM 超时。记录实际事实与最终输入，每一项都有预期，不以 README 分数代替。锁定后端和模型再测费用与延迟。</p>
 <h3 id="graphiti-试用合同覆盖身份-时间与来源">Graphiti：试用合同覆盖身份、时间与来源</h3><p>同名不同团队不合并，晚到消息保持正确有效区间，演练不关闭默认，第二跳来源确实返回。另测 remove_episode 的共享支持与摘要影响、driver 故障和索引恢复。图能画出来只能证明其中很少的环节。</p>
@@ -81,6 +99,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-07.svg" alt="给 Atlas 做一次有理由的选型：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：新增图不要求把所有偏好都迁走；每个组件都应对应一项已确认的失败。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Atlas 初期只有几条发布教训，可以先用 Mem0 明确存取与注入位置。出现多团队批准链及批准人变更，再用 Graphiti 小图检验两份来源与日期查询。迁移要同时检查旧卡片如何转成新对象和关系，不能将旧正文搬进去就认定新结构已经正确。</p>
 <h3 id="mem0-atlas-初期可以只采用少量路径">Mem0：Atlas 初期可以只采用少量路径</h3><p>先存核验教训并直接读固定规则，再为历史经历加 search；输入规模增长后验证推断与重排。若批准关系需要两次检索，记录这两次的成本，与显式关系表比较。保持一个简单无自动提取的对照，才能知道新增机制值不值。</p>
 <h3 id="graphiti-批准链和变更出现后再验证迁移">Graphiti：批准链和变更出现后再验证迁移</h3><p>把审核材料按顺序加入独立测试图，核对团队 UUID 和批准边，再引入日期过滤。应用 assembler 和权限策略尽量不变，避免迁移时同时更换 reader。通过自己的失败题再决定将哪些资料从事实池迁到关系图。</p>
@@ -94,6 +115,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/17-08.svg" alt="怎样判断一次升级应该撤回：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：升级可撤回不表示丢掉原始资料；保留失败题和来源，才能继续比较。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>新评分增加费用却没有补回必要卡片，可以撤掉额外排序；新图扩展不断把不同平台组合并，可以先缩小自动建图范围。Mem0 与 Graphiti 都应保留简单可复现的对照与原材料。撤回某项复杂机制，不等于删除历史，更不等于免去权限和当前状态检查。</p>
 <h3 id="mem0-复杂评分无收益时回到可解释读取">Mem0：复杂评分无收益时回到可解释读取</h3><p>若实体 boost 增噪、云重排增加成本却不减少失败，可撤回相应配置而保留审核事实与源数据。不要把一次实验产生的更新留给 baseline。回滚范围包括 payload、辅助实体索引与应用缓存，历史记录只提供证据不自动恢复全部状态。</p>
 <h3 id="graphiti-关系误合并无法控制时先缩小自动化">Graphiti：关系误合并无法控制时先缩小自动化</h3><p>可以保留原 episode，暂用显式审核关系或较窄 schema，关闭不必要扩展，再研究 resolution。撤回前核对旧边有效性与摘要，必要时从事件重建。平均正确率提升不能抵消跨团队泄漏，安全失败应独立作为门槛。</p>
@@ -133,9 +157,9 @@
 <td>有平台运维与 schema 团队</td>
 </tr>
 <tr>
-<td>Stateful/self-edit Agent</td>
+<td>让助手主动读历史、修改长期规则</td>
 <td>Letta Code</td>
-<td>需要 Agent 管理 core context</td>
+<td>愿意审核修改，并验证后续输入是否生效</td>
 </tr>
 <tr>
 <td>本地人机知识库</td>
@@ -173,10 +197,10 @@
 <td>不直接当生产 memory backend</td>
 </tr>
 </tbody></table>
-<h2 id="四阶段演进">四阶段演进</h2><h3 id="阶段-1-可控事实库">阶段 1：可控事实库</h3><p>先实现 <code>remember / recall / supersede / delete</code>，带 user scope、source、valid time、token budget。建立 50 至 200 条真实 query 标注集。</p>
-<h3 id="阶段-2-混合检索与反馈">阶段 2：混合检索与反馈</h3><p>增加 BM25 + embedding + RRF，记录候选与 outcome。若重排成为瓶颈，再引入 cross-encoder 或 Jev，并先 shadow。</p>
-<h3 id="阶段-3-层级和生命周期">阶段 3：层级和生命周期</h3><p>加入 working/episodic/semantic，异步巩固、冲突、衰减和 Skill promotion。删除和重建必须可验证。</p>
-<h3 id="阶段-4-图与团队治理">阶段 4：图与团队治理</h3><p>只有当多跳、时间事实、跨来源 entity 和共享资产成为主要失败模式时，再引入 temporal graph、ACL、Agent Loadout 与多 Agent memory exchange。</p>
+<h2 id="四阶段演进">四阶段演进</h2><h3 id="阶段-1-可控事实库">阶段 1：可控事实库</h3><p>先做保存、读取、替代和删除四个动作，并记录所属用户、来源、生效日期和输入长度预算。多人使用时，这一步就要验证权限。先把十条真实问题逐题检查清楚，数据积累后再扩到 50 至 200 条，标出每题需要的证据和预期行为。</p>
+<h3 id="阶段-2-混合检索与反馈">阶段 2：混合检索与反馈</h3><p>当精确词或不同说法容易漏掉时，试全文与向量两路搜索，再按名次融合，记录候选和任务结果。若正确证据已入池却总排得太低，再试模型重排；先只记录新排序、不改变回答，确认收益后才启用。</p>
+<h3 id="阶段-3-层级和生命周期">阶段 3：层级和生命周期</h3><p>当历史增长确实造成干扰时，再区分近期任务、具体经历和稳定知识，按需要增加后台整理、纠正或价值衰减。提炼出的技能先评审和回放，不能直接启用；整理后仍要能删除和重建。</p>
+<h3 id="阶段-4-关系与共享资料">阶段 4：关系与共享资料</h3><p>当答案需要跨文档连接或历史状态时，再试带时间的关系图。团队共享则按实际需求安排：谁能读什么，必须在开放共享之前落实，不能等到第四阶段。资产集合和多个助手之间的资料交换，只有需要这些功能时才增加。</p>
 <h2 id="最终检查表">最终检查表</h2><ul>
 <li><input disabled="" type="checkbox"> canonical 主仓仍活跃，而不是归档/迁移仓</li>
 <li><input disabled="" type="checkbox"> 许可证适合你的分发方式</li>
@@ -199,7 +223,7 @@
 <h2 id="阶段是验收顺序-不是强制购买顺序">阶段是验收顺序，不是强制购买顺序</h2><p>四阶段表示先保证可控，再加复杂机制。明确有多租户需求时第一天就做权限；已有时间关系业务时可以直接试 Graphiti；数据绝不外发时不应先上线 Jev 再补隐私。每次升级至少留一个更简单 baseline，以及一个证明新机制必要的失败集。下面列出各路线最小试用合同，不表示已完成这些实测。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/17-selection.svg" alt="由偏好遗漏、第二跳缺失、旧规则误用和共享混乱选择不同下一步机制" loading="lazy"><figcaption>图：从失败类型选择机制，再用对应验收决定保留或撤回。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/17-selection.svg" alt="由偏好遗漏、第二跳缺失、旧规则误用和共享混乱选择不同下一步机制" loading="lazy"><figcaption>图：从失败类型选择机制，再用对应验收决定保留或撤回。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -299,9 +323,9 @@
 </tr>
 <tr>
 <td>Hermes Jev Skills</td>
-<td>判别/filter/搜索控制</td>
-<td>本地 rerank + deterministic checks</td>
-<td>shadow/graded、云费用、故障回退</td>
+<td>筛选候选、判断是否继续搜索</td>
+<td>本地重排加代码检查</td>
+<td>只观察模式与逐题评分、云费用、故障回退</td>
 </tr>
 <tr>
 <td>旧 Letta</td>

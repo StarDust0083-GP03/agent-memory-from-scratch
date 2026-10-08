@@ -9,6 +9,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-01.svg" alt="如果应用没猜中要找哪段历史：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Agent 可以提出查询，实际权限和调用身份由应用决定，不接受模型改成 Bob。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>模型可以提出“查询 Atlas 的旧教训”，但真正调用搜索的是应用的工具执行器。应用可把 Mem0 search 或 Graphiti 查询包装成工具，收到请求后校验可见范围，查库，再将文字作为工具结果回传。主动记忆是这条选择与执行循环的行为，并不是数据库自己发现模型需要哪段历史。</p>
 <h3 id="mem0-把-search-包成工具-主动选择发生在宿主">Mem0：把 search 包成工具，主动选择发生在宿主</h3><p>应用可以提供“搜索 Atlas 历史”工具，内部用可信身份调用 <code>search()</code>，模型从工具结果继续判断。SDK 没有替宿主实现整套模型循环。工具 schema 应只允许模型表达查询意图，不能让它自由指定别人的 user_id；是否继续搜索也需纳入端到端评测。</p>
 <h3 id="graphiti-图查询可以成为补证据工具">Graphiti：图查询可以成为补证据工具</h3><p>宿主将 <code>search()</code> 或固定 <code>search_()</code> 配方暴露给模型，返回 fact、时间和来源。模型读到“Atlas 属平台组”后可以继续查批准人，或由代码限深展开关系。图存在不会自动触发这些动作，第一次工具未被调用时应查宿主控制流。</p>
@@ -23,6 +26,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-02.svg" alt="小核心常驻，大资料按需打开：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：小核心与大资料是应用的读取安排，不是两套库自动保证的常驻规则。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>每轮常驻“默认中文、生产发布先审批”，详细失败日志只在需要时查。Mem0 可以提供短记录与详细来源入口，Graphiti 可以提供对象摘要与材料编号；应用决定哪段每轮发、哪段按需取。常驻太多会挤占输入，常驻太少又可能让模型不知道该查什么。</p>
 <h3 id="mem0-稳定摘要与详细事实可以由应用分层">Mem0：稳定摘要与详细事实可以由应用分层</h3><p>审核过的核心约束可以由业务按身份直接读取并常驻，详细事件通过 query 搜索。Mem0 没有 Letta 的 root、deferred 目录编译协议；所谓分层在这里是读取策略。避免同一规则既常驻又从事实池全文返回，assembler 需按 ID 或来源去重。</p>
 <h3 id="graphiti-summary-可作入口-episode-可作详情">Graphiti：summary 可作入口，episode 可作详情</h3><p>节点 summary 或社区摘要帮助发现有关 Atlas 的区域，事实边给具体关系，episode 给原文。它们形成不同粒度的访问方式，但 summary 不一定始终注入。应用需要决定哪些节点是入口、何时展开，以及有时间变化时先核对哪条事实边。</p>
@@ -36,6 +42,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-03.svg" alt="写了文件，为什么这次还没有生效：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：发送给模型的消息不会因数据库更新而自动变化；需明确本轮使用的版本。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一次回答已发送旧默认环境，此时后台改了记录，模型不会在计算中自动再读数据库。Mem0 update 改的是后续读取内容；Graphiti 新材料处理完，应用也要重新查询并组装才可能看到。记录更新、缓存更新与本轮消息更新是不同步骤，不能用一次存储成功代替全部生效。</p>
 <h3 id="mem0-update-改存储-不改已发送的-prompt">Mem0：update 改存储，不改已发送的 prompt</h3><p><code>update()</code> 重新 embedding、更新 payload 和历史。若模型调用已经发出，SDK 无法回头替换那次输入；后续 search 才有机会读新正文，还需清理应用缓存。当前任务要立即用纠正，应把新消息或工具结果放进当前交互，不只依赖下一轮读取。</p>
 <h3 id="graphiti-新-episode-处理结束后仍有读取边界">Graphiti：新 episode 处理结束后仍有读取边界</h3><p>写入可能更新旧边时间与节点摘要，但已经打包的输入不会自动刷新。后台任务完成、后端索引可见与宿主重新查询是不同状态。记录 episode 处理完成后进行受限验证，再更新下一次输入，不能把接收 HTTP 成功当作新规则已经生效。</p>
@@ -54,6 +63,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-04.svg" alt="从一条教训到一个 Skill：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：过程文本与关系边都不是可执行 Skill；权限、工具实现和测试要另做。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Skill 在这里指可复用的执行资产，需要入口、参数、工具、完成判断及权限。Mem0 生成“检查、审批、发布”的过程文字，还缺这些执行合同；Graphiti 能表达步骤关联，也没有因此得到可运行函数。可以将文字作为编写 Skill 的材料，审核代码和测试后再启用。</p>
 <h3 id="mem0-procedural-memory-生成的是步骤文本">Mem0：procedural_memory 生成的是步骤文本</h3><p><code>_create_procedural_memory()</code> 用过程总结提示请求模型，从对话得到一段可复用文字，然后存入事实后端。没有自动打包资源文件、版本发布和权限审查。想成为 Skill，还需宿主定义触发、输入、工具、失败条件和验收，并对文本逐条回放。</p>
 <h3 id="graphiti-可以表达步骤关系-不内置执行引擎">Graphiti：可以表达步骤关系，不内置执行引擎</h3><p>通过流程、步骤和依赖关系建模，可以查询检查在发布之前。但图上的先后关系不负责调度工具，也不验证步骤在当前环境可运行。应用取得流程证据后，应加载完整已审核版本，再由确定性策略检查批准与停止条件。</p>
@@ -66,6 +78,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-05.svg" alt="回滚为什么不能代替测试：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：恢复记忆不能撤销外部副作用；回滚记录、回滚工具动作必须分别安排。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>改错卡片后，Mem0 的 history 可以帮助找到旧正文，应用还需决定怎样恢复当前值。Graphiti 删掉刚添加的材料，不保证所有被改过的关系和摘要都恢复原样。回滚描述的是恢复动作，测试描述的是新状态是否满足要求；能够回滚不能证明之前的修改安全。</p>
 <h3 id="mem0-history-提供修改证据-恢复需要再写入">Mem0：history 提供修改证据，恢复需要再写入</h3><p>历史中保存旧正文，可以由应用挑选已知版本再显式 update。恢复文本时仍会重新生成向量与实体链接；它没有自动恢复所有外部 Skill 资源和 prompt 缓存。恢复后跑同一组正式发布、演练和其他项目测试，才能确认行为边界回来了。</p>
 <h3 id="graphiti-删除新-episode-不等于整体回滚">Graphiti：删除新 episode 不等于整体回滚</h3><p><code>remove_episode()</code> 处理该来源相关对象，未承诺恢复它造成的旧边失效和所有摘要变化。完整回滚可能需要备份、事件重放或重新构建派生视图。图结构可追溯让重建更可行，但不能把一个删除 API 当作反向撤销整个 ingestion。</p>
@@ -79,6 +94,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-06.svg" alt="一个好索引，要让 Agent 知道何时值得打开：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：索引描述说明何时值得读；它不能替代实际关系用途和原文核验。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>索引条目可以写“Atlas 发布：含迁移检查与正式批准要求”，正文另放详细来源。Mem0 返回相应卡片编号，Graphiti 返回可作为入口的对象编号，模型才知道何时值得继续读取。索引说明只负责发现，应用执行读取时还要核验当前权限与版本，不能凭一段旧简介直接行动。</p>
 <h3 id="mem0-发现说明可以和读取正文分离">Mem0：发现说明可以和读取正文分离</h3><p>业务可保存短入口“正式发布读取 Atlas 检查规则”，工具根据稳定 ID 获取审核全文。<code>get()</code> 的准确读取避免相似度随机决定已知规则是否出现；但要先核验 ID 所属身份。搜索用于发现，直接读取用于已知目标，组合起来比单一 top-k 更容易解释。</p>
 <h3 id="graphiti-规范节点-uuid-可以固定探索入口">Graphiti：规范节点 UUID 可以固定探索入口</h3><p>已确认 Atlas 节点后，<code>center_node_uuid</code> 支持按接近该节点的关系重排；高级搜索还可提供 BFS 起点。入口 UUID 应来自可信范围，不能由模型随便引用其他组节点。距离近帮助定位资料，但某条近边是否适用发布仍由事实语义和时间判断。</p>
@@ -92,6 +110,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/08-07.svg" alt="修改未来规则之前，先比较旧版和新版：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：多份派生文字可能只有一个证据来源；修改未来行为前要比较旧版与新版结果。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>助手第一次猜迁移是根因，第二次总结又重复它，看起来有两份记录，其实只有一个未证实猜测。Mem0 可能保存两张卡，Graphiti 可能形成两个来源材料对象；这不自动变成两份独立证据。应用保留原始来源关系，比较新版规则时应数真实观察，不数总结次数。</p>
 <h3 id="mem0-模型自述不能当作第二份来源">Mem0：模型自述不能当作第二份来源</h3><p>自动提取 Agent 反馈时，可能保存模型自己总结的原因。payload 的 role、actor 或 <code>attributed_to</code> 帮助区分说话者，但不构成验证。应用对高风险候选要求工具或用户来源，再通过回放批准 update，防止上一轮猜测变成下一轮确定规则。</p>
 <h3 id="graphiti-多个-episode-可以重复同一未经验证的说法">Graphiti：多个 episode 可以重复同一未经验证的说法</h3><p>模型回答和用户引用该回答可能进入不同 episode，关系来源数量增加却没有新增观察。保留 source_description 与事件映射，识别来源依赖；审核未来规则时查看实际支持链。自动 summary 合法地整合内容，也可能把转述压成确定陈述，需要对照原始材料。</p>
@@ -140,7 +161,7 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 <p>Letta 用 Git 保存 Agent-owned Skill 与 memory 的变化，回滚可恢复文本，却不自动跑流程回放。MemOS 的“结晶化”表示从轨迹提炼过程知识，也仍需验证。Basic 里的程序笔记和 Hippo 的教训都能成为 Skill 输入，但目录/标签不是审核凭证；Beacon 提供证据不代表会批准步骤。模型、工具权限与人审仍需独立于这些版本机制。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/08-agent-native.svg" alt="本轮主动读取与后续提交编译两条路径，以及 Skill 先路由后执行" loading="lazy"><figcaption>图：读取立即补证据，编辑未来规则则要跨越版本与编译边界。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/08-agent-native.svg" alt="本轮主动读取与后续提交编译两条路径，以及 Skill 先路由后执行" loading="lazy"><figcaption>图：读取立即补证据，编辑未来规则则要跨越版本与编译边界。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -162,15 +183,15 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 </tr>
 <tr>
 <td>Letta Code</td>
-<td>root core、索引、deferred、recall、skills</td>
-<td>已提交版本在后续编译</td>
-<td>文件保存/commit/生效三状态</td>
+<td>根目录核心、索引、按需文件、历史和技能</td>
+<td>已提交版本用于后续模型输入</td>
+<td>文件保存、版本提交、输入生效三个状态</td>
 </tr>
 <tr>
 <td>TencentDB</td>
-<td>Loadout、Skill 摘要、工具详情、L2/L3</td>
-<td>资产/版本与 Proxy 注入路径</td>
-<td>owner/ACL、缓存、资源事务</td>
+<td>可用资产集合、技能摘要、高层记忆、详情工具</td>
+<td>资产版本更新后，由代理和工具读取</td>
+<td>所属人、访问权限、缓存、跨资源操作</td>
 </tr>
 <tr>
 <td>MemOS</td>
@@ -198,9 +219,9 @@ Agent：读到取消原因，回答；证据不足则继续查。</code></pre><p
 </tr>
 <tr>
 <td>Hermes Jev Skills</td>
-<td>判别选 Skill、检查证据</td>
-<td>本次选择生效</td>
-<td>不发布、不存长期流程本体</td>
+<td>选择技能候选，判断证据是否充分</td>
+<td>改变本次选择</td>
+<td>不发布技能，也不保存长期流程正文</td>
 </tr>
 <tr>
 <td>Agent Beacon</td>

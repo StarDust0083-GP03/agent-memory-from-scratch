@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 610" role="img" aria-labelledby="title desc"><title id="title">长文截断和服务失败各留下什么盲区：两条案例流程</title><desc id="desc">Mem0：长记录末尾有本次测试例外 → 应用保留关键限定再送去判断 → 不把截断部分当全文已通过；Graphiti：原文末尾写 Lin 只批出差 → 应用读到用途限定再核验关系 → 无法核验就不继续正式发布。检查点：截断与失败回退都有未审查范围；unjudged 表示缺少判断，不表示已安全。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:16px}rect{stroke-opacity:.6}@media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style><text x="12" y="26" font-weight="600">Mem0</text>
+<rect x="12" y="42" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="67">1. 长记录末尾有本次测试例外</text>
+<path d="M180 105v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="127" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="152">2. 应用保留关键限定再送去判断</text>
+<path d="M180 190v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="212" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="237">3. 不把截断部分当全文已通过</text>
+<text x="12" y="309" font-weight="600">Graphiti</text>
+<rect x="12" y="325" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="350">1. 原文末尾写 Lin 只批出差</text>
+<path d="M180 388v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="410" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="435">2. 应用读到用途限定再核验关系</text>
+<path d="M180 473v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="495" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="520">3. 无法核验就不继续正式发布</text>
+<text x="12" y="592" font-size="13">教学推演；“应用”步骤需自行实现。</text></svg>

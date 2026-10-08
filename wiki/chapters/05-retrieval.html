@@ -8,6 +8,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-01.svg" alt="先用三条记录观察搜索会漏什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：找回一条相关记录与找齐回答所需证据不同；缺第二段时不要猜答案。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>候选单位是一次搜索所挑选的最小对象。Mem0 可能挑一张卡“Atlas 曾报 E42”，Graphiti 基本接口挑的则是从材料整理出的事实边，未必含完整错误日志。若错误码只在原文、不在短事实里，只搜索短事实可能漏掉它。调搜索参数之前，先检查这个词是否存在于实际被搜索的文字中。</p>
 <h3 id="mem0-a-能否入池由语义召回先决定">Mem0：A 能否入池由语义召回先决定</h3><p>当前内部候选上限是 <code>max(limit * 4, 60)</code>。扩大语义池让弱语义但有字面信号的记录有机会被重新评分，但没有保证 A 一定进入。过滤先交给后端；到期记录还在构造 candidates 时排除。候选配额与有效结果配额不同，过期项也可能占据早期召回名额。</p>
 <h3 id="graphiti-事实边和原文不是同一个候选单位">Graphiti：事实边和原文不是同一个候选单位</h3><p>基础查询可以找 A、B 对应的事实边；若需要完整段落，后续沿来源读 episode。分组通过 <code>group_ids</code> 传入，时间通过 <code>SearchFilters</code> 指定。搜索到 Atlas 配色边 C 只说明对象相符，必须继续评估关系用途，不能把项目匹配当成答案相关性。</p>
@@ -21,6 +24,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-02.svg" alt="关键词检索：认出具体词语：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 的关键词加分不会救回语义池外记录；Graphiti 找到字串后也要核对项目。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>问题带错误码 E42，文字匹配可以找同样的字串；“发布前注意什么”则没有指定字串。Mem0 在已有语义候选上利用关键词加分，原始词分数会转换到可组合的数值范围。Graphiti 全文路可以独立找到包含 E42 的关系。全文索引就是为文字建立查找结构，不能找到从未保存进被索引字段的错误码。</p>
 <h3 id="mem0-关键词分数经规范化参与池内排序">Mem0：关键词分数经规范化参与池内排序</h3><p>正文在写入时生成 <code>text_lemmatized</code>，查询也经 <code>lemmatize_for_bm25()</code> 处理；支持的后端执行 <code>keyword_search()</code>。<code>get_bm25_params()</code> 和 <code>normalize_bm25()</code> 将原始分数映射后交给评分器。后端返回空或不支持关键词时，这条信号弱化，但语义路径仍可运行；中文与代码标识符需单独测试。</p>
 <h3 id="graphiti-全文可以独立带回事实候选">Graphiti：全文可以独立带回事实候选</h3><p><code>edge_search()</code> 按配置调用 <code>edge_fulltext_search(..., 2 * limit)</code>。全文候选保留在自己的列表里，随后与向量、可选 BFS 候选按 UUID 汇集。因而只在全文命中的 A 也能参加融合。索引分词和查询处理依 driver，称为 BM25 不代表所有后端对中文表达一致。</p>
@@ -34,21 +40,27 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-03.svg" alt="向量检索：把表达转换成可比较的数字：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：意思接近不代表事实等价；“负责人”与“维护者”可能不是同一角色。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>卡片“先核验数据库结构”和问题“发布前要查迁移吗”措辞不同，向量可能靠近，因为模型学到了表达联系。Mem0 用问题向量寻找卡片向量；Graphiti 在相应配置下比较问题与关系等对象的向量。Cosine 是一种比较向量方向的相似度计算，不表示两句话内容真实，也不保证所有同义句都能找到。</p>
 <h3 id="mem0-query-与正文向量必须来自兼容空间">Mem0：query 与正文向量必须来自兼容空间</h3><p>调用 <code>embedding_model.embed(query, &quot;search&quot;)</code> 后，后端 <code>search()</code> 返回候选与分数。正文写入用 add 模式，检索用 search 模式，某些模型会区别处理；换 provider 时需保留这一约定。相似度只刻画表达关系，不能据 0.8 推断迁移原因有八成概率真实。</p>
 <h3 id="graphiti-按配置才需要查询向量">Graphiti：按配置才需要查询向量</h3><p>搜索总流程检查边、节点或社区配置是否启用 cosine，以及是否启用需要向量的 MMR，再决定生成 query embedding。纯全文配置可避免这项调用。事实 embedding 与节点 embedding 的用途不同，升级模型时应重建对应索引，不能只重新计算查询向量。</p>
 </details>
 
-<h2 id="先合候选-还是只给已有候选加分">先合候选，还是只给已有候选加分</h2><p>假设关键词搜索只找到 A，向量搜索找到 B 和 C。如果取两路并集，A、B、C 都有机会参加后续排序；如果先限定向量池，再按关键词加分，A 没入向量池就无法被补回来。</p>
+<h2 id="先合候选-还是只给已有候选加分">先合候选，还是只给已有候选加分</h2><p>继续用开头的三条记录：假设向量搜索找到 A、C，关键词搜索找到 A、B。如果合并两路结果，A、B、C 都有机会参加后续排序；如果只给向量池里的记录加分，B 没入池就无法被补回来。A 同时被两路找到，合并时只保留一份。</p>
 <p>这正是 MCP 和当前本地 Mem0 路径的一处区别。MCP 的 hybrid，也就是混合检索，会合并全文和向量的候选。Mem0 先多取一些语义候选，再用关键词和实体信号调整这个池里的分数。两者都利用多种信号，但能看见的内容不同。</p>
-<p>因此，找不到 A 时先检查它有没有进候选集合。对池外记录，无论重排多聪明都无从评分。Hippo 的池内图排名与池外图邻居补充也应这样区分，图的具体例子见第 11 章。</p>
-<p>Mem0：初选只有 A、B，C 虽然含准确错误码，却不在其中。给 A、B 加关键词分仍不会出现 C；先扩大或补足候选，才可能找回它。</p>
-<p>Graphiti：按意思找到 A、B，按文字找到 B、C。合并后可比较 A、B、C，B 不必出现两次；接着再决定哪些结果排在前面。</p>
+<p>因此，找不到 B 时先检查它有没有进候选集合。对池外记录，无论重排多聪明都无从评分。Hippo 的池内图排名与池外图邻居补充也应这样区分，图的具体例子见第 11 章。</p>
+<p>Mem0：初选只有发布要求 A 和配色说明 C，流程记录 B 不在其中。给 A、C 加关键词分仍不会出现 B；先扩大或补足候选，才可能找回它。</p>
+<p>Graphiti：按意思找到 A、C，按文字找到 A、B。合并后可比较 A、B、C，A 不必出现两次；接着再决定哪些结果排在前面。</p>
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
-<p>假设向量路找到 A、B，文字路找到 B、C。候选并集是 A、B、C 都有被选中的机会；池内加分则可能仍只有 A、B，文字路只能提高 B 的位置。当前 Mem0 主要是后者，Graphiti 的基本边搜索可以采用前者。两者都叫混合搜索，但 C 能不能进入最后排序，是决定漏召回的具体差别。</p>
-<h3 id="mem0-逐行查看-candidates-的来源">Mem0：逐行查看 candidates 的来源</h3><p>构造集合的循环只遍历 <code>semantic_results</code>。关键词命中被整理成按 ID 查的 <code>bm25_scores</code>，实体信息成为 <code>entity_boosts</code>；两者给集合内记录加信号。A 即使在这两个字典里，没有进入 semantic 集合也不会得到最终输出。调融合权重无法突破这个控制流边界。</p>
+<figure class="source-flow"><img src="../assets/source-flows/05-04.svg" alt="先合候选，还是只给已有候选加分：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：改排名救不了根本没进候选的记录；候选合并与候选加分是不同操作。</figcaption></figure>
+
+<p>源码对照：</p>
+<p>假设向量路找到 A、C，文字路找到 A、B。候选并集是 A、B、C 都有被选中的机会；池内加分则可能仍只有 A、C，文字路只能提高 A 的位置。当前 Mem0 主要是后者，Graphiti 的基本边搜索可以采用前者。两者都叫混合搜索，但 B 能不能进入最后排序，是决定漏召回的具体差别。</p>
+<h3 id="mem0-逐行查看-candidates-的来源">Mem0：逐行查看 candidates 的来源</h3><p>构造集合的循环只遍历 <code>semantic_results</code>。关键词命中被整理成按 ID 查的 <code>bm25_scores</code>，实体信息成为 <code>entity_boosts</code>；两者给集合内记录加信号。B 即使在这两个字典里，没有进入语义候选集合也不会得到最终输出。调融合权重无法突破这个控制流边界。</p>
 <h3 id="graphiti-先保留各路列表-再构造-uuid-并集">Graphiti：先保留各路列表，再构造 UUID 并集</h3><p><code>edge_uuid_map = {edge.uuid: edge ...}</code> 汇集各路候选。RRF 使用各列表中的 UUID 名次投票，再从 map 取正文。重复边只占一个身份，但来自多路的排名都可贡献。BFS 是否执行由配置决定，基础 edge RRF 配方并未默认加入图遍历。</p>
 </details>
 
@@ -56,16 +68,19 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <pre tabindex="0"><code class="hljs">每路贡献 = 1 / (k + 本路名次)
 总分 = 各路贡献相加</code></pre><p>取教学常量 <code>k=60</code>，一条记录在关键词第 1、向量第 4，总分约为 <code>1/61 + 1/64 = 0.0320</code>。另一条只在向量第 1，总分约为 <code>1/61 = 0.0164</code>。第一条得到两路支持，因此这次会排得更高。</p>
 <p>MCP 支持这种融合及其他加权方法，Graphiti 也可以通过配置选择 RRF。Hippo 融合后还会结合寿命和价值等因素。常量与额外因子要按实际配置看，刚才的算例不是三个项目共同的默认输出。</p>
-<p>Mem0：A 的语义分是 0.8，文字和对象各加 0.5、0.2。本章算例按 <code>(0.8 + 0.5 + 0.2) / 2.5 = 0.6</code> 得到合分，不是把两个搜索榜的名次相加。</p>
+<p>Mem0：A 的语义分为 0.8，文字和对象各贡献 0.5、0.2。这次查询三种信号都有结果，除以 2.5 后合分为 0.6。除数按实现中的 <code>1 + 1 + 0.5</code> 计算，不是三项的平均值；0.6 也不代表六成可信。</p>
 <p>Graphiti：A 在两榜排第 1、第 2，B 都排第 3。此快照的 RRF 算例：A 得 <code>1 + 1/2 = 1.5</code>，B 得 <code>1/3 + 1/3 ≈ 0.67</code>，所以 A 靠前。这里用的是名次，不是原始相似度分。</p>
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-05.svg" alt="RRF：用名次合并，避免直接相加不同分数：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 算例的合分与 Graphiti 的名次融合不是同一公式；参数必须与所用快照一致。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>RRF 可以想成汇总多张排行榜：一条关系在文字榜第 1、向量榜第 3，分别按名次得到贡献，再相加。它不需要假定两条榜的原始分数单位相同。Graphiti 可以这样融合边候选；Mem0 当前把语义分、转换后的词分和对象加分组合，所以不能直接套 RRF 的名次公式。下面两套算例各自对应不同运算。</p>
 <h3 id="mem0-当前-score-and-rank-不是-rrf">Mem0：当前 score_and_rank 不是 RRF</h3><p>这条路径输入的是语义评分、规范化关键词分数与实体 boost，按实现的多信号规则计算结果。不能给它套 <code>1/(60 + rank)</code> 并声称重现了本地算法。若应用想验证 RRF，需要独立取得各路候选并实现融合，与现有路径使用同一数据和预算比较。</p>
 <h3 id="mem0-的评分算例-先过语义门-再合信号">Mem0 的评分算例：先过语义门，再合信号</h3><p><a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/utils/scoring.py">评分实现</a> 还有一处容易遗漏的控制条件：<code>threshold</code> 先作用于原始 semantic score，未过门槛的候选直接跳过。即使一条记录已经在语义池中，关键词分数和实体 boost 也不能救回低于门槛的项。这与对最后 combined score 应用阈值是不同策略。</p>
 <p>BM25 通过 sigmoid 规范化。若 query 归一后不超过三个词，当前参数为 midpoint=5、steepness=0.7；原始 BM25=5 时得到 0.5，原始分数更大时趋近 1。词数变多会改变参数，因此不同 query 的原始 5 分不能直接解释为相同强度。</p>
-<p>假设候选 A 的 semantic=0.8、规范化 BM25=0.5、entity boost=0.2，三种信号都活跃时，最终为 <code>(0.8 + 0.5 + 0.2) / 2.5 = 0.6</code>。除数由整次查询是否有非空关键词和实体信号决定，不是每条候选分别决定。若候选 B 没有关键词与实体命中，semantic 仍为 0.8，它在同一次查询中为 <code>0.8 / 2.5 = 0.32</code>。这让多信号支持改变排序，但不是校准后的事实可信度。</p>
+<p>假设候选 A 的 semantic=0.8、规范化 BM25=0.5、entity boost=0.2，三种信号都活跃时，最终为 <code>(0.8 + 0.5 + 0.2) / 2.5 = 0.6</code>。除数从语义项的 1 开始：这次查询有关键词结果就加 1，有实体加分就再加 0.5，因此这里是 <code>1 + 1 + 0.5 = 2.5</code>。这些数是代码设置的缩放份额，不是从 A 的三个分数推导出来的。除数由整次查询是否有非空关键词和实体信号决定，不是每条候选分别决定。若候选 B 没有关键词与实体命中，semantic 仍为 0.8，它在同一次查询中为 <code>0.8 / 2.5 = 0.32</code>。这让多信号支持改变排序，但不是校准后的事实可信度。</p>
 <p>若 threshold=0.1，而 A 的 semantic 只有 0.09，它在相加之前就被丢弃。调大实体权重没有效果。可以通过 <code>explain=True</code> 看通过门槛的记录的原始、组合及归一分值，但被丢弃项需要另外记录原始候选。查分数异常时，还要确认后端的 semantic 分数尺度适合当前实现假设。</p>
 <h3 id="graphiti-rrf-是可选择的明确-reranker">Graphiti：RRF 是可选择的明确 reranker</h3><p><code>EdgeReranker.rrf</code> 把各路结果转换为 UUID 排名列表，调用 <code>rrf()</code>，再应用分数和结果限制。名次融合解决分数尺度问题，不验证事实和来源。一条在全文与向量都排名高的旧默认，仍需要时间条件才能退出当前结果。</p>
 <h3 id="graphiti-的实际常量为什么不能照搬教学公式">Graphiti 的实际常量为什么不能照搬教学公式</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_utils.py">本地 rrf 函数</a> 默认 <code>rank_const=1</code>，循环使用从 0 开始的 i，贡献是 <code>1 / (i + rank_const)</code>。换成从 1 开始的名次 r，默认贡献就是 <code>1/r</code>。前面用 k=60 的算例介绍常见融合思想，并非这个快照的默认常量。</p>
@@ -73,7 +88,7 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <p>两种方法控制候选的方式不同。Mem0 在语义池内先检查语义门槛，再合分；Graphiti 的边 RRF 把各路 UUID 合起来，全文单路强命中仍能参加。选哪个应看你的错误码、同义表达与实体问题，尤其比较遗漏是在入池之前、门槛阶段还是最后截断。</p>
 </details>
 
-<h2 id="重排和打包各做什么">重排和打包各做什么</h2><p>重排器再次读查询与候选正文，判断更细的相关性。Cross-encoder 把问题和一条候选一起送进评分模型；Jev 这类服务也可给候选提供判别信号。它们能把 C 降下去，不能自动找回未进入池的 A，也不能绕过权限。</p>
+<h2 id="重排和打包各做什么">重排和打包各做什么</h2><p>重排器再次读查询与候选正文，判断更细的相关性。Cross-encoder 把问题和一条候选一起送进评分模型；Jev 这类服务也可给候选提供判别信号。它们能把配色说明 C 降下去，不能自动找回未进入池的流程记录 B，也不能绕过权限。</p>
 <p>按排序取前 k 条通常叫 top-k，它限制条数，不限制总长度。排序后还要打包。假设留给记忆的预算是 300 token，A 需要 80，B 需要 260，它们一起就超额。程序可以只放 A，或取 B 中有来源的必要片段，但不能仅因为 <code>top_k=2</code> 就把两条全文强塞进去。这里的数字是假设目标 tokenizer 已经算出的值。</p>
 <p>固定偏好也不必每次搜索。Memobase 可以直接读画像，Letta 的核心记忆已经随输入出现，Basic Memory 在已知笔记 URI 时直接打开。检索方式应服务于“本次需要哪些信息”，而不是让所有信息都经过同一个向量 top-k。</p>
 <p>Mem0：搜索先取回十条，应用让重排器把“先检查迁移”排到前面。当前只装得下两条，再选两条组装输入；排得靠前与最终装进去是两步。</p>
@@ -81,6 +96,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-06.svg" alt="重排和打包各做什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：重排改变次序，打包决定真正发送的内容；排第一仍可能在打包时用错来源。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>第一轮先快速取一批候选；重排模型再同时阅读问题与每条候选，判断谁更贴题，这类逐对阅读模型常称 cross-encoder。Mem0 是否用它受配置和开关影响；Graphiti 对事实边重排前也先缩小集合。打包则发生在之后：哪条留正文、哪条只留来源、总长度多少，仍由应用决定。</p>
 <h3 id="mem0-配置与调用开关共同决定重排">Mem0：配置与调用开关共同决定重排</h3><p>初始化时 <code>RerankerFactory</code> 创建配置的重排器，但搜索还需传 <code>rerank=True</code>。当前外层在已生成的 <code>original_memories</code> 上调用重排，所以底层 limit 已排掉的记录不会被补回。重排异常时保留原结果并记录错误；应用应另记录降级状态，而非以为这次一定使用了模型重排。</p>
 <h3 id="graphiti-cross-encoder-前先做-rrf-截断">Graphiti：cross-encoder 前先做 RRF 截断</h3><p>边 cross-encoder 路径先对各路候选 RRF 排序，取最多 <code>2 * limit</code> 条事实再评分。它重新读 query 与 fact，但截断之前被丢掉的边也不会回来。<code>fact_to_uuid_map</code> 按事实文本映射 UUID，重复文本边的返回行为值得检查。之后的 token 打包仍由调用方负责。</p>
@@ -94,6 +112,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-07.svg" alt="怎样从“搜不到”一步步定位原因：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：调试不能绕过权限；没有结果可能是筛选正确，也可能是查询条件错误。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>把“搜不到”分成四问：正文存下了吗，第一批里有它吗，排序后留下了吗，最后发给模型了吗。Mem0 的 explain 能展开已进入评分流程的信号，但不能展示所有没进入池的记录。Graphiti 则还要看找到的是对象、关系还是材料；找到 Atlas 对象，不等于找到它的发布批准人。</p>
 <h3 id="mem0-explain-解释评分-不能解释全部遗漏">Mem0：explain 解释评分，不能解释全部遗漏</h3><p><code>search(explain=True)</code> 可返回 <code>score_details</code>，适合核对关键词与实体是否改变某条入池记录的分数。池外 A 没有评分分项，因此还要记录后端语义和关键词原始 ID。用 <code>get(A)</code> 核对存在性后，再逐层比较 filters、池、阈值和最终 limit，避免把不存在与低排名混为一谈。</p>
 <h3 id="graphiti-分对象观察-searchresults">Graphiti：分对象观察 SearchResults</h3><p><code>search_()</code> 返回 edges、nodes、episodes、communities 及对应 reranker 分数。节点 Atlas 被找到，不等于批准事实边也被找到。检查 config、每路原始 ID、UUID 并集、重排输出和来源展开；若只有节点结果，先修读取对象，不急着调余弦阈值。</p>
@@ -107,6 +128,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/05-08.svg" alt="留给记忆的预算要从完整调用里算：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：模型上下文还包含任务、工具和回答预留；不能只按记忆条数估算。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>模型输入还要容纳当前任务、工具说明和预留回答，剩下的才给历史。Mem0 卡片的正文虽短，来源说明也会占长度；Graphiti 一条 fact 很短，按来源取回整份 episode 却可能很长。应用可以先给短陈述与来源编号，证据不足再读详情，而不是把所有搜索命中一次发进去。</p>
 <h3 id="mem0-source-metadata-也占输入长度">Mem0：source metadata 也占输入长度</h3><p>应用取 <code>memory</code> 后若补项目、来源、置信度和安全 framing，应把完整字符串一起送目标 tokenizer。多条相同规则可以合并展示来源，但不能在合并时丢掉任务例外。对必要证据组保留固定预算，对可选背景再按评分填充；这些都是 SDK 之外的 assembler 工作。</p>
 <h3 id="graphiti-短-fact-与长-episode-可以分级读取">Graphiti：短 fact 与长 episode 可以分级读取</h3><p>正常任务先给带时间的事实；遇到归因争议再读相应 episode。这样节省输入，但需要显式记录事实是否已经核验。若 query 要求批准链，应一起保留两条事实及支持来源，不能因为单条关系排名高就挤掉链上另一条必要边。</p>
@@ -187,7 +211,7 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 <p>Cognee 的 session lexical 与不同 graph/chunk/Skill retriever，MemOS 的 backend/插件，以及 Hermes 的 relevance/injection/sufficiency 都说明：相同 recall 名字可能经过不同支路。Beacon 是供给原始 trace 的入口，不能当作同类 retriever。最终统一验收应问“期望证据是否在可见池、是否被选、是否装入、是否真的被用”。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/05-retrieval.svg" alt="语义池 boost、两路并集、配置化图搜索和 PPR 的候选边界比较" loading="lazy"><figcaption>图：每行返回证据的边界不同；相同 hybrid 标签不表示相同算法。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/05-retrieval.svg" alt="语义池 boost、两路并集、配置化图搜索和 PPR 的候选边界比较" loading="lazy"><figcaption>图：每行返回证据的边界不同；相同 hybrid 标签不表示相同算法。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -203,9 +227,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 </thead>
 <tbody><tr>
 <td>Mem0</td>
-<td>语义 over-fetch 池</td>
-<td>BM25/entity boost、可选 reranker</td>
-<td>keyword-only 可能不入池；应用打包</td>
+<td>先多取一些语义候选</td>
+<td>关键词与对象匹配加分，可选重排</td>
+<td>仅被关键词找到的记录可能不入池；应用控制输入长度</td>
 </tr>
 <tr>
 <td>Memobase</td>
@@ -215,9 +239,9 @@ C：Atlas 文档站使用深色主题。</code></pre><p>用户问“Atlas 上线
 </tr>
 <tr>
 <td>Graphiti</td>
-<td>edge/node 全文/cosine/BFS；episode BM25</td>
-<td>RRF/MMR/距离/mentions/cross-encoder 可选</td>
-<td>search limit 非 token；配置需明确</td>
+<td>按配置搜索关系、对象或原材料</td>
+<td>可按名次融合、去相似、距离或模型评分排序</td>
+<td>返回条数不限制总长度；邻域扩展需明确启用</td>
 </tr>
 <tr>
 <td>Cognee</td>

@@ -13,6 +13,10 @@ Graphiti：回答批准人前，应用查询关系并取来源；收到新组织
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/13-01.svg)
+
+源码对照：
+
 在助手代码里找到两处位置：回答前读取历史，任务后保存允许记忆的新材料。Mem0 放进这两个位置即可形成存取闭环；Graphiti 还可能把材料整理作为独立服务，查询作为另一服务。Ingestion 就是接收并整理输入的过程，query 是读取问题；部署分开后仍要记录何时整理完成。
 
 ### Mem0：生成前读取、生成后写入需要业务安排
@@ -47,6 +51,10 @@ Graphiti：Alice 在聊天端和发布端查自己的批准链，都能读到平
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/13-02.svg)
+
+源码对照：
+
 MCP 是让客户端以约定协议调用服务工具的一种方式。把 Mem0 搜索或 Graphiti 查询包成 MCP 工具后，模型可以提议查什么，服务端仍应从已验证身份确定用户或组。模型若在参数里写 Bob，不能因此获得 Bob 的 Atlas 资料；传输协议不会替服务做最终授权。
 
 ### Mem0：工具封装不能让模型替用户挑 scope
@@ -75,6 +83,10 @@ Graphiti：组织文档把批准人改成 Mei，应用处理新材料并检查�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/13-03.svg)
+
+源码对照：
 
 人把 Markdown 里的默认环境改了，数据库中的旧派生记录不会凭空消失。Mem0 接入文件时需决定重写哪张卡；Graphiti 可以把文件版本作为不同材料，但要检查旧关系是否该结束。同步策略就是定义文件变化如何对应新增、修改与删除，原文可编辑与搜索状态已更新是两件事。
 
@@ -105,6 +117,10 @@ Graphiti：把清洗后的工具报告作为材料，关系连回该报告。回
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/13-04.svg)
+
+源码对照：
+
 Trace 指工具和任务的执行记录，可能包括参数、输出与时间。Mem0 可从脱敏结果整理教训，Graphiti 可从事件材料形成带来源关系；两者都不应把密码或完整生产日志直接永久化。原始事件负责核对做过什么，派生事实负责下次复用，保存范围和保留时间可以不同。
 
 ### Mem0：工具 trace 应先脱敏再形成事实
@@ -134,6 +150,10 @@ Graphiti：用户可以读公开维护关系，但不能读私有审批原文。
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/13-05.svg)
+
+源码对照：
+
 ACL 是访问控制规则，例如 Alice 能读自己项目，审核员能读团队发布资料。Mem0 的 user、agent、run 字段与 Graphiti 的 group 字段帮助定位数据，但请求者写出这些值不证明有权使用。服务先判断能访问哪些对象，再构造过滤条件，按编号读取也要遵守同一判断。
 
 ### Mem0：user、agent、run 不等于完整团队 ACL
@@ -160,6 +180,10 @@ Graphiti：T7 作为来源材料，支持本次检查失败关系。后续要形
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/13-06.svg)
+
+源码对照：
 
 工具事件 T7 可能让 Mem0 产生 M1、M2，也可能让 Graphiti 产生材料 E1、多个节点和关系。应用保存 T7 到实际返回编号的对应表，才能回答“这条教训来自哪次运行”和“重试该补什么”。这些编号分别标识原事件和派生对象，不能因为都长得像 UUID 就随意互换。
 
@@ -188,6 +212,10 @@ Graphiti：两份材料重复同一结论，关系有两个来源编号；回查
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/13-07.svg)
+
+源码对照：
+
 聊天摘要写一次“迁移是根因”，任务报告再抄一次，同一猜测就经过两个入口。Mem0 两张卡片文字不同，指纹去重未必认出；Graphiti 两份材料也不代表独立观察。保留它们共同引用的原事件，才能避免把转述次数当作证据数量，再不断生成更强的总结。
 
 ### Mem0：hash 去重不能识别跨摘要转述
@@ -214,6 +242,10 @@ Graphiti：撤权后，她不能再查私有关系，也不能凭旧来源编号
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/13-08.svg)
+
+源码对照：
 
 Alice 离开团队后，搜索结果、直接读取、原文回查与缓存都应停止暴露团队材料。Mem0 过滤搜索还不够，已知 M1 编号的读取也需核验；Graphiti 隐藏关系后，按 E1 取原材料也不能绕过权限。沿实际访问路径逐项检查，权限撤销才不会只作用于一个入口。
 
@@ -418,12 +450,12 @@ Markdown 也有两种角色：Basic 文件是可重建索引的真相，Letta Me
 
 ## 本章对照结论
 
-| 项目 | 主要接入方式 | source of truth / 控制者 | 组合时额外责任 |
+| 项目 | 主要接入方式 | 原始资料在哪，谁管理 | 组合时额外责任 |
 |---|---|---|---|
 | MCP Memory Service | MCP/REST/CLI | 服务后端与巩固 | transport auth、过滤、同步 |
 | Basic Memory | 文件编辑/MCP | Markdown，数据库为索引 | 同步/关系解析、Git 删除 |
-| Agent Beacon | hook/plugin/OTLP/poll | runtime JSONL/各运行日志 | coverage、脱敏、下游提炼 |
-| TencentDB | Adapter/SDK/MemoryProxy | Core、Knowledge、资产服务各分工 | 身份、callback、注入缓存与撤销 |
+| Agent Beacon | 事件回调、插件、遥测或轮询 | 统一事件文件及各次运行日志 | 漏采检查、脱敏、后续教训提炼 |
+| TencentDB | 适配器、开发库或请求代理 | 会话、知识及资产服务分别管理 | 身份验证、处理完成通知、输入缓存与撤销 |
 | Mem0 | SDK/API 集成 | 事实 store 与应用 assembler | auth、scope、数据版本 |
 | Graphiti | Python/MCP/FastAPI | 图与 episode | schema、后端、权限与 ingestion |
 | Cognee | SDK/API/UI/MCP | datasets/管线与多存储 | route/config、后台恢复 |
@@ -434,7 +466,7 @@ Markdown 也有两种角色：Basic 文件是可重建索引的真相，Letta Me
 | A-MEM | Python memory system | MemoryNote 与索引 | 持久化/演化一致性、安全包装 |
 | HippoRAG | indexing/retrieval/QA 库 | passage/OpenIE/graph/index manifest | 用户治理、离线到在线管线 |
 | Hermes Jev Skills | CLI/工具调用云决策 | 调用方 store；本地决策缓存 | 外发政策、ID 映射、预算 |
-| 旧 Letta | archive/历史教程 | 历史版本 | 只用于复现，当前接 Letta Code |
+| 旧 Letta | 归档版本及历史教程 | 历史版本 | 只用于复现，当前接 Letta Code |
 
 </details>
 

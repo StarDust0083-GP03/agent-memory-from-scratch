@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 610" role="img" aria-labelledby="title desc"><title id="title">怎样判断一句话值得长期保存：两条案例流程</title><desc id="desc">Mem0：猜测：也许迁移没跑 → 保留猜测，再等待检查报告 → 应用核验后才形成长期教训；Graphiti：聊天猜测与工具确认两份材料 → 分别保存来源与限定关系 → 应用区分假设和直接证据。检查点：能保存成记录或关系，不表示它值得成为长期规则；规则升级需要业务审核。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:16px}rect{stroke-opacity:.6}@media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style><text x="12" y="26" font-weight="600">Mem0</text>
+<rect x="12" y="42" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="67">1. 猜测：也许迁移没跑</text>
+<path d="M180 105v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="127" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="152">2. 保留猜测，再等待检查报告</text>
+<path d="M180 190v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="212" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="237">3. 应用核验后才形成长期教训</text>
+<text x="12" y="309" font-weight="600">Graphiti</text>
+<rect x="12" y="325" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="350">1. 聊天猜测与工具确认两份材料</text>
+<path d="M180 388v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="410" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="435">2. 分别保存来源与限定关系</text>
+<path d="M180 473v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="495" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="520">3. 应用区分假设和直接证据</text>
+<text x="12" y="592" font-size="13">教学推演；“应用”步骤需自行实现。</text></svg>

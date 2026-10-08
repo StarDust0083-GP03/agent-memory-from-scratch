@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 610" role="img" aria-labelledby="title desc"><title id="title">Basic Memory：把人能编辑的笔记作为原始资料：两条案例流程</title><desc id="desc">Mem0：笔记默认已改预发布 → 应用同步并处理旧测试记录 → 搜索使用核验后的新默认；Graphiti：组织文档批准人已改 Mei → 应用处理新材料并检查旧关系 → 确认当前关系和来源正确。检查点：改了文件不会自动刷新所有派生库；同步成功也要检查旧状态是否仍参与读取。</desc><style>svg{color:#29564c;font-family:system-ui,sans-serif}text{fill:currentColor;font-size:16px}rect{stroke-opacity:.6}@media(prefers-color-scheme:dark){svg{color:#87b7a8}}</style><text x="12" y="26" font-weight="600">Mem0</text>
+<rect x="12" y="42" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="67">1. 笔记默认已改预发布</text>
+<path d="M180 105v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="127" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="152">2. 应用同步并处理旧测试记录</text>
+<path d="M180 190v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="212" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="237">3. 搜索使用核验后的新默认</text>
+<text x="12" y="309" font-weight="600">Graphiti</text>
+<rect x="12" y="325" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="350">1. 组织文档批准人已改 Mei</text>
+<path d="M180 388v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="410" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="435">2. 应用处理新材料并检查旧关系</text>
+<path d="M180 473v16m-5-5 5 5 5-5" fill="none" stroke="currentColor"/>
+<rect x="12" y="495" width="336" height="60" rx="4" fill="none" stroke="currentColor"/>
+<text x="28" y="520">3. 确认当前关系和来源正确</text>
+<text x="12" y="592" font-size="13">教学推演；“应用”步骤需自行实现。</text></svg>

@@ -3,6 +3,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 import json
+import csv
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -11,6 +12,7 @@ ROOT = Path(__file__).resolve().parent
 BOOK = ROOT.parent / 'book'
 entries = re.findall(r'\]\(chapters/([^)]+)\.md\)', (BOOK / 'SUMMARY.md').read_text())
 errors = []
+flow_references = set()
 
 
 class Page(HTMLParser):
@@ -47,6 +49,12 @@ for slug in entries:
     if md.count('<details') != md.count('</details>'):
         errors.append(f'unbalanced optional sections: {slug}')
     teaching = md.split('<details class="implementation-notes">')[0]
+    references = re.findall(r'!\[本例流程\]\(../../wiki/assets/source-flows/([^/]+)\.svg\)', teaching)
+    prefix = 'appendix' if slug.startswith('appendix-') else slug[:2]
+    expected = [f'{prefix}-{i:02d}' for i in range(1, teaching.count('<details class="source-example">') + 1)]
+    if references != expected:
+        errors.append(f'source flow/order mismatch: {slug}')
+    flow_references.update(references)
     visible = re.sub(r'<details class="source-example">.*?</details>', '', teaching, flags=re.S)
     for title, section in re.findall(r'^## ([^\n]+)\n(.*?)(?=^## |\Z)', visible, re.M | re.S):
         if title == '动手检查':
@@ -72,6 +80,8 @@ for path in ROOT.rglob('*.html'):
     if page.images_without_alt:
         errors.append(f'images without alt in {path}: {page.images_without_alt}')
     for resource in page.resources:
+        if resource.startswith('../../wiki/assets/'):
+            errors.append(f'book-relative asset path in rendered page: {path}: {resource}')
         if resource.startswith(('http:', 'https:', 'mailto:', 'data:', '#')) or '+' in resource:
             continue
         local = resource.split('#')[0].split('?')[0]
@@ -95,11 +105,36 @@ for slug in entries:
     except (OSError, ET.ParseError) as error:
         errors.append(f'invalid diagram {path}: {error}')
 
+with (BOOK / 'source-flows.tsv').open() as source:
+    flows = list(csv.DictReader(source, delimiter='\t'))
+flow_ids = {f'{row["chapter"]}-{int(row["section"]):02d}' for row in flows}
+if len(flow_ids) != len(flows) or flow_ids != flow_references:
+    errors.append('source flow data/reference mismatch')
+if {p.stem for p in (ROOT / 'assets' / 'source-flows').glob('*.svg')} != flow_ids:
+    errors.append('source flow assets/data mismatch')
+for row in flows:
+    flow_id = f'{row["chapter"]}-{int(row["section"]):02d}'
+    path = ROOT / 'assets' / 'source-flows' / f'{flow_id}.svg'
+    try:
+        svg = ET.parse(path).getroot()
+        title = svg.find('svg:title', ns)
+        desc = svg.find('svg:desc', ns)
+        if title is None or not title.text or desc is None or not desc.text or 'viewBox' not in svg.attrib:
+            errors.append(f'missing accessible source flow metadata: {flow_id}')
+        elif any(value not in desc.text for key, value in row.items() if key not in ('chapter', 'section')):
+            errors.append(f'source flow content mismatch: {flow_id}')
+    except (OSError, ET.ParseError) as error:
+        errors.append(f'invalid source flow {path}: {error}')
+
 index = ROOT / 'assets' / 'search-index.json'
 if not index.exists() or len(json.loads(index.read_text())) != len(entries):
     errors.append('search index mismatch')
 else:
     indexed = {item['slug']: item['text'] for item in json.loads(index.read_text())}
+    for row in flows:
+        slug = next((s for s in entries if s.startswith(row['chapter'] + '-')), None)
+        if slug is None or any(value not in indexed.get(slug, '') for key, value in row.items() if key not in ('chapter', 'section')):
+            errors.append(f'source flow missing from search index: {row["chapter"]}:{row["section"]}')
     for slug in entries:
         teaching = (BOOK / 'chapters' / f'{slug}.md').read_text().split('<details class="implementation-notes">')[0]
         for heading in re.findall(r'^## (.+)$', teaching, re.M):
@@ -109,4 +144,4 @@ else:
 if errors:
     print('\n'.join(errors))
     sys.exit(1)
-print(f'OK: {len(entries)} tutorials/exercises, short project examples, optional notes, closing tables, accessible SVGs, links/images and search index verified')
+print(f'OK: {len(entries)} tutorials/exercises, short project examples, {len(flows)} source flows, optional notes, closing tables, accessible SVGs, links/images and search index verified')

@@ -15,6 +15,10 @@ Graphiti：多次材料支持同一项发布要求，可以核验这些来源是
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/07-01.svg)
+
+源码对照：
+
 十次发布都提到同一检查要求，不必给每次回答十份重复文字。Mem0 可能积累多张相似卡，应用需检查合并与保留策略；Graphiti 若认出相同关系，可以复用关系并增加来源引用。来源变多仍不意味着已经验证十次，可能只是同一句话被复制了十遍。
 
 ### Mem0：ADD-only 会把长期治理责任留给外层
@@ -41,6 +45,10 @@ Graphiti：发布要求连回支持它的报告。纠正一份报告后，应用
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/07-02.svg)
+
+源码对照：
 
 把三次经历总结成“发布前检查迁移”，中间省略了每次具体命令，这叫巩固。Mem0 的过程总结能提出步骤文字，Graphiti 的对象摘要能整理相关关系；两者都需要回查原事件，确认没有把“失败时检查”改成“每次必须执行迁移”。生成摘要是一次理解工作，不是一次流程审批。
 
@@ -73,6 +81,10 @@ Graphiti：Lin 的批准关系已结束，就不用于今天的答案；只是�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/07-03.svg)
+
+源码对照：
+
 一条过时活动提醒可以随时间减少优先级，也可以到某天直接隐藏；“Lin 不再负责批准”则是事实状态改变。这三种动作要分开。Mem0 的 expiration_date 是隐藏门槛；Graphiti 的 invalid_at 是关系不再有效的时间。它们没有直接表示“一条正确旧教训今天只有一半重要”。
 
 ### Mem0：expiration_date 是阈值，不是半衰期
@@ -100,6 +112,10 @@ Graphiti：批准关系被展示了，但助手找错人。记录查询命中与
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/07-04.svg)
+
+源码对照：
+
 搜索返回了迁移教训，助手仍漏检，不能计为成功使用。应用接 Mem0 时要把返回卡片编号与真实动作对应；接 Graphiti 时要把使用的关系和来源与结果对应。Outcome 是任务实际结果，比如是否避免漏检；它和相关分数、关系来源数量是不同的观察。
 
 ### Mem0：搜索分数与任务 outcome 分开记录
@@ -124,6 +140,10 @@ Graphiti：查到“检查应先于发布”后，应用把顺序落实到任务
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/07-05.svg)
+
+源码对照：
 
 教训建议“先检查迁移”，真正执行还要选检查工具、核验参数和权限。Mem0 保存步骤文字后，没有为助手开启命令权限；Graphiti 保存要求关系，也没有修改工具授权。可以先将建议生成为待审流程，再经测试发布，不能让一条模型总结直接决定生产操作。
 
@@ -152,6 +172,10 @@ Graphiti：原文说“正式发布需要 Lin 批准”，摘要只写“发布�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/07-06.svg)
+
+源码对照：
+
 “检查迁移是否完成”与“执行数据库迁移”只差几个字，副作用却不同。Mem0 卡片压缩时应保留检查动词；Graphiti 即使把边命名为发布步骤，也要看 fact 正文是否变成执行。原文保留“只读检查”，摘要若删掉只读条件，就可能把安全观察升级成修改数据库。
 
 ### Mem0：检查与执行的动词需要原文核验
@@ -178,6 +202,10 @@ Graphiti：测试批准链时，加一题“平台组出差由 Lin 批准”。�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/07-07.svg)
+
+源码对照：
 
 试验新规则时，准备迁移已完成、无需迁移、演练禁止写库三种反例。Mem0 的测试库若吸收试验中生成的新卡，后一次就不再与第一次可比；Graphiti 的测试图若新增或结束关系，同样改变了底稿。固定初始资料，再比较行为，才能解释差别来自哪一步。
 
@@ -308,14 +336,14 @@ Mem0 的 ADD-only 避免在抽取时破坏旧事实，但不自动构成巩固�
 
 | 项目 | 演化触发 | 真正改变的状态 | 保留/删除与主要风险 |
 |---|---|---|---|
-| Hippo | 时间、召回、outcome、sleep | strength/寿命/排序、语义合并 | 误强化、反馈偏差；失效非隐私删除 |
-| MCP Service | horizon 巩固/可选矛盾检测 | relevance、聚类/压缩/关系、归档 | 相似度误矛盾；读 action/保护条件 |
-| MemoryOS | 容量与 heat | page/session 到 profile/knowledge | 摘要漏例外；LFU 不等于衰减 |
+| Hippo | 时间、检索命中、使用结果、集中巩固 | 价值、寿命、排序及教训合并 | 误强化、反馈偏差；失效不等于清除隐私 |
+| MCP Service | 按时间窗口巩固，可选矛盾检测 | 评分、聚类、压缩、关系与归档 | 相似不等于矛盾；检查实际操作及保护项 |
+| MemoryOS | 近期容量和访问热度 | 问答页、主题段及长期画像知识 | 摘要可能漏例外；按使用频率淘汰不同于时间衰减 |
 | A-MEM | 新笔记 + 邻居 | links/context/tags | 描述漂移与索引同步 |
 | Memobase | flush | topic/subtopic profile 与 event | 原 blob 可删；字段合并错误 |
 | TencentDB | 层级提取/Skill 版本动作 | L1/L2/L3、Skill/资产状态 | 过度提升、跨服务部分失败 |
 | Graphiti | 新 episode | 实体摘要、重复边、有效区间 | 错误失效、原始证据必须可查 |
-| Cognee | feedback/improve 与 gate | 图权重、持久知识、session/trace 派生 | 每阶段状态不同、不能算训练模型 |
+| Cognee | 反馈及改进调用，各阶段有启用条件 | 图权重、长期知识、会话与轨迹的派生内容 | 有些阶段会跳过；不能算训练模型 |
 | MemOS | scheduler/feedback/插件处理 | backend 内容与资源/Skill 组织 | 模块成熟度与任务积压 |
 | Letta Code | 反思/用户纠正 + commit | 后续 prompt 的 core/文件规则 | 过度泛化；Git 不证明规则正确 |
 | Basic Memory | 人/Agent 文件编辑 | 显式 observation/relation | 并发冲突、Git 旧副本 |

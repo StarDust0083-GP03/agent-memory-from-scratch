@@ -15,6 +15,10 @@ Graphiti：昨天保存了“Atlas 的批准人是 Lin”。今天模型不会�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/01-01.svg)
+
+源码对照：
+
 ### Mem0：外部状态通过 search 回到输入
 
 初始化 `Memory`，就是给记忆程序接好整理文字的模型、将文字变成向量的服务、保存事实的后端以及历史数据库。之后调用 `add()` 保存教训，改变的是这些外部记录，回答模型的参数并没有被重新训练。数据库即使关闭后还能保留 M1，也不等于下一轮模型已经知道 M1。
@@ -52,6 +56,10 @@ Graphiti：把失败报告留作材料 E1，再保存“Atlas 这次发布漏查
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/01-02.svg)
+
+源码对照：
 
 ### Mem0：一段事件会分成消息记录与事实 payload
 
@@ -92,6 +100,10 @@ Graphiti：应用查到“Atlas 由平台组维护”和“Lin 批准正式发�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/01-03.svg)
+
+源码对照：
+
 ### Mem0：过滤、评分、格式化之后还差一次组装
 
 应用先从已登录身份确定 Alice，而不是让模型猜用户是谁，再用 `filters={"user_id": "alice"}` 限定搜索。Filters 是筛选条件，表示只在这个可读集合里找；语义候选则是在这个范围内按意思找出的待选记录。两者分别解决可见范围和相关程度。
@@ -123,6 +135,10 @@ Graphiti：保存“Atlas→维护团队→平台组”“平台组→发布批�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/01-04.svg)
+
+源码对照：
+
 ### Mem0：实体索引没有把事实库变成时间关系图
 
 Mem0 可以给 Atlas 建一个对象索引，记着涉及它的卡片 M1、M2。这份清单叫 `linked_memory_ids`，读作“与这个对象有关的记录编号”。问题里提到 Atlas，相关卡片可得到额外加分。
@@ -153,6 +169,10 @@ Graphiti：没有批准关系时，助手不知道找谁；提供两条已核验
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/01-05.svg)
+
+源码对照：
 
 ### Mem0：观察计划变化需要记录实际注入
 
@@ -264,12 +284,12 @@ MemoryOS、Hippo 和 A-MEM 进一步在查询之前改变组织：分别提升�
 |---|---|---|---|
 | Mem0 | 提取事实、搜索与评分 | add 后按 query search | 认证、时间语义、打包 |
 | Memobase | buffer 整理画像与事件 | profile 直接读，事件搜索 | flush 一致性与画像核验 |
-| Graphiti | 实体/边 resolution | 搜索事实、追踪 episode | reader、授权与建图恢复 |
-| Cognee | loader/schema/retriever 路由 | recall 返回结构或答案 | 固定所选管线与验收 |
-| HippoRAG | fact/passage seeds 与 PPR | 排序 passage 交 reader | 会话/身份治理 |
-| MemoryOS | page/session/长期层提升 | 多层检索与画像上下文 | 阈值、token 与隔离 |
-| MemOS | cube/backend/scheduler | 文本检索或兼容资源加载 | 模型兼容与队列运维 |
-| Hippo | strength/outcome/sleep | 本地候选、可选重排 | 反馈可靠性与删除政策 |
+| Graphiti | 辨认同一对象，判断关系重复或变化 | 查询关系，再按来源读原文 | 回答模型、授权与建图恢复 |
+| Cognee | 选择加载、抽取格式和检索方法 | 按配置返回证据或生成答案 | 固定处理配置，逐步验收 |
+| HippoRAG | 从相关事实和段落出发，沿图传播相关性 | 把高分原段落交给回答模型 | 会话管理和身份权限 |
+| MemoryOS | 把近期问答整理为主题页和长期知识 | 分层搜索，另读取画像 | 提升条件、输入长度与隔离 |
+| MemOS | 配置资源容器，调度处理任务 | 检索文本或加载兼容模型资源 | 模型兼容与队列运维 |
+| Hippo | 按时间、使用结果和巩固操作调整价值 | 本地搜索，可选重排 | 反馈可靠性与删除政策 |
 | A-MEM | 笔记属性和 link 演化 | 近邻、尝试邻居扩展 | 演化审计与持久化 |
 | Letta Code | self-edit 与后续编译 | core 常驻，文件/recall 主动读 | 高风险规则评审 |
 | Basic Memory | 文件解析与显式关系 | URI/搜索/邻域上下文 | 文件历史与编辑冲突 |

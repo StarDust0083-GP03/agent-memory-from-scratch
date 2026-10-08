@@ -13,6 +13,10 @@ Graphiti：测试题问“谁批准 Atlas”，预先标出维护和正式批准
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/14-01.svg)
+
+源码对照：
+
 Gold 是测试题预先标出的必要证据与答案。问 Atlas 批准人，Mem0 的必要证据可能是维护和批准两张卡；Graphiti 的必要证据可能是两条边与两份来源。模型重新抽取会换编号，所以测试应说明是哪件事实支持答案，不能只要求命中上次随机生成的编号。
 
 ### Mem0：gold 应关联源事实，不只关联生成 ID
@@ -37,6 +41,10 @@ Graphiti：答错批准人，依次看关系是否连对、查询是否找到、
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/14-02.svg)
+
+源码对照：
 
 错误答案可能来自写错、没找到、没放进输入或读错。Mem0 分别留提取正文、候选编号、组装文字与动作；Graphiti 还留对象身份和被结束的旧关系。这样看到“Mei”答错时，能区分批准人未存下、旧 Lin 未过滤和模型忽略新证据，而不是统称记忆效果差。
 
@@ -74,6 +82,10 @@ Graphiti：批准链需要维护边 A、批准边 B，只查到 A 也只完成�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/14-03.svg)
+
+源码对照：
+
 必要证据是 A、B，返回 A、C，召回了两件里的一个；但 Mem0 一张长卡也可能同时含 A、B。Graphiti 一条边与支持它的原文同样不是两件独立事实。计算召回前先固定计数单位，明确数的是必要事实、记录还是材料，否则数量相同的结果会被误判成相同覆盖。
 
 ### Mem0：一张卡可能覆盖多个 gold 要素
@@ -103,6 +115,10 @@ Graphiti：固定图和问题，只改变是否追加邻域查询。比较第二
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/14-04.svg)
+
+源码对照：
+
 消融测试就是只去掉或增加一种机制，观察差别。Mem0 可固定第一批候选，再比较对象加分开关；Graphiti 可固定同一图，再比较是否加邻域扩展。若同时换提取模型、候选数量和回答模型，即使答对更多，也无法解释是哪项带来了收益。
 
 ### Mem0：把候选扩展和重排分别控制
@@ -127,6 +143,10 @@ Graphiti：先测同名项目、批准人变更、缺一段证据等案例。逐
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/14-05.svg)
+
+源码对照：
 
 别人公布的分数还包含具体模型、资料、问题和回答预算。自建 Mem0 库若使用不同提取器，不能直接沿用托管成绩；Graphiti 若建图时已误合并平台组，搜索公式再好也可能答错。先逐题读原文、派生结果与答案，把十题失败原因写明，再判断大规模指标代表什么。
 
@@ -155,6 +175,10 @@ Graphiti：预期证据是 15 日有效的维护关系与正式批准关系。�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/14-06.svg)
+
+源码对照：
+
 一题问 15 日批准人，答案依据应写清当日维护对象、批准用途与有效时间。Mem0 卡片若只留最新文字，需要外层版本规则；Graphiti 若连到 Lin 却是出差审批，也不支持答案。加入这些相近反例，能检查系统是否真的理解限定，而不只是找到同样的人名。
 
 ### Mem0：测试条件应保留业务有效时间
@@ -182,6 +206,10 @@ Graphiti：新增答对两题，但两题都用同一条批准链。再测另一
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/14-07.svg)
+
+源码对照：
+
 新版本多答对两题，先看具体是哪两题。Mem0 可能只是候选变多找到了旧漏项；Graphiti 可能补到了批准链，也可能同时引入错误身份。固定预算逐题比较成功与新失败，才知道改动是否适合当前负载。小样本提供改进线索，不足以宣称所有任务都受益。
 
 ### Mem0：逐题比较漏提取、漏入池和漏使用
@@ -205,10 +233,10 @@ BFS 补到第二跳后，若同名项目串线增加，平均 QA 可能掩盖安
 
 ## 先拆开四种能力
 
-1. **Extraction**：该记的是否写入，是否产生幻觉。
-2. **Retrieval**：相关证据是否进入候选和 top-k。
-3. **Utilization**：reader/Agent 是否正确使用证据。
-4. **Task improvement**：有记忆是否让长期任务更成功、更便宜。
+1. **写入**：该记的是否保存，提取是否添加了原文没有的内容。
+2. **检索**：必要证据是否进入候选，并留在最终结果中。
+3. **使用**：回答模型是否读到证据，是否理解正确。
+4. **任务收益**：实际动作是否少犯错，总费用是否值得。
 
 只测最终回答，会把四层错误混在一起；只测 Recall@5，又无法证明 Agent 真正变好。
 
@@ -222,11 +250,11 @@ BFS 补到第二跳后，若同名项目串线增加，平均 QA 可能掩盖安
 
 500 个问题，覆盖 information extraction、multi-session reasoning、temporal reasoning、knowledge update 与 abstention，历史可超过 115K tokens。需要明确：
 
-- `_s` per-question haystack 还是 pooled global store；
-- memory 单位是 turn 还是 session；
-- R@k 还是 reader accuracy；
-- 数据是否 cleaned；
-- 是否在测试集调了 reranker。
+- 每题只搜预先指定的历史（如 `_s` 设置），还是所有历史共用一个库；
+- 一条记忆是一轮消息，还是整个会话；
+- 评分只看搜没搜到（R@k），还是看回答是否正确；
+- 数据有没有清洗，清洗了什么；
+- 重排参数是否用最终测试题调过。
 
 ### BEAM 与项目自建评测
 
@@ -236,13 +264,13 @@ BEAM 面向百万/千万 token 规模，但不同实现可能采用不同 ingest
 
 | 层 | 指标 |
 |---|---|
-| 写入 | precision/recall、重复率、冲突率、每轮 LLM 成本 |
-| 候选 | Recall@k、coverage、permission leakage=0 |
-| 排序 | MRR、NDCG、temporal correctness |
+| 写入 | 该记的保存了多少、保存的有多少正确；重复、冲突和模型费用 |
+| 候选 | 前 k 项覆盖多少必要证据（Recall@k）；越权候选应为零 |
+| 排序 | 第一条正确结果排多前（MRR）、重要证据是否靠前（NDCG）、日期是否适用 |
 | 上下文 | token 数、证据密度、注入拦截率 |
 | 回答 | exact/F1、引用正确、应拒答准确率 |
 | 任务 | 成功率、返工 turns、总成本、长期学习曲线 |
-| 系统 | p50/p95 延迟、写入积压、重建时间、删除 SLA |
+| 系统 | 一半及 95% 请求能在多久内完成（p50/p95）；积压、重建时间、承诺的删除时限 |
 
 ## 最小可信实验
 

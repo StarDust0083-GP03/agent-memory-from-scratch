@@ -9,6 +9,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/02-01.svg" alt="一段话里，其实有四种不同的信息：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：提取器不一定正确拆分；“今天”一旦丢失，临时要求就可能被当成长久规则。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>同一段原话可以整理成“Atlas 昨天发布失败”“Alice 默认中文”“发布前检查迁移”三条不同用途的文字。Mem0 可能把它们存成三张短记录，具体拆法由提取结果决定。Graphiti 则要辨认分别是谁的偏好、哪个项目的经历、什么操作的要求，再形成相应关系；谈到同一个项目，不表示它们都适用于今天的动作。</p>
 <h3 id="mem0-拆分依赖提取提示-不是固定四张表">Mem0：拆分依赖提取提示，不是固定四张表</h3><p>普通推断写入把消息交给 <code>ADDITIVE_EXTRACTION_PROMPT</code>，得到多个带 <code>text</code> 的候选。应用可以通过自定义提取指令要求保留“今天”和“以后”，但数据库不会自动把它们分别放入工作、情景、语义和过程四个专用区域。适用任务和项目可放 metadata，读取时再明确执行条件。</p>
 <h3 id="graphiti-一句话可以支持多条不同关系">Graphiti：一句话可以支持多条不同关系</h3><p>同一个 episode 可以抽取语言偏好、部署安排和流程要求，边的 <code>episodes</code> 都指向它。<code>edge_types</code> 与 <code>edge_type_map</code> 可以约束实体类型之间允许的关系；定义任务实体能帮助表达本次例外，但这种建模是应用设计。Graphiti 不会仅凭“有图”就自动得到本书四类信息的正确边界。</p>
@@ -22,6 +25,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/02-02.svg" alt="类型名是方便讨论的标签：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：过程记忆和步骤关系都不是执行引擎；保存成功不会自动运行工具。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>“经历”“事实”“流程”先是本书解释用途的标签。给一条文字贴上“流程”，不会让 Mem0 变出执行按钮；Graphiti 把“检查先于发布”连成关系，也没有执行检查。Schema 是应用规定的对象与字段格式，比如项目有名称、任务有日期；它约束怎样保存，不证明内容已经审核。</p>
 <h3 id="mem0-公开类型参数比概念分类窄">Mem0：公开类型参数比概念分类窄</h3><p>当前 <code>add(memory_type=...)</code> 只显式接受 <code>procedural_memory</code>，其他非空类型值会被校验拒绝。不能把本书的 <code>episodic</code> 等字符串直接当作这个参数传入。应用自定义类别应放 metadata；带 <code>agent_id</code> 的过程记忆走专门摘要路径，仍是被保存的文本，不是可自动执行的 Skill。</p>
 <h3 id="graphiti-类型通过节点和边-schema-表达">Graphiti：类型通过节点和边 schema 表达</h3><p><code>entity_types</code> 接收 Pydantic 模型，<code>edge_types</code> 描述关系属性，标签和关系类型让提取器知道所需结构。它们与“情景记忆”这种用途标签不一一对应：一次情景可以同时产生项目、人员和时间事实。schema 校验约束输出形状，事实是否被原文支持仍需另外核验。</p>
@@ -46,6 +52,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/02-03.svg" alt="从一句话变成一条能管理的记录：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：业务字段存进 metadata 不代表过滤已实现；项目同名也不代表同一个对象。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>假设记录 M1 的正文是“Atlas 默认预发布”，还要记它属于 Alice、来自哪次表达。Mem0 将正文和这些附加字段一起保存，应用负责赋予项目范围和来源含义。Graphiti 可以把默认环境关系接到 Atlas 对象，另留材料编号和有效日期。两个结构都需要避免把今天收到的文字误当作今天才开始有效。</p>
 <h3 id="mem0-教学字段要映射到真实-payload">Mem0：教学字段要映射到真实 payload</h3><p>当前事实 payload 包含 <code>data</code>、<code>hash</code>、<code>text_lemmatized</code>、<code>created_at</code>、<code>updated_at</code> 和身份等字段；<code>source</code>、业务置信度与项目范围可以由应用传入 metadata。它们不会因为被存进去就自动参加评分或有效时间筛选。<code>expiration_date</code> 能隐藏过期记录，但不同于现实事实的开始和结束区间。</p>
 <h3 id="graphiti-来源与有效性是边的明确字段">Graphiti：来源与有效性是边的明确字段</h3><p><code>EntityEdge</code> 有两端 UUID、<code>fact</code>、<code>episodes</code>、<code>valid_at</code>、<code>invalid_at</code>、<code>created_at</code> 与 <code>expired_at</code>。其中来源列表和时间字段支持关系核验，不能把 <code>expired_at</code> 当作现实失效日。需要自定义可信程度时可以设计属性，框架并未把每条边附带一个经过校准的真实性概率。</p>
@@ -58,6 +67,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/02-04.svg" alt="原话、事实和摘要要保留不同角色：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：压缩时不能丢掉“怀疑”；历史记录和来源链接只能帮助核验，不能自动证明根因。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>原话说“我怀疑失败因为迁移没跑”，事实记录若改成“失败由迁移造成”，就丢了怀疑程度。Mem0 的变更历史能帮助看记录怎么改过，但不自动证明根因。Graphiti 的对象摘要若写成确定结论，同样要退回关系正文和来源材料，检查是哪一句支持它。摘要更短，证据并没有因此更强。</p>
 <h3 id="mem0-事实历史不等于原始会话来源图">Mem0：事实历史不等于原始会话来源图</h3><p>历史数据库保存 ADD、UPDATE、DELETE 的前后正文，也保存近期消息供下次提取使用。然而普通事实结果没有自动提供 Graphiti 式 episode 引用链。要核对“漏迁移”来自哪次工具观察，应用应把稳定 source ID 写进 metadata，并保留对应事件，避免把变更历史误当成原始证据。</p>
 <h3 id="graphiti-摘要更新不会替代具体边">Graphiti：摘要更新不会替代具体边</h3><p><code>add_episode()</code> 在关系解析后调用 <code>extract_attributes_from_nodes()</code>，传入新增边参与节点摘要更新，避免重复关系反复累加。摘要方便认识 Atlas，但“谁批准”应核对具体边和 episode。摘要是围绕节点的派生文本，删除或纠正来源后还需检查它是否包含已经撤回的结论。</p>
@@ -71,6 +83,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/02-05.svg" alt="项目差异怎样从用途推出来：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：一次发布问题的相似度搜索未必找回语言偏好；需要稳定生效的属性应明确读取。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>今天问迁移，不一定顺便搜到“默认中文”。应用接 Mem0 时，可以将已确认的语言偏好直接读取，再搜索发布经历；接 Graphiti 时，可以读 Alice 的偏好关系，再读 Atlas 的发布资料。这是两次用途不同的读取，不能让一次问题相似度决定用户每轮都需要的默认属性。</p>
 <h3 id="mem0-稳定偏好需要明确读取策略">Mem0：稳定偏好需要明确读取策略</h3><p>默认中文若必须每轮出现，可用身份和业务类别读取已核验记录，不宜只用发布问题的相似度搜索。<code>get_all()</code> 可以提供按范围列举的入口，但不是 Memobase 的画像合并接口。应用需要决定哪条语言记录当前有效，不能假设事实池自动维护唯一字段。</p>
 <h3 id="graphiti-关系型偏好需要指定主体与时间">Graphiti：关系型偏好需要指定主体与时间</h3><p>可以将 Alice 与中文连接为语言偏好关系，变化时维护有效区间。读取要定位规范 Alice 节点或用限定组的搜索，再筛当前关系。节点摘要可能提及语言，却未必保留完整历史；把摘要当成权威当前值，会重新丢掉时间边带来的信息。</p>
@@ -86,6 +101,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/02-06.svg" alt="数据模型要让下一次读取少猜一点：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：拆成小记录只帮助定位；更新目标和变更范围仍要由应用确认。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一张卡片若同时写语言、环境、批准人，改批准人时可能误动另外两项。Mem0 用小记录便于定位要改的正文；Graphiti 用独立关系便于定位哪个连接改变。比如中文默认继续保留，只纠正 Atlas 的批准关系。记录拆小之后，项目、任务与日期仍要写清，否则只是把一段含糊文字拆成多段。</p>
 <h3 id="mem0-细粒度事实方便更新-范围仍由业务解释">Mem0：细粒度事实方便更新，范围仍由业务解释</h3><p>把语言和默认环境分成两条事实后，<code>update(memory_id, text=...)</code> 只改目标记录，并重新生成向量、hash 和词形文本；身份字段不能借 metadata 更新转移给另一个用户。单次邮件要求应另存有任务边界的记录，更新哪条仍由应用判断。</p>
 <h3 id="graphiti-关系粒度让纠正定位到边">Graphiti：关系粒度让纠正定位到边</h3><p>语言偏好和部署环境是不同关系，边解析不应把它们当作冲突。但一条“环境改了”的消息如果缺区域或任务条件，抽取器仍可能失误。设计属性和关系签名，让模型有位置保存限定信息，再核验 <code>AddEpisodeResults.edges</code>，比只检查节点名完整更有用。</p>
@@ -180,7 +198,7 @@ supersedes, source</code></pre><p>每个字段都对应一个生产问题：</p>
 <p>第三个轴是物理形态。MemOS 文本可以表达与事实库相似的知识，但 KV/LoRA 是模型相关资源。把 KV 叫 working memory 只能表达用途类比，不应让它与近期聊天队列共享迁移或删除规则。Hermes 的 memo 也是小决策缓存，不是用户画像或 episode 仓。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/02-taxonomy.svg" alt="记忆的语义类型、物理容器和访问方式彼此独立" loading="lazy"><figcaption>图：按三个轴比较，避免按数据库名字给记忆分类。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/02-taxonomy.svg" alt="记忆的语义类型、物理容器和访问方式彼此独立" loading="lazy"><figcaption>图：按三个轴比较，避免按数据库名字给记忆分类。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -202,14 +220,14 @@ supersedes, source</code></pre><p>每个字段都对应一个生产问题：</p>
 </tr>
 <tr>
 <td>Memobase</td>
-<td>blob / buffer</td>
-<td>topic/subtopic profile、event</td>
+<td>原始输入和待处理区</td>
+<td>按主题整理的画像字段、事件列表</td>
 <td>每轮立即更新的画像</td>
 </tr>
 <tr>
 <td>Graphiti</td>
-<td>episode</td>
-<td>entity、带时间 fact edge、summary</td>
+<td>一次收到的原始材料</td>
+<td>对象、带时间关系、对象摘要</td>
 <td>摘要可替代原始证据</td>
 </tr>
 <tr>
@@ -226,15 +244,15 @@ supersedes, source</code></pre><p>每个字段都对应一个生产问题：</p>
 </tr>
 <tr>
 <td>MemoryOS</td>
-<td>QA page</td>
-<td>主题 session、heat、profile/知识</td>
-<td>KV/参数化资源管理</td>
+<td>问答页面</td>
+<td>主题段、访问热度、画像与知识</td>
+<td>模型计算缓存或参数资源管理</td>
 </tr>
 <tr>
 <td>MemOS</td>
-<td>cube 配置与可选模块</td>
-<td>text、act、para、pref</td>
-<td>所有 cube 同时启用全部形态</td>
+<td>资源容器配置与可选模块</td>
+<td>文本、模型状态、参数适配、偏好</td>
+<td>每个容器都启用全部形态</td>
 </tr>
 <tr>
 <td>Hippo</td>

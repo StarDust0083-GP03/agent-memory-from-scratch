@@ -7,6 +7,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/appendix-01.svg" alt="从一个问题开始读源码：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：从输入和状态变化读代码，不必从类名开始；每个结论需对应实际入口。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>初读只追一个问题：“这句原话最后存成什么？”Mem0 从 add 的输入走到卡片正文，Graphiti 从原材料走到对象与关系。遇到函数名，先看它收什么、返回什么，再回到 Atlas 示例给变量填值；不必一开始读完模型客户端、数据库连接和全部异常处理。</p>
 <h3 id="mem0-从实际函数与提示双向核对">Mem0：从实际函数与提示双向核对</h3><p><a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/main.py">主流程</a> 从 <code>add()</code> 进入 <code>_add_to_vector_store()</code>，读取普通追加和过程摘要两个分支；<a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/storage.py">历史存储</a> 核对消息与变更表。不要停在 docstring 的自动 CRUD 描述，正文解释以函数实际写操作为准。</p>
 <h3 id="graphiti-从-orchestration-追-maintenance">Graphiti：从 orchestration 追 maintenance</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/graphiti.py">主流程</a> 的 <code>add_episode()</code> 编排抽取、解析和保存；<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/utils/maintenance/edge_operations.py">边维护</a> 展开重复候选与时间关闭逻辑。先记返回的 resolved、invalidated、new 三集合，再核对它们如何写回。</p>
@@ -20,6 +23,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/appendix-02.svg" alt="用纸笔记录三个集合：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：集合记录能区分漏候选与被排序淘汰；别只在最后答案处猜原因。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集合。Mem0 需要核对两者是否相同；Graphiti 需要核对文字榜、向量榜和最终编号并集。用 A、B、C 手记每一步即可：哪一步第一次出现 C，哪一步去掉 C，比只阅读一个复杂评分函数更容易定位漏项。</p>
 <h3 id="mem0-semantic-集合决定-candidate-身份">Mem0：semantic 集合决定 candidate 身份</h3><p>分别记录后端 search、keyword_search 和 entity boost 的 ID，随后看 candidates 是否只遍历 semantic results。源码显示后两者给分，而非无条件补入新身份。explain 提供已评分记录的分项，没有覆盖池外遗漏，复查时要保存原始集合。</p>
 <h3 id="graphiti-uuid-并集与各路名次同时保留">Graphiti：UUID 并集与各路名次同时保留</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search.py">搜索实现</a> 的 <code>edge_search()</code> 汇集多路列表，再构造 edge_uuid_map。RRF 用名次，cross-encoder 先截断再读 fact。对照<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_config_recipes.py">配方</a>，确认本次到底启用了哪些路。</p>
@@ -33,6 +39,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/appendix-03.svg" alt="用论文学习机制，再核对当前代码：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：论文机制、当前源码与实测结果要分开；论文图不能替代当前调用行为。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>论文帮助理解为什么将聊天压成短事实或为关系保留时间，代码决定当前调用是否真正这么做。Mem0 论文中的某种写入决策，不保证与这个快照的批量追加相同；Graphiti 的时间字段，也不表示每个查询默认使用它。把机制意图、当前分支和实测范围分别记录，读者就不会把介绍当成保证。</p>
 <h3 id="mem0-论文路线与当前-batch-实现分开记">Mem0：论文路线与当前 batch 实现分开记</h3><p>论文可能描述较早的提取与更新算法，当前源码已有 additive prompt、批量 embedding 和实体链接。读实验时记数据、reader、候选粒度及 OSS 或 managed 交付物。算法思想相近不证明当前本地后端复现了同一分数。</p>
 <h3 id="graphiti-时间思想要核对字段和过滤">Graphiti：时间思想要核对字段和过滤</h3><p>时间论文解释为什么保留历史，<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/edges.py">边定义</a> 明确具体字段，<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_filters.py">过滤实现</a> 决定查询怎样使用它们。字段存在只支持模型表达，仍要实际测试当前与历史视图，不能把论文目标当作每个接口保证。</p>
@@ -45,6 +54,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/appendix-04.svg" alt="给自己的结论留一个可复查的小注释：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：附可复查输入、版本和代码位置；没有跑过的后端或实验应明确标注。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Provider 是提供模型或存储服务的具体实现，driver 是访问存储的程序。笔记可以写“Mem0 普通提取分支，某向量后端，仅核对源码”；Graphiti 则写“边搜索，启用哪些找法，使用哪个 driver”。这些条件解释结论适用范围，换服务或配置后需重新验证，而不是把同一项目名当作固定行为。</p>
 <h3 id="mem0-记录分支-provider-与已验证范围">Mem0：记录分支、provider 与已验证范围</h3><p>可以写“在普通 infer=True 同步路径，候选由语义池构造；未测试所有 vector stores”。同时注明 commit、模型和 backend，真实实验另保存源数据与输出。delete history 残留等观察也限定到实际函数，不宣称所有托管版本行为相同。</p>
 <h3 id="graphiti-记录配置-driver-与对象粒度">Graphiti：记录配置、driver 与对象粒度</h3><p>结论如“基础 search 采用 edge RRF，未自动启用 BFS”应指向 recipe 和入口分支；晚到日期实验注明 search_filter。针对 remove_episode 记录共享来源和摘要检查结果。源码观察、教学推演和运行结论各自标明证据类型。</p>
@@ -275,7 +287,7 @@
 <p>接入比较应画出原文与派生副本：Basic 文件与索引，Beacon JSONL 与 forwarding，Memobase blob/profile/event，Graphiti episode/fact，HippoRAG passage/fact，TencentDB Core/Knowledge/Proxy。许可证、auth、删除或性能属于不同证据问题，不能用论文或宣传分数替当前部署证明。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/appendix-sources.svg" alt="源码、实验和部署三种结论分别追踪到 commit/config、协议和实际运行记录" loading="lazy"><figcaption>图：证据类型不同，支持的结论范围也不同；本次仍是本地快照审阅。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/appendix-sources.svg" alt="源码、实验和部署三种结论分别追踪到 commit/config、协议和实际运行记录" loading="lazy"><figcaption>图：证据类型不同，支持的结论范围也不同；本次仍是本地快照审阅。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -296,10 +308,10 @@
 <td>解释数据流；未独立测所有模型</td>
 </tr>
 <tr>
-<td>候选/排序</td>
+<td>候选与排序</td>
 <td>Mem0、MCP、Hippo、Graphiti、Cognee、HippoRAG、Hermes</td>
-<td>candidate/fusion/rerank 与配置</td>
-<td>区分池边界；未复现统一质量排名</td>
+<td>初选、合并、重排代码及配置</td>
+<td>区分候选范围；未复现统一质量排名</td>
 </tr>
 <tr>
 <td>图/来源</td>
@@ -314,16 +326,16 @@
 <td>描述机制；未证明长期任务提升</td>
 </tr>
 <tr>
-<td>接入/副本</td>
-<td>Beacon、Basic、MCP、TencentDB、Letta、MemOS、Hippo 与 SDK 框架</td>
-<td>事件 schema、transport、sync、auth</td>
-<td>说明审计点；非生产安全认证</td>
+<td>接入与副本</td>
+<td>Beacon、Basic、MCP、TencentDB、Letta、MemOS、Hippo 与开发库</td>
+<td>事件格式、传输、同步、身份授权代码</td>
+<td>说明检查位置；不是生产安全认证</td>
 </tr>
 <tr>
 <td>历史与实验</td>
-<td>MemGPT/旧 Letta、各论文和 benchmark</td>
-<td>archive commit、数据/reader/judge</td>
-<td>限定原协议；非当前产品背书</td>
+<td>MemGPT/旧 Letta、各论文和评测</td>
+<td>归档提交、数据、回答模型、评分方法</td>
+<td>结论限于原实验；不保证当前产品质量</td>
 </tr>
 </tbody></table>
 </details>

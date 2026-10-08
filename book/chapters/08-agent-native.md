@@ -22,6 +22,10 @@ Graphiti：助手先查 Atlas 的维护团队，发现还缺批准人，再请�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/08-01.svg)
+
+源码对照：
+
 模型可以提出“查询 Atlas 的旧教训”，但真正调用搜索的是应用的工具执行器。应用可把 Mem0 search 或 Graphiti 查询包装成工具，收到请求后校验可见范围，查库，再将文字作为工具结果回传。主动记忆是这条选择与执行循环的行为，并不是数据库自己发现模型需要哪段历史。
 
 ### Mem0：把 search 包成工具，主动选择发生在宿主
@@ -54,6 +58,10 @@ Graphiti：每轮保留必要的沟通偏好，问批准人时才查 Atlas 的�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/08-02.svg)
+
+源码对照：
+
 每轮常驻“默认中文、生产发布先审批”，详细失败日志只在需要时查。Mem0 可以提供短记录与详细来源入口，Graphiti 可以提供对象摘要与材料编号；应用决定哪段每轮发、哪段按需取。常驻太多会挤占输入，常驻太少又可能让模型不知道该查什么。
 
 ### Mem0：稳定摘要与详细事实可以由应用分层
@@ -80,6 +88,10 @@ Graphiti：查询结果已交给模型后，批准人关系才改成 Mei。应�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/08-03.svg)
+
+源码对照：
 
 一次回答已发送旧默认环境，此时后台改了记录，模型不会在计算中自动再读数据库。Mem0 update 改的是后续读取内容；Graphiti 新材料处理完，应用也要重新查询并组装才可能看到。记录更新、缓存更新与本轮消息更新是不同步骤，不能用一次存储成功代替全部生效。
 
@@ -118,6 +130,10 @@ Graphiti：保存“检查先于发布”能说明步骤依赖。真正的检查
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/08-04.svg)
+
+源码对照：
+
 Skill 在这里指可复用的执行资产，需要入口、参数、工具、完成判断及权限。Mem0 生成“检查、审批、发布”的过程文字，还缺这些执行合同；Graphiti 能表达步骤关联，也没有因此得到可运行函数。可以将文字作为编写 Skill 的材料，审核代码和测试后再启用。
 
 ### Mem0：procedural_memory 生成的是步骤文本
@@ -142,6 +158,10 @@ Graphiti：误把批准人改成 Mei，应用纠正关系并检查摘要。若�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/08-05.svg)
+
+源码对照：
 
 改错卡片后，Mem0 的 history 可以帮助找到旧正文，应用还需决定怎样恢复当前值。Graphiti 删掉刚添加的材料，不保证所有被改过的关系和摘要都恢复原样。回滚描述的是恢复动作，测试描述的是新状态是否满足要求；能够回滚不能证明之前的修改安全。
 
@@ -170,6 +190,10 @@ Graphiti：入口写成“Atlas 正式批准链：维护团队、批准人及来
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/08-06.svg)
+
+源码对照：
+
 索引条目可以写“Atlas 发布：含迁移检查与正式批准要求”，正文另放详细来源。Mem0 返回相应卡片编号，Graphiti 返回可作为入口的对象编号，模型才知道何时值得继续读取。索引说明只负责发现，应用执行读取时还要核验当前权限与版本，不能凭一段旧简介直接行动。
 
 ### Mem0：发现说明可以和读取正文分离
@@ -196,6 +220,10 @@ Graphiti：新总结和旧报告都指向同一次原始判断。应用先找独
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/08-07.svg)
+
+源码对照：
 
 助手第一次猜迁移是根因，第二次总结又重复它，看起来有两份记录，其实只有一个未证实猜测。Mem0 可能保存两张卡，Graphiti 可能形成两个来源材料对象；这不自动变成两份独立证据。应用保留原始来源关系，比较新版规则时应数真实观察，不数总结次数。
 
@@ -326,13 +354,13 @@ Letta 用 Git 保存 Agent-owned Skill 与 memory 的变化，回滚可恢复文
 | 项目 | 渐进加载/过程知识接法 | 更新何时影响 Agent | 需要分开的边界 |
 |---|---|---|---|
 | MemGPT / 旧 Letta | 论文 core/recall/archival 工具 | 工具返回补当前窗口 | 历史协议非当前文件约定 |
-| Letta Code | root core、索引、deferred、recall、skills | 已提交版本在后续编译 | 文件保存/commit/生效三状态 |
-| TencentDB | Loadout、Skill 摘要、工具详情、L2/L3 | 资产/版本与 Proxy 注入路径 | owner/ACL、缓存、资源事务 |
+| Letta Code | 根目录核心、索引、按需文件、历史和技能 | 已提交版本用于后续模型输入 | 文件保存、版本提交、输入生效三个状态 |
+| TencentDB | 可用资产集合、技能摘要、高层记忆、详情工具 | 资产版本更新后，由代理和工具读取 | 所属人、访问权限、缓存、跨资源操作 |
 | MemOS | 插件轨迹/策略/Skill 与 reader | scheduler/backend/宿主加载后 | 语义提升非 KV/LoRA 分层 |
 | Cognee | typed entries 与 Skill recall route | 管线写入完成、召回使用 | 检索到步骤非获得工具权限 |
 | Hippo | 本地教训/过程记忆与可选技能入口 | recall/sleep/技能加载 | outcome 增寿非批准执行 |
 | Basic Memory | URI、关系笔记与人审流程 | 文件同步索引后，主动读取 | relation 不是可执行授权 |
-| Hermes Jev Skills | 判别选 Skill、检查证据 | 本次选择生效 | 不发布、不存长期流程本体 |
+| Hermes Jev Skills | 选择技能候选，判断证据是否充分 | 改变本次选择 | 不发布技能，也不保存长期流程正文 |
 | Agent Beacon | 有顺序的工具轨迹供下游 | 提炼/评审后才影响行为 | 捕获、提炼、批准三阶段 |
 | 其余事实/图框架 | 可存约束与步骤，再由宿主加载 | 宿主决定注入和执行 | 不据此宣称原生 self-edit harness |
 

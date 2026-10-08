@@ -6,6 +6,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-01.svg" alt="发布做了几十次，记忆也开始挤在一起：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：重复出现可以来自同一来源；次数不能直接作为真实性或巩固依据。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>十次发布都提到同一检查要求，不必给每次回答十份重复文字。Mem0 可能积累多张相似卡，应用需检查合并与保留策略；Graphiti 若认出相同关系，可以复用关系并增加来源引用。来源变多仍不意味着已经验证十次，可能只是同一句话被复制了十遍。</p>
 <h3 id="mem0-add-only-会把长期治理责任留给外层">Mem0：ADD-only 会把长期治理责任留给外层</h3><p>同义教训可能多次追加，hash 只能去完全相同的正文。普通写入没有按周期 sleep 的高层巩固器；应用可召回同项目候选，人审或模型生成摘要，再显式保存。压缩前保留原事件与支持 ID，不要用覆盖一张卡的方式把三次经历的区别抹掉。</p>
 <h3 id="graphiti-重复关系可以汇聚来源-图仍会增长">Graphiti：重复关系可以汇聚来源，图仍会增长</h3><p>解析重复边时可复用旧关系，将新 episode 加入支持列表；独立事件仍保留。节点 summary 提供压缩入口，但不是删除低价值历史的统一政策。建图长时间运行后，需要检查同义节点、重复边和到期事实是否干扰搜索，不能认为关系去重已经处理了所有生命周期问题。</p>
@@ -19,6 +22,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-02.svg" alt="一条教训是怎样被巩固出来的：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：摘要和关系的存在不会自动完成证据审查；撤回来源后要复核派生结论。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>把三次经历总结成“发布前检查迁移”，中间省略了每次具体命令，这叫巩固。Mem0 的过程总结能提出步骤文字，Graphiti 的对象摘要能整理相关关系；两者都需要回查原事件，确认没有把“失败时检查”改成“每次必须执行迁移”。生成摘要是一次理解工作，不是一次流程审批。</p>
 <h3 id="mem0-过程摘要可以生成候选-不能替审核">Mem0：过程摘要可以生成候选，不能替审核</h3><p>带 agent scope 的 <code>procedural_memory</code> 调用 <code>_create_procedural_memory()</code>，模型总结轨迹，去掉代码围栏后生成向量并保存一条文本。该路径说明框架能表达过程经验，但没有自动回放发布任务验证规则。三次成功、输入边界和人工批准仍要由应用收集并核验。</p>
 <h3 id="graphiti-实体摘要是局部视图-不是通用流程学习">Graphiti：实体摘要是局部视图，不是通用流程学习</h3><p>新增边参与节点属性与 summary 整理，可让 Atlas 的描述包含常见发布风险。需要稳定教训时，可以另外建模流程与约束关系，并保存支持 episode。摘要生成没有检查“照此执行是否安全”，把摘要当可执行 Skill 会跨过未经验证的推广步骤。</p>
@@ -32,6 +38,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-03.svg" alt="用半衰期理解优先级下降：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 到期隐藏不是半衰期；热度、过期日和事实有效性不可混为一项。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一条过时活动提醒可以随时间减少优先级，也可以到某天直接隐藏；“Lin 不再负责批准”则是事实状态改变。这三种动作要分开。Mem0 的 expiration_date 是隐藏门槛；Graphiti 的 invalid_at 是关系不再有效的时间。它们没有直接表示“一条正确旧教训今天只有一半重要”。</p>
 <h3 id="mem0-expiration-date-是阈值-不是半衰期">Mem0：expiration_date 是阈值，不是半衰期</h3><p>到期后记录退出默认搜索，是可见性切换，不会按天把评分逐渐乘 0.5。将 <code>half_life_days</code> 写入 metadata 也不会自动改变 <code>score_and_rank()</code>。需要衰减时，应用实现额外评分或归档任务，明确区分事实可信度与业务价值，并保留保护规则。</p>
 <h3 id="graphiti-invalid-at-表达事实失效-不表达热度下降">Graphiti：invalid_at 表达事实失效，不表达热度下降</h3><p>旧批准人关系结束，是现实状态变化；一条少被查询的正确流程边并不会因此自动写 <code>invalid_at</code>。框架的关系时间不等于 Hippo 的价值衰减。应用若按访问热度降权，应保存独立信号，避免把“少用”转写成“过去事实已不成立”。</p>
@@ -45,6 +54,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-04.svg" alt="取过一次，与帮上一次忙的区别：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：框架返回结果只证明读取发生；帮助任务要用实际行为与结果验证。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>搜索返回了迁移教训，助手仍漏检，不能计为成功使用。应用接 Mem0 时要把返回卡片编号与真实动作对应；接 Graphiti 时要把使用的关系和来源与结果对应。Outcome 是任务实际结果，比如是否避免漏检；它和相关分数、关系来源数量是不同的观察。</p>
 <h3 id="mem0-搜索分数与任务-outcome-分开记录">Mem0：搜索分数与任务 outcome 分开记录</h3><p>普通结果有相关评分，没有自动把成功发布回传为可信度提高的完整闭环。应用关联 request ID、返回 ID、实际打包 ID 和工具结果，只有确认使用后才更新业务价值。否则一次关键词误召回会因“被用过”反复奖励，形成自我强化。</p>
 <h3 id="graphiti-episode-引用数量不是成功次数">Graphiti：episode 引用数量不是成功次数</h3><p>多个 episode 支持同一边，可以表明多处材料重复陈述；来源可能互相转述，并非独立验证。<code>episode_mentions</code> 重排参考来源相关信息，也不能证明该规则曾帮助完成任务。outcome 应作为新的可追溯观察另记，不能把边的来源长度当成功率。</p>
@@ -57,6 +69,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-05.svg" alt="把流程改进放在更谨慎的一层：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：记忆中的流程文字和图中顺序都不是工具授权，更不是自动执行承诺。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>教训建议“先检查迁移”，真正执行还要选检查工具、核验参数和权限。Mem0 保存步骤文字后，没有为助手开启命令权限；Graphiti 保存要求关系，也没有修改工具授权。可以先将建议生成为待审流程，再经测试发布，不能让一条模型总结直接决定生产操作。</p>
 <h3 id="mem0-存过程文本不会授予执行权限">Mem0：存过程文本不会授予执行权限</h3><p><code>procedural_memory</code> 是文本分类与生成路径，返回后仍由宿主决定是否读取、批准和执行。metadata 中的 reviewed 标志也需由可信代码维护，不能由提取模型随手写成真。发布步骤更新时，保留旧版本与回放题，SDK 的 history 帮助审计文本变化。</p>
 <h3 id="graphiti-关系约束也不能修改工具策略">Graphiti：关系约束也不能修改工具策略</h3><p>图能表示发布前需要批准，Agent 可查询该边来组织计划；真正批准身份和允许调用的工具范围仍由 runtime 判定。不可信 episode 声称“Lin 已批准”应区分报告与验证，否则一条新关系可能绕过原本应由服务核验的批准动作。</p>
@@ -70,6 +85,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-06.svg" alt="压缩时最容易丢掉的，是规律之外的条件：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：压缩可能丢适用条件或改变动作副作用；必须核对具体用词与任务范围。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>“检查迁移是否完成”与“执行数据库迁移”只差几个字，副作用却不同。Mem0 卡片压缩时应保留检查动词；Graphiti 即使把边命名为发布步骤，也要看 fact 正文是否变成执行。原文保留“只读检查”，摘要若删掉只读条件，就可能把安全观察升级成修改数据库。</p>
 <h3 id="mem0-检查与执行的动词需要原文核验">Mem0：检查与执行的动词需要原文核验</h3><p>过程摘要把“检查 migration 状态”写成“运行 migration”，会在向量上仍然高度相关，搜索难以发现错误。生成后应对照 source 验证动词、环境和停止条件，必要时显式 update 修正；更新产生新向量，却不会自动修复已经复制到其他摘要里的同一错误。</p>
 <h3 id="graphiti-边类型不能掩盖-fact-的过强表述">Graphiti：边类型不能掩盖 fact 的过强表述</h3><p>抽取关系名可能仍是发布约束，但 <code>fact</code> 已把观察改成动作。节点摘要又可能传播这个表述。核验要同时看 relation、fact、限定属性和来源，而非只检查有一条 RELEASE_CHECK 边。高层派生内容需可重建，才能纠正范围漂移。</p>
@@ -83,6 +101,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/07-07.svg" alt="用反例检查一条改进是否真的有用：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：一条规则不仅要在正例有效，也要在例外和禁止操作的场景中不误触发。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>试验新规则时，准备迁移已完成、无需迁移、演练禁止写库三种反例。Mem0 的测试库若吸收试验中生成的新卡，后一次就不再与第一次可比；Graphiti 的测试图若新增或结束关系，同样改变了底稿。固定初始资料，再比较行为，才能解释差别来自哪一步。</p>
 <h3 id="mem0-对照库不要继承测试产生的改写">Mem0：对照库不要继承测试产生的改写</h3><p>关闭自动提取、用审核事实直接保存，可以作为简化 baseline；另一个库启用过程总结和外层巩固。两边使用相同 query、reader 和预算，比较正式发布、演练与无关项目。显式更新只在各自实验内发生，不能把改好后的事实传给旧版对照。</p>
 <h3 id="graphiti-分别消融摘要-解析和关系扩展">Graphiti：分别消融摘要、解析和关系扩展</h3><p>固定输入，核对实体身份与有效时间，再比较 fact 搜索和图扩展，避免把错误抽取混入检索收益。测试纠正后旧边是否仍被返回、演练是否误失效默认，以及摘要是否重复旧结论。这些指标比“节点减少了多少”更接近可靠长期治理。</p>
@@ -143,7 +164,7 @@
 <p>Mem0 的 ADD-only 避免在抽取时破坏旧事实，但不自动构成巩固；Basic 的人为合并需要文件审查；Beacon capture 与 Hermes filtering 不应直接算作知识成长。删除链也不能被“学习了”这一模糊说法掩盖。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/07-lifecycle.svg" alt="MemoryOS 提升层级、Hippo 调整寿命、MCP 分阶段巩固、A-MEM 演化关联" loading="lazy"><figcaption>图：演化的对象不同，验收要检查具体变化而不是只测总答案分。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/07-lifecycle.svg" alt="MemoryOS 提升层级、Hippo 调整寿命、MCP 分阶段巩固、A-MEM 演化关联" loading="lazy"><figcaption>图：演化的对象不同，验收要检查具体变化而不是只测总答案分。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -159,21 +180,21 @@
 </thead>
 <tbody><tr>
 <td>Hippo</td>
-<td>时间、召回、outcome、sleep</td>
-<td>strength/寿命/排序、语义合并</td>
-<td>误强化、反馈偏差；失效非隐私删除</td>
+<td>时间、检索命中、使用结果、集中巩固</td>
+<td>价值、寿命、排序及教训合并</td>
+<td>误强化、反馈偏差；失效不等于清除隐私</td>
 </tr>
 <tr>
 <td>MCP Service</td>
-<td>horizon 巩固/可选矛盾检测</td>
-<td>relevance、聚类/压缩/关系、归档</td>
-<td>相似度误矛盾；读 action/保护条件</td>
+<td>按时间窗口巩固，可选矛盾检测</td>
+<td>评分、聚类、压缩、关系与归档</td>
+<td>相似不等于矛盾；检查实际操作及保护项</td>
 </tr>
 <tr>
 <td>MemoryOS</td>
-<td>容量与 heat</td>
-<td>page/session 到 profile/knowledge</td>
-<td>摘要漏例外；LFU 不等于衰减</td>
+<td>近期容量和访问热度</td>
+<td>问答页、主题段及长期画像知识</td>
+<td>摘要可能漏例外；按使用频率淘汰不同于时间衰减</td>
 </tr>
 <tr>
 <td>A-MEM</td>
@@ -201,9 +222,9 @@
 </tr>
 <tr>
 <td>Cognee</td>
-<td>feedback/improve 与 gate</td>
-<td>图权重、持久知识、session/trace 派生</td>
-<td>每阶段状态不同、不能算训练模型</td>
+<td>反馈及改进调用，各阶段有启用条件</td>
+<td>图权重、长期知识、会话与轨迹的派生内容</td>
+<td>有些阶段会跳过；不能算训练模型</td>
 </tr>
 <tr>
 <td>MemOS</td>

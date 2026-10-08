@@ -15,6 +15,9 @@ python3 mini_memory.py --db <span class="hljs-string">&quot;<span class="hljs-va
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/04-01.svg" alt="先做一个不调用模型的记忆实验：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：本章 SQLite 实验直接存已写好的文字，不包含两套真实服务的模型提取步骤。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>本章程序直接把你写好的教训存入 SQLite，不请模型猜怎样总结。Mem0 的直接保存模式也可以跳过事实提取，但仍要配置生成向量等依赖，不能把它当成纯标准库实验。Graphiti 的普通材料写入还需提取对象与关系，所以“跟做本章成功”尚不能证明两套服务已搭好。</p>
 <h3 id="mem0-零模型实验可以映射到直接保存路径">Mem0：零模型实验可以映射到直接保存路径</h3><p>教学 SQLite 不调用模型。Mem0 的相近入口是 <code>add(..., infer=False)</code>，它不提取事实，但仍调用 embedding 并连接配置的存储，不能理解为零依赖。调用教学形态为 <code>m.add(&quot;Atlas 发布前检查迁移&quot;, user_id=&quot;alice&quot;, infer=False)</code>，检索则用 <code>m.search(&quot;Atlas 发布&quot;, filters={&quot;user_id&quot;: &quot;alice&quot;})</code>。这些调用需要先配置 provider。</p>
 <h3 id="graphiti-从-episode-开始会引入抽取依赖">Graphiti：从 episode 开始会引入抽取依赖</h3><p><code>await graphiti.add_episode(name=..., episode_body=..., source_description=..., reference_time=..., group_id=...)</code> 要求时区明确的时间与图后端，并通常调用抽取模型。<code>add_triplet()</code> 可以从显式节点和边入手，但仍有关系解析与 embedding 等工作，不能照搬 SQLite 命令声称无需配置即可执行。</p>
@@ -34,6 +37,9 @@ PY</code></pre><p>应看到 Alice、发布检查正文和 <code>session-42</code
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/04-02.svg" alt="SQLite 里面到底保存了什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：教学表字段不等于项目实际字段；身份、来源和时间需要按真实接口映射。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>在最小程序里，一行可以保存编号、正文、用户和时间。接 Mem0 后，还要区分事实后端中的卡片与历史 SQLite 中的消息和变化。Graphiti 则至少区分原材料、谈论对象及事实关系，并保存相互引用。看到一个数据库文件存在，只证明某种状态可能保留，不证明这些不同对象都已写齐。</p>
 <h3 id="mem0-历史-sqlite-与事实后端不是同一职责">Mem0：历史 SQLite 与事实后端不是同一职责</h3><p><code>SqliteManager</code> 管理变更历史和消息，而事实正文与向量通过配置的 <code>vector_store</code> 保存。即使历史文件存在，事实后端不可用也会影响查询。备份和恢复要同时检查事实存储、实体存储及历史数据库，不能把一个 SQLite 文件当作整套状态。</p>
 <h3 id="graphiti-一次写入形成多个有关联的对象">Graphiti：一次写入形成多个有关联的对象</h3><p>保存包含 episode、实体节点、事实边及 episode 与实体的关联，driver 承担持久化。读取 episode 的原文与搜索事实边是不同访问路径。验证持久化时应在新连接中按 UUID 读取各类对象，并检查来源链接，而非只看图界面出现一个 Atlas 节点。</p>
@@ -47,6 +53,9 @@ PY</code></pre><p>应看到 Alice、发布检查正文和 <code>session-42</code
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/04-03.svg" alt="相关性怎样算出来：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：玩具词重合分不能当成真实语义评分；高分也不能证明关系含义正确。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>玩具程序认出共享词语，是为了让结果能手算。Mem0 用真实向量衡量意思接近，再参考词和对象关联；Graphiti 可比较关系正文向量，也可按配置找对象摘要或材料。换一种候选单位，分数就比较另一种文字，不能把“节点很相关”直接理解成“批准关系已找到”。</p>
 <h3 id="mem0-真实-embedding-后还有多信号评分">Mem0：真实 embedding 后还有多信号评分</h3><p><code>_search_vector_store()</code> 对 query 生成向量，再从后端取语义评分，关键词分数规范化后参与 <code>score_and_rank()</code>，实体记录另提供 boost。教学代码里的固定加权公式并非 Mem0 的公式；即使字段都叫 semantic，也要分别记录真实向量模型、后端分值和最终评分。</p>
 <h3 id="graphiti-搜索对象决定向量比较什么">Graphiti：搜索对象决定向量比较什么</h3><p>边相似搜索比较 query 与事实文本的 embedding，节点搜索比较节点的索引内容；配置可再用 RRF 或其他方法排序。边、节点和 episode 结果不能当成同一组可交换的候选。学习时先固定边搜索，观察 fact 和来源，再开启组合搜索。</p>
@@ -65,6 +74,9 @@ python3 mini_memory.py --db <span class="hljs-string">&quot;<span class="hljs-va
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/04-04.svg" alt="用新记录替代旧默认：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：仅看到新记录或新边，不代表旧状态已退出当前使用。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>最小程序用“新记录取代旧记录”表达业务规则，这个字段不会因为换后端而自动存在。接 Mem0 时，需要应用维护取代关系或显式更新；接 Graphiti 时，可核对新旧默认关系与有效时间。程序应能解释为什么保留旧历史、为什么当前选择新值，而不是只比较哪条最后写入。</p>
 <h3 id="mem0-不要调用不存在的-supersedes-语义">Mem0：不要调用不存在的 supersedes 语义</h3><p>普通 <code>add()</code> 没有教学代码中的 <code>supersedes</code> 参数。可以把旧 ID 和业务生效时间放进 metadata，但 SDK 不会因此关闭旧事实。显式更新或到期设置需应用决定；要实现本书的历史查询，应在外层维护有效版本，而非把 metadata 当作已执行的约束。</p>
 <h3 id="graphiti-替代发生在语义与时间解析中">Graphiti：替代发生在语义与时间解析中</h3><p>新 episode 说明“18 日起默认预发布”，提取新关系并比较相关旧边，可能让测试关系的 <code>invalid_at</code> 为 18 日。它比手工给旧 ID 自动化程度高，也更可能误判单次例外。实验必须核对边字段及历史过滤返回，不能只看新边写入成功。</p>
@@ -79,6 +91,9 @@ python3 mini_memory.py --db <span class="hljs-string">&quot;<span class="hljs-va
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/04-05.svg" alt="让搜索结果成为有限输入：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：返回条数不是 token 预算；关系短也不代表来源原文短。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>返回五条记录，如果每条都是长文，仍可能塞不进模型。Mem0 的 top_k 和 Graphiti 的 num_results 表示最多返回多少项，不是输入长度预算。应用可以先选少量短事实，必要时再取原文，最后计算总长度；一条有来源的关键教训往往比五段重复背景更适合当前任务。</p>
 <h3 id="mem0-limit-限制结果-不保证最终-token">Mem0：limit 限制结果，不保证最终 token</h3><p><code>search(top_k=...)</code> 控制返回条数，正文长短仍由记录决定。应用把 <code>memory</code>、metadata 和格式一起计数，才能得到实际注入长度。启用重排也没有自动生成一段满足预算的 prompt，预算打包仍要独立实现。</p>
 <h3 id="graphiti-num-results-与-searchconfig-limit-都是中间限额">Graphiti：num_results 与 SearchConfig.limit 都是中间限额</h3><p>基础 <code>search(num_results=...)</code> 返回有限事实边，组合 <code>search_()</code> 还可能包含节点和 episode。来源原文展开后，长度可能远大于 fact 本身。应在核对来源之后统一打包，并给图扩展和原文读取设限，不能把十条边理解成十条短句的固定费用。</p>
@@ -94,6 +109,9 @@ python3 mini_memory.py --db <span class="hljs-string">&quot;<span class="hljs-va
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/04-06.svg" alt="沿着一次函数调用读懂这个程序：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：顺着实际数据查问题，不能只凭调用没报错就认定每一步都正确。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>追一次 Mem0 调用，可在纸上记“输入消息→候选正文→保存字段→返回正文→模型消息”。追 Graphiti 则记“原材料→对象编号→关系两端→来源编号→回答证据”。每个箭头都写下当前值，发现“这里仍是原句，那里已改成强规则”时，才知道错误在哪一步出现。</p>
 <h3 id="mem0-沿-add-payload-search-memoryitem-读">Mem0：沿 add、payload、search、MemoryItem 读</h3><p>最短阅读路线是 <code>add()</code> 的校验与 scope、<code>_add_to_vector_store()</code> 的批处理、<code>_search_vector_store()</code> 的候选池，再到结果格式化。逐步记下 message、extracted text、payload 和返回 memory 的形状，便能定位正文在哪一步丢条件。实体链接是辅助索引，不应替代正文核验。</p>
 <h3 id="graphiti-沿-episode-uuid-映射-edge-searchresults-读">Graphiti：沿 episode、UUID 映射、edge、SearchResults 读</h3><p>追 <code>add_episode()</code> 时保留一个临时 Atlas UUID，观察 resolution 后对应哪个规范节点，再检查边的两个端点和 episode 引用。追搜索时核对配置启用了哪类对象和哪条召回路。这样可以把“图里有内容”拆成已存、能到达、被选中和实际读到。</p>
@@ -139,7 +157,7 @@ python3 -m unittest -v</code></pre><p>测试覆盖租户隔离、supersession、
 <p>遗忘命令只写 <code>valid_to</code>，因此正文仍在 SQLite，历史查询可以读取。这与 Hippo 调整寿命、MCP 受控遗忘、Memobase 原 blob 保留开关不同，更不能满足物理删除请求。下面比较的是机制位置，不表示这些生产项目拥有示例的全部字段。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/04-from-scratch.svg" alt="最小实现先 SQL 过滤再评分和强化，随后预算打包，替代记录保留历史" loading="lazy"><figcaption>图：预算选择晚于召回强化，示例的简化边界应明确保留在解释中。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/04-from-scratch.svg" alt="最小实现先 SQL 过滤再评分和强化，随后预算打包，替代记录保留历史" loading="lazy"><figcaption>图：预算选择晚于召回强化，示例的简化边界应明确保留在解释中。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -160,16 +178,16 @@ python3 -m unittest -v</code></pre><p>测试覆盖租户隔离、supersession、
 <td>权限、并发与索引重建</td>
 </tr>
 <tr>
-<td>lexical + hash cosine</td>
+<td>词匹配与哈希向量比较</td>
 <td>Mem0、MCP、Hippo、Graphiti、MemOS 插件、TencentDB</td>
-<td>真实 embedding/FTS/图与不同池边界</td>
-<td>中文分词、候选 recall、模型版本</td>
+<td>真实项目用模型向量、全文索引或图，初选范围也不同</td>
+<td>中文分词、必要证据能否找到、模型版本</td>
 </tr>
 <tr>
-<td>显式 supersede</td>
+<td>明确替代旧记录</td>
 <td>Graphiti、Hippo、MCP；文件版本另见 Letta/Basic</td>
-<td>自动关系失效或显式替代，不都支持同一 as_of</td>
-<td>valid time 与事务时间</td>
+<td>有的自动处理关系失效，有的显式替代；历史查询接口不同</td>
+<td>现实生效日和系统记录日</td>
 </tr>
 <tr>
 <td>近似预算打包</td>
@@ -178,10 +196,10 @@ python3 -m unittest -v</code></pre><p>测试覆盖租户隔离、supersession、
 <td>全文本 tokenizer 与漏证据</td>
 </tr>
 <tr>
-<td>recall 强化</td>
-<td>Hippo；MemoryOS 有访问/heat</td>
-<td>strength 延寿或热段 promotion</td>
-<td>无帮助误召回不能算成功</td>
+<td>搜到后强化记录</td>
+<td>Hippo；MemoryOS 也记录访问热度</td>
+<td>延长记录寿命，或触发长期知识整理</td>
+<td>搜到却没帮上忙，不能算成功使用</td>
 </tr>
 <tr>
 <td>指数衰减与 dry-run</td>

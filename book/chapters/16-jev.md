@@ -21,6 +21,10 @@ Graphiti：批准文档前半说明团队，后半要求绕过审核。应用把
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/16-01.svg)
+
+源码对照：
+
 一段材料前半写正确迁移说明，后半要求导出密钥，整体仍可能很贴题。Mem0 的高分卡片和 Graphiti 的相关边都可能保留这个要求。安全检查判断哪些文字或动作不应接受，相关排序判断哪些资料贴近问题，这两个判断回答不同问题，不能用高相关抵消危险。
 
 ### Mem0：高度相关的事实仍可夹带恶意动作
@@ -47,6 +51,10 @@ Graphiti：应用把维护关系标 A、批准关系标 B，连同原文片段�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/16-02.svg)
+
+源码对照：
 
 外部判断器可以看到候选 A、B、C，而不必看到数据库真实编号。应用先把 Mem0 卡片编号或 Graphiti 边编号映射到这些标签，只送必要文字；返回“选 B”后，再映射回原记录。隐去身份不等于正文已无秘密，发送前仍需检查候选文字与来源内容。
 
@@ -75,6 +83,10 @@ Graphiti：只有 Atlas 到平台组的关系，没有平台组到批准人的�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/16-03.svg)
+
+源码对照：
+
 问题需要 Atlas 的维护团队和正式批准人，只有维护资料很相关，却不够回答。Mem0 搜到一张卡之后要检查缺哪项证据；Graphiti 找到一个相邻对象也要检查批准边及用途。充分性表示当前证据是否覆盖问题所需条件，不能仅由返回非空或排名第一判定。
 
 ### Mem0：search 返回不能作为充分性布尔值
@@ -99,6 +111,10 @@ Graphiti：原文末尾才说明“Lin 只批准出差”。只看摘要可能�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/16-04.svg)
+
+源码对照：
 
 判断器只读前几百字，危险要求或关键例外可能在末尾。Mem0 选中了 M1，意味着看过的片段贴题，不证明整张卡安全；Graphiti 的短 fact 若省略原文条件，同样形成盲区。记录送去判断的具体片段，服务失败时明确哪些检查没完成，再按业务风险选择停止或降级。
 
@@ -125,6 +141,10 @@ Graphiti：正式批准关系排第一，仍要核对用途、日期和权限。
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/16-05.svg)
+
+源码对照：
+
 Reranker 是调整候选顺序的重排器，gate 是允许继续之前的门槛。Mem0 外接重排器、Graphiti 使用 cross-encoder，通常只得到相关排序；Jev 放在不同位置也有不同输入输出合同。想检查安全或证据充分，要调用对应判断并处理其结果，不能从一个排序分数推导全部通过。
 
 ### Mem0：可选 reranker 的契约与安全 gate 不同
@@ -149,6 +169,10 @@ Graphiti：昨天核验过 Lin 的批准关系，今天关系日期或来源改�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/16-06.svg)
+
+源码对照：
 
 昨天判过 M1 安全，今天 M1 正文改了，旧编号仍在，旧判断不能直接复用。Mem0 缓存键应绑定正文与规则版本；Graphiti 同一边编号的时间和支持材料也可能变化。缓存键就是决定“何时算同一次判断”的条件集合，漏掉变化因素会把旧结论错误套给新状态。
 
@@ -177,6 +201,10 @@ Graphiti：Lin 的旧批准关系真实且相关，却在目标日期已结束�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/16-07.svg)
+
+源码对照：
+
 一条事实很相关，却越权或不适用于目标日期，不能放进答案证据。Mem0 搜索前先限定可读范围，返回后检查内容用途；Graphiti 还需核对关系有效时间。安全、相关、充分可以分别拒绝继续，不是三项随意相加成一个总分，让高分抵消某项失败。
 
 ### Mem0：安全门槛先于相关性排序
@@ -203,6 +231,10 @@ Graphiti：阈值放宽找到了第二段批准关系，却也带入出差关系
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/16-08.svg)
+
+源码对照：
 
 阈值是把数值变成接受或拒绝的界线。给 Mem0 和 Graphiti 的候选准备正常说明、混入危险动作、缺一跳证据等样本，观察误拒绝与漏放的代价，再选界线。候选本身已被提取错，与判断器读对文字却判错，是两类错误，校准时要分别标注。
 
@@ -317,16 +349,16 @@ Hermes memo 在 exact-match 下复用小决策，Hippo pinned model 让重排实
 
 | 项目/方法 | 判断对象与信号 | 返回后谁行动 | 成本、盲区与回退 |
 |---|---|---|---|
-| Hermes Jev filter | relevance、injection、answerability | 本地代码筛 ID/读原文 | 脱敏/首尾截断；有限 unjudged 回退 |
-| Hermes search gate | 已筛证据充分性、下一 query choice | 调用方继续搜索或回答 | unknown 不能当 sufficient |
-| Hermes memo | exact input/scope/rules key | shadow 比较或 on 复用 | TTL/私有文件；失败 miss、值需校验 |
+| Hermes Jev filter | 是否相关、是否夹带危险指令、是否够回答 | 本地代码筛编号，再读原文 | 脱敏、首尾截断；有限保留未判别候选 |
+| Hermes search gate | 当前证据是否足够，下一条查询选哪个 | 调用方继续搜索或回答 | 未完成判断不能当作证据充分 |
+| Hermes memo | 输入、范围、规则版本完全相同才复用 | 只观察并比较，或明确启用缓存 | 有到期时间；失败当未命中，缓存值需校验 |
 | Hippo Jev | 前 40 候选相关性概率 | 稳定排序/后续 packing | 前 1,200 字符；整批校验失败退 local |
 | Hippo local cross-encoder | query 与正文成对评分 | 本地排序 | 模型推理但不必外发；固定候选对照 |
 | Graphiti | RRF/MMR/cross-encoder/距离等 | 配置化搜索返回事实 | 不默认有注入/sufficiency gate |
 | MCP hybrid | BM25/vector 分数或名次 | deterministic fusion | 便宜、无语义新裁决、过滤要一致 |
 | Mem0 scoring/reranker | 语义池 + keyword/entity/可选 rerank | SDK 返回、应用打包 | boost 不能补池外证据 |
 | Cognee / HippoRAG | retriever route / fact filter | 查选中 route / seeds 扩散 | 不等于云安全判别 |
-| Letta / TencentDB | 是否读工具 / 选择 Skill 资产 | Agent 或路由执行下一步 | 工具权限仍须 deterministic |
+| Letta / TencentDB | 是否读取历史，或选择哪个技能资产 | 助手或路由代码安排下一步 | 工具权限仍由可信代码检查 |
 | 其他存储/采集项目 | 本章不据名称推断 Jev 集成 | 如需接入由 assembler 编排 | 无候选/无外发许可时不要硬接 |
 
 </details>

@@ -2,6 +2,8 @@
 
 本书的 Mem0 和 Graphiti 例子用简化记录说明过程，表示希望得到并应当核对的结果，不是两套服务的实测输出。应用需要补做的查询、筛选、审核或执行，会在例子中直接说明。
 
+展开“源码与边界”后，先沿图读本节的例子：每组第 1 格是输入或已有状态，第 2 格是处理动作，第 3 格是结果或下一步检查。Mem0、Graphiti 分成上下两组。图下的检查点说明这个例子在哪种情况下会出错；需要复查实现时，再读后面的源码对照，不必先背函数名。
+
 ## 从一个会忘事的助手开始
 
 你请一个助手帮忙发布 Atlas 项目。第一次发布失败，你告诉它：“这个项目发布前，要先检查数据库迁移。”几天后换了一个会话，你又说：“帮我发布 Atlas。”助手直接执行发布，再次撞上同一个问题。
@@ -16,6 +18,10 @@ Graphiti：文档写“Atlas 由平台组维护”“平台组发布由 Lin 批�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/00-01.svg)
+
+源码对照：
 
 ### 在 Mem0 中，教训先成为可以搜索的事实
 
@@ -46,6 +52,10 @@ Graphiti：给文档编号 E1，给 Atlas 和平台组分别编号 N1、N2，再
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/00-02.svg)
+
+源码对照：
+
 ### Mem0 的学习入口是消息与短事实
 
 一条记录有两部分：人能读的正文，以及程序用来管理和寻找它的信息。正文可以是“Atlas 发布前检查迁移”；附加信息可以说明它属于 Alice、来自 session-42。程序里的 metadata 就是这些附加信息，payload 是后端保存的一包字段。后文出现 `payload["data"]` 时，指的就是从这包字段里取正文。
@@ -70,6 +80,10 @@ Graphiti：输入“Atlas 由平台组维护”→保存维护关系和原文。
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/00-03.svg)
+
+源码对照：
 
 ### Mem0 写入时，长消息在哪里变短
 
@@ -143,6 +157,10 @@ Graphiti：读批准人例子时，先画“Atlas→平台组→Lin”。后来�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/00-04.svg)
+
+源码对照：
 
 ### 两条标志性实现怎样贯穿全书
 
@@ -240,9 +258,9 @@ Agent ← 上下文组装 ← 预算控制 ← 重排 ← 候选召回 ← 查�
 | 想理解的区别 | 应同时阅读的项目 | 比较对象 | 不应混同 |
 |---|---|---|---|
 | 事实与稳定画像 | Mem0、Memobase、MemoryOS、TencentDB、Letta、MemOS | 提取/提升时机与读取方式 | query top-k 与按用户直接读 |
-| 图与关联检索 | Graphiti、Cognee、HippoRAG、A-MEM、Basic、Hippo、MCP、TencentDB、MemOS 文本后端 | 边的含义、扩展方式、证据来源 | PPR、BFS、笔记 link 与实体 boost |
+| 图与关联检索 | Graphiti、Cognee、HippoRAG、A-MEM、Basic、Hippo、MCP、TencentDB、MemOS 文本后端 | 连接说了什么、搜索如何沿连接找资料 | 沿图传播、逐层找邻居、打开笔记链接、给已有候选加分 |
 | 演化与遗忘 | Hippo、MCP、MemoryOS、A-MEM、Memobase、Graphiti、Cognee、MemOS、TencentDB、Letta | 价值、描述、层级或事实状态怎么变 | 衰减、覆盖、过期与隐私删除 |
-| 接入与选择 | Beacon、Basic、MCP、TencentDB、Letta、Hermes，并对照 SDK/图框架 | 数据入口、身份和最终 assembler | capture、transport、store 与判别器 |
+| 接入与选择 | Beacon、Basic、MCP、TencentDB、Letta、Hermes，并对照开发库和图框架 | 谁收材料、谁验证身份、谁组装模型输入 | 采集日志、传输请求、保存资料、筛选候选 |
 
 </details>
 

@@ -13,6 +13,10 @@ Graphiti：聊天说“Atlas 正式发布前检查迁移”。整理出的关系
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/12-01.svg)
+
+源码对照：
+
 “整理记忆”可能只是从长话形成短卡，也可能改变对象摘要或事实时间。Mem0 主要让新话形成可搜索陈述，并关联谈到的对象；Graphiti 还要决定对象是不是同一个、关系是否重复或变化。理解整理时，先写出被改的是正文、索引、摘要还是有效期，避免把它们混成一次自动学习。
 
 ### Mem0：组织主要发生在事实提取和实体关联
@@ -48,6 +52,10 @@ Graphiti：把本次材料和旧关系一起核验，有助于认出 Atlas 的�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/12-02.svg)
+
+源码对照：
+
 参考最近几句，是为了理解“以后都这样”；把多次经历提升成主题页面，是另一个处理动作。Mem0 读取近期消息，Graphiti 读取前序材料，都可帮助当前抽取，却没有因此形成 MemoryOS 的层级页面。是否长期保留、何时合并、下一次按什么入口读取，要分别检查。
 
 ### Mem0：近期十条消息是提取上下文，不是 page 层
@@ -76,6 +84,10 @@ Graphiti：Lin 的批准关系已经结束，查今天时排除它；当前 Mei 
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/12-03.svg)
+
+源码对照：
 
 旧教训今天仍正确，却很少再用，可以降低优先级；旧批准人今天已不负责，则要停止当作当前事实。Mem0 需要业务评分表达前一种变化，Graphiti 的关系结束时间表达后一种变化。热度是使用价值信号，有效性是事实是否成立，两者不能共用一个数值随意替代。
 
@@ -106,6 +118,10 @@ Graphiti：新材料撤回旧原因，应用核对相关关系和 Atlas 摘要�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/12-04.svg)
+
+源码对照：
+
 将“迁移失败”纠正成“配置错误”，Mem0 应使之后的文字和向量搜索指向新正文；Graphiti 则要检查事实关系与对象摘要是否仍保留旧猜测。索引重建是让查找结构对应新内容，不是模型重新学习参数；只改一处显示文字，其他搜索线索可能仍旧。
 
 ### Mem0：更新正文会重建检索描述
@@ -135,6 +151,10 @@ Graphiti：保存“Atlas 由平台组维护”及其来源，是建立可查询
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/12-05.svg)
+
+源码对照：
+
 Mem0 为文字保存的向量，是搜索用数字，Graphiti 的对象或关系向量也如此。模型激活则是模型计算内部产生的中间数值，模型参数是长期权重。把正文向量存进库，没有让下一次模型计算自动继承上次内部状态，也没有更新它的权重。这三类数字必须按用途区分。
 
 ### Mem0：embedding 向量不是模型激活记忆
@@ -157,6 +177,10 @@ Graphiti：两份批准文档里的平台组被认成两个对象，先修对象
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/12-06.svg)
+
+源码对照：
 
 漏掉迁移卡片，先查它是否存下、是否进入 Mem0 候选，未必需要复杂层级整理。需要追问上周批准人、默认何日改变时，Graphiti 的关系与时间更贴题。选机制先对应失败：找不到文字、接不上关系、选错历史版本，分别需要不同处理，不因名字带“OS”就认定功能更完整。
 
@@ -189,6 +213,10 @@ Graphiti：保存新的流程变化，并核对旧手动要求的适用区间。
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/12-07.svg)
+
+源码对照：
+
 用户把“发布前手动检查”纠正为“检查已由流水线自动完成”，Mem0 追加新卡后旧卡仍可能被搜索到；Graphiti 若把新条件当成同一规则变化，应核对哪些旧边结束。读取时应保留“确认自动检查结果”的实际含义，不能再要求人工重复操作，也不能误读为完全无需检查。
 
 ### Mem0：自动检查的新规则不会自动取代旧卡
@@ -215,6 +243,10 @@ Graphiti：关系和摘要出错后，保留的原文可用于重建。重建仍
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/12-08.svg)
+
+源码对照：
 
 重建表示从保留资料重新生成可读状态。Mem0 若只剩短摘要，原先的“本次例外”可能已无法还原；Graphiti 即使保留原材料，新提取也可能得到不同对象合并和时间判断。重建前后对照原文、身份、条件和当前答案，不能只确认数据库重新能搜索。
 
@@ -407,16 +439,16 @@ KV/LoRA 仅是 MemOS 多形态路线中的模型资源。Letta 编译小 core �
 
 | 项目/路线 | 组织轴 | 何时改变 | 读取与失败边界 |
 |---|---|---|---|
-| MemOS | text/act/para/pref 可选 cube modules | scheduler/feedback/load/dump | 文本检索或资源加载；模型兼容 |
-| MemoryOS | short QA/mid sessions/long profile | 容量、主题相似、heat | 粗到细 page 与长期知识；摘要漏信息 |
-| Hippo | buffer/episode/semantic、value | recall/outcome/time/sleep | blend/RRF/重排；误强化与删除链 |
-| A-MEM | 笔记属性/link 网络 | 新笔记与近邻演化 | Chroma+links；索引刷新与 k 截断 |
+| MemOS | 可选文本、模型状态、参数适配和偏好模块 | 调度任务、反馈、资源加载与导出 | 文本检索或资源加载；检查模型兼容 |
+| MemoryOS | 近期问答、中期主题、长期画像 | 容量、主题相似度、访问热度 | 先主题后页面，再读长期知识；摘要可能漏信息 |
+| Hippo | 待整理内容、经历、教训及价值 | 检索命中、使用结果、时间、巩固 | 融合与重排；检查误强化和删除范围 |
+| A-MEM | 笔记描述与链接网络 | 新笔记改变附近旧笔记 | 近邻后补链接；检查索引刷新及最终条数截断 |
 | Memobase | buffer/profile/event | flush/merge | 直接 profile；滞后与原文保留 |
 | TencentDB | L0 至 L3 + 多类资产 | 后台提取/归纳、版本更新 | 高层注入+低层工具；ACL/状态链 |
 | Letta Code | core/index/deferred/recall/skills | self-edit/commit/recompile | 常驻+主动读；漏发现/未生效 |
 | MCP Service | 时间 horizon 与质量层次 | 阶段巩固与受控遗忘 | hybrid 候选；归档与同步一致性 |
 | Cognee | typed entries/dataset/stage | remember/improve 的 gate/watermark | retriever 路由；部分阶段跳过 |
-| Hermes memo | exact-match/TTL 小决策缓存 | shadow/on、过期和容量清理 | cache hit/miss；不是 KV 或事实层级 |
+| Hermes memo | 输入完全匹配、带到期时间的小决策缓存 | 只观察或启用复用，按时间和容量清理 | 命中才复用；不是模型计算缓存或事实分层 |
 | Graphiti/HippoRAG/Basic | 事实/来源图或笔记关系 | 新知识/文件同步 | 可组织连接，不据此认定 OS 模型资源 |
 | Mem0/Beacon | 短事实索引/原始 trace | add/捕获 | 提供内容，不自动拥有上述提升协议 |
 

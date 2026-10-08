@@ -6,6 +6,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/01-01.svg" alt="模型为什么没有自动记住上次对话：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：模型不会主动访问记忆库；数据库存在记录与本轮输入包含记录是两个状态。</figcaption></figure>
+
+<p>源码对照：</p>
 <h3 id="mem0-外部状态通过-search-回到输入">Mem0：外部状态通过 search 回到输入</h3><p>初始化 <code>Memory</code>，就是给记忆程序接好整理文字的模型、将文字变成向量的服务、保存事实的后端以及历史数据库。之后调用 <code>add()</code> 保存教训，改变的是这些外部记录，回答模型的参数并没有被重新训练。数据库即使关闭后还能保留 M1，也不等于下一轮模型已经知道 M1。</p>
 <p>第二次发布前，应用调用 <code>search()</code>，得到类似“编号 M1、正文为发布前检查迁移、相关分数为某值”的结果。应用把正文加入本轮消息，模型才读到教训。<code>history()</code> 用来查看一条记录怎么改过，不是自动送给模型的对话历史。</p>
 <h3 id="graphiti-图也在模型窗口之外">Graphiti：图也在模型窗口之外</h3><p>Graphiti 也需要接好几项依赖。Driver 是访问图数据库的连接程序；LLM client 是请求提取模型的客户端；embedder 把对象或关系文字变成搜索用向量。它们分别负责访问、理解与检索，不是三个会一起替你发布项目的 Agent。</p>
@@ -24,6 +27,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/01-02.svg" alt="让一条发布教训走完整个过程：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：短教训不能代替原始事件；后来纠正原因时，必须能找到当时的原话或报告。</figcaption></figure>
+
+<p>源码对照：</p>
 <h3 id="mem0-一段事件会分成消息记录与事实-payload">Mem0：一段事件会分成消息记录与事实 payload</h3><p>用户只说“下次也这样”，单独这一句无法形成准确教训。Mem0 会把本次消息与同范围最近十条消息一起交给提取器，还找十条相关旧记录供比较。提取器可能由此写出“Atlas 发布前检查迁移”，而不是把“这样”原样存成无法复用的卡片。</p>
 <p>源码中负责这段工作的是 <code>_add_to_vector_store()</code>。模型输出的 <code>text</code> 是候选正文，存储包中的 <code>data</code> 保存它；hash 是查重指纹，词形文本是便于关键词匹配的规范文字。正常收尾另存消息历史。工具调用 tool-7 的具体结果若要回查，应用还需保留这个来源映射，短事实没有包含完整操作过程。</p>
 <h3 id="graphiti-实体身份决定边接到哪里">Graphiti：实体身份决定边接到哪里</h3><p>Graphiti 先把这次输入留成材料对象，类名叫 <code>EpisodicNode</code>。提取模型可能暂时给 Atlas 一个新编号，随后查旧图发现 Atlas 已有正式编号 N1，程序就把新编号换成 N1。这个替换表叫 UUID 映射，解决“同一对象不要每次新建一份”的问题。</p>
@@ -43,6 +49,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/01-03.svg" alt="第二次发布：先找，再读，再做：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：过滤不能替代身份认证；历史批准人关系不能代替本次审批结果。</figcaption></figure>
+
+<p>源码对照：</p>
 <h3 id="mem0-过滤-评分-格式化之后还差一次组装">Mem0：过滤、评分、格式化之后还差一次组装</h3><p>应用先从已登录身份确定 Alice，而不是让模型猜用户是谁，再用 <code>filters={&quot;user_id&quot;: &quot;alice&quot;}</code> 限定搜索。Filters 是筛选条件，表示只在这个可读集合里找；语义候选则是在这个范围内按意思找出的待选记录。两者分别解决可见范围和相关程度。</p>
 <p>Mem0 再参考关键词和对象关联排序，返回 <code>MemoryItem</code>。应用取它的 <code>memory</code> 正文及来源 metadata，写进当前消息。例如明确标注“这是上次的教训，先核验当前迁移状态”。搜索没有执行检查工具，也没有保证模型一定遵循，应另查看实际动作。</p>
 <h3 id="graphiti-返回的是事实边-原文需要另查">Graphiti：返回的是事实边，原文需要另查</h3><p>基本搜索可能带回一条关系：“Atlas 的正式发布需要迁移检查。”这只是从材料中整理出的陈述。边里的 <code>episodes</code> 是来源材料编号列表，应用可按编号读原文，核对是不是只针对一次演练。它没有把每份完整材料直接塞进结果。</p>
@@ -58,6 +67,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/01-04.svg" alt="三种架构，就是三种放资料的方法：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 的实体加分不代表关系遍历；Graphiti 存成图也不表示每次搜索默认多跳。</figcaption></figure>
+
+<p>源码对照：</p>
 <h3 id="mem0-实体索引没有把事实库变成时间关系图">Mem0：实体索引没有把事实库变成时间关系图</h3><p>Mem0 可以给 Atlas 建一个对象索引，记着涉及它的卡片 M1、M2。这份清单叫 <code>linked_memory_ids</code>，读作“与这个对象有关的记录编号”。问题里提到 Atlas，相关卡片可得到额外加分。</p>
 <p>清单只说明 M1、M2 谈过 Atlas，没有表示“Atlas 属于平台组，平台组由 Lin 批准”这样的方向与关系。若 M1 只告诉你维护团队，应用还可继续问平台组的批准人；这次追加查询就是第二步查找，需要明确安排，不能因存在对象索引就假设已经完成。</p>
 <h3 id="graphiti-图结构与摘要承担不同工作">Graphiti：图结构与摘要承担不同工作</h3><p>在 Graphiti 中，平台组对象的 <code>summary</code> 可能写“维护 Atlas，承担发布审批等工作”，方便了解团队；具体边的 <code>fact</code> 才分别说明维护谁、由谁批准；episode 保留当时输入的资料。读摘要像看简介，读关系和原文像核对两条具体凭据。</p>
@@ -73,6 +85,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/01-05.svg" alt="记忆怎样改变一次决策：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：答案提到教训或人名，不代表工具执行已按要求改变；要检查实际动作。</figcaption></figure>
+
+<p>源码对照：</p>
 <h3 id="mem0-观察计划变化需要记录实际注入">Mem0：观察计划变化需要记录实际注入</h3><p>做一次教学对照：同一任务先只发“发布 Atlas”，另一次额外发“历史教训要求先检查迁移”，观察两次工具调用。Mem0 的高分记录表示被选中，不表示模型已执行动作。如果 M1 搜出来了，最终消息却没有 M1，问题发生在应用组装。</p>
 <p>若最终消息已有 M1，仍直接发布，就继续查模型和工具控制流程。保存“搜索返回哪些编号”“最终发送哪些文字”“真正执行哪些工具”三份记录，才能把这些情况分开。这个对照方法不是本书已部署两套服务的实验结果。</p>
 <h3 id="graphiti-时间事实也只提供检查依据">Graphiti：时间事实也只提供检查依据</h3><p>Graphiti 搜到“9 日 Atlas 发布失败”和“正式发布前检查迁移”，两条文字都相关，但前者讲过去，后者指导当前检查。应用可以分别写成“过去事件”和“当前适用要求”，并说明来源与日期，让回答模型知道各自用途。</p>
@@ -155,7 +170,7 @@
 <p>MemoryOS、Hippo 和 A-MEM 进一步在查询之前改变组织：分别提升层级、调整价值、修改关联描述。MemOS 则增加资源与调度层。服务、trace 和 Jev 工具不能替代这些操作，组合时要明确是谁拥有原文、谁生成派生信息、谁决定最终上下文。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/01-mental-model.svg" alt="事实、图与 Agent 原生架构在不同阶段选择上下文" loading="lazy"><figcaption>图：输入相同，选择发生的位置不同，失败定位也随之改变。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/01-mental-model.svg" alt="事实、图与 Agent 原生架构在不同阶段选择上下文" loading="lazy"><figcaption>图：输入相同，选择发生的位置不同，失败定位也随之改变。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -183,38 +198,38 @@
 </tr>
 <tr>
 <td>Graphiti</td>
-<td>实体/边 resolution</td>
-<td>搜索事实、追踪 episode</td>
-<td>reader、授权与建图恢复</td>
+<td>辨认同一对象，判断关系重复或变化</td>
+<td>查询关系，再按来源读原文</td>
+<td>回答模型、授权与建图恢复</td>
 </tr>
 <tr>
 <td>Cognee</td>
-<td>loader/schema/retriever 路由</td>
-<td>recall 返回结构或答案</td>
-<td>固定所选管线与验收</td>
+<td>选择加载、抽取格式和检索方法</td>
+<td>按配置返回证据或生成答案</td>
+<td>固定处理配置，逐步验收</td>
 </tr>
 <tr>
 <td>HippoRAG</td>
-<td>fact/passage seeds 与 PPR</td>
-<td>排序 passage 交 reader</td>
-<td>会话/身份治理</td>
+<td>从相关事实和段落出发，沿图传播相关性</td>
+<td>把高分原段落交给回答模型</td>
+<td>会话管理和身份权限</td>
 </tr>
 <tr>
 <td>MemoryOS</td>
-<td>page/session/长期层提升</td>
-<td>多层检索与画像上下文</td>
-<td>阈值、token 与隔离</td>
+<td>把近期问答整理为主题页和长期知识</td>
+<td>分层搜索，另读取画像</td>
+<td>提升条件、输入长度与隔离</td>
 </tr>
 <tr>
 <td>MemOS</td>
-<td>cube/backend/scheduler</td>
-<td>文本检索或兼容资源加载</td>
+<td>配置资源容器，调度处理任务</td>
+<td>检索文本或加载兼容模型资源</td>
 <td>模型兼容与队列运维</td>
 </tr>
 <tr>
 <td>Hippo</td>
-<td>strength/outcome/sleep</td>
-<td>本地候选、可选重排</td>
+<td>按时间、使用结果和巩固操作调整价值</td>
+<td>本地搜索，可选重排</td>
 <td>反馈可靠性与删除政策</td>
 </tr>
 <tr>

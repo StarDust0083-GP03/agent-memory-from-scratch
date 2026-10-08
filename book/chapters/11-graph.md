@@ -21,6 +21,10 @@ Graphiti：两条关系通过同一个平台组相连。应用查齐两段及其
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/11-01.svg)
+
+源码对照：
+
 “第二跳”就是先由 Atlas 找维护团队，再由团队找批准人，两次沿关系查找。Mem0 可以先返回维护卡片，应用拿平台组继续查询；Graphiti 可以保存两段连接，但基本搜索仍不保证沿图继续走。BFS 是从起点一层层找邻居的遍历方法，需要对应配置，不能用“建了图”代替“此次查询走了第二跳”。
 
 ### Mem0：实体关联只能提供第二跳线索
@@ -50,6 +54,10 @@ Graphiti：确认两个名字指同一团队后，让两份材料连到同一个
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/11-02.svg)
+
+源码对照：
+
 “平台组”和“Platform Team”若是同一团队，应归同一个对象；若分别属于不同公司，应分开。Mem0 的实体合并主要影响哪些卡片被归到这个对象。Graphiti 的节点合并还会影响维护边和批准边接到哪里。后者错了，甚至可能把两个公司的正式批准要求拼成一条看似完整路径。
 
 ### Mem0：相近名字合并只影响实体索引
@@ -78,6 +86,10 @@ Graphiti：两份文档整理成“Atlas→维护团队→平台组→正式批�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/11-03.svg)
+
+源码对照：
 
 ### 把两份文档写入 Graphiti 的完整调用形状
 
@@ -163,6 +175,10 @@ Graphiti：基础搜索先找相关关系；要扩展到邻居，应用另选支
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/11-04.svg)
+
+源码对照：
+
 Mem0 对 Atlas 相关卡片加分，属于当前候选的局部调整。Graphiti 的 BFS 可以找附近关系；PPR 则像把一份相关性质量不断分配给邻居，再部分拉回查询起点。三种操作的输入、循环和输出不同，PPR 的数值也不是批准权限概率。下面算例用于理解传播，不能套给任何带图的库。
 
 ### Mem0：实体数量权重不等于 PageRank
@@ -187,6 +203,10 @@ Graphiti：关系搜索返回了维护边，也不表示执行过 PPR。要确�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/11-05.svg)
+
+源码对照：
 
 谓词就是关系说的动作，比如“维护”“批准”。Mem0 的对象索引列出 M1、M2，只说明两张卡都谈到平台组，没有说明谁维护谁。Graphiti 的边明确两端与关系文字，但也可能把“Lin 批准出差”误用于发布。对象有关联与结论被支持之间，还需要阅读关系用途和原文。
 
@@ -215,6 +235,10 @@ Graphiti：即使 Atlas、平台组、Lin 已连成路径，第二段也可能�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/11-06.svg)
+
+源码对照：
+
 先找到 Atlas 属于平台组，再找到 Lin 批准平台组，回答需要同时保留两份证据。Mem0 的两次搜索若换了用户范围，不能拼接；Graphiti 的两条边若中间不是同一个对象编号，也不能拼接。Reader 指最终读证据并回答的模型，它需要看到链条的每一步，而不是只看到最后的人名。
 
 ### Mem0：两次检索的证据需要成组打包
@@ -242,6 +266,10 @@ Graphiti：平台组连着几十个项目，扩展邻居会带回很多关系。
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/11-07.svg)
+
+源码对照：
+
 Fanout 表示一个对象向外连接多少邻居。平台组连接几十个项目，Graphiti 多走一层也会带回其他项目；Mem0 多查一次平台组，同样可能取到无关卡片。比较时固定最终给模型的输入长度，观察批准证据是否补齐，以及噪音是否挤掉必要来源，不能以查得更多直接判定更好。
 
 ### Mem0：先增大语义池和多次查询作简化对照
@@ -266,6 +294,10 @@ Graphiti：两个平台组被误合并，应用修对象和关系后，还要检
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/11-08.svg)
+
+源码对照：
 
 若错把两个平台组混在一起，修正正文只是第一步。Mem0 还要检查旧对象索引是否仍指向卡片；Graphiti 还要检查错误节点周围哪些边和摘要需要重建。删材料时，某条关系可能还有另一份来源支持；删除操作有没有保住合法支持、清掉错误派生，需要实际核验，不能只看接口成功。
 
@@ -455,16 +487,16 @@ Mem0 的 entity linking 只把实体映射到 memory IDs、提供评分 boost，
 
 | 项目 | 边或连接是什么 | query 如何利用它 | 主要收益/成本 |
 |---|---|---|---|
-| Graphiti | 带时间事实与 episode 来源 | 全文/cosine/BFS，配置化重排 | 当前/历史关系；昂贵抽取与 resolution |
-| Cognee | schema 实体关系、块与来源 | 选择 graph/chunk 等 retriever | 异构知识平台；配置/一致性复杂 |
-| HippoRAG | phrase/fact/passages 与同义连接 | fact+dense seeds，PPR | 多跳 passage 召回；OpenIE/扩散噪音 |
+| Graphiti | 带时间关系及原材料引用 | 按配置用全文、向量、邻域扩展与重排 | 查当前和历史关系；抽取与身份核对成本高 |
+| Cognee | 按结构定义抽取的关系、文本块和来源 | 选择图或文本块等检索方法 | 能组织多类资料；配置与多存储一致性复杂 |
+| HippoRAG | 实体短语、事实、段落及同义连接 | 用相关事实和段落作起点，沿图传播 | 补多跳证据；抽取错误和泛化连接会增噪 |
 | Basic Memory | 人/Agent 显式 relation/wikilink | URI/笔记命中后限深展开 | 可编辑可重建；漏链接/同步 |
 | A-MEM | LLM 建议笔记 links | 近邻后追加邻居 | 自动关联；演化漂移/截断 |
 | Hippo | memory 的实体关系图 | 池内 graph stream/RRF 或池外 graph-recall | 图与生命周期组合；需分清池边界 |
 | MCP Service | association/typed/contradiction 等 | 关系/巩固与配置化服务 | 运维统一；关系证据强弱不一 |
 | TencentDB | Wiki 页面链接、CodeGraph 符号/调用 | 授权资产内工具探索 | 团队文档/代码上下文；构建/同步链 |
 | MemOS textual | reader/backend 组织的图知识 | 后端检索与调度 | 可组合资源；配置/模块差异 |
-| Mem0 | entity → linked_memory_ids | 对语义池加 entity boost | 实体锚定便宜；不等同多跳关系图 |
+| Mem0 | 对象对应一组相关记忆编号 | 给语义池中谈到同一对象的记录加分 | 帮助定位对象；不等同自动多跳搜索 |
 | Letta / MemoryOS | 文件发现链接 / page 连续性与主题 | 主动读 / 分层读取 | 有组织性，但非本章事实图协议 |
 | Beacon / Hermes | 动作关联 / 判别控制数据 | 供下游索引或筛选 | 不据此称为长期知识图后端 |
 

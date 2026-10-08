@@ -20,6 +20,10 @@ Graphiti：带着“Atlas 由平台组维护”读代码，记录原文、两个
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/appendix-01.svg)
+
+源码对照：
+
 初读只追一个问题：“这句原话最后存成什么？”Mem0 从 add 的输入走到卡片正文，Graphiti 从原材料走到对象与关系。遇到函数名，先看它收什么、返回什么，再回到 Atlas 示例给变量填值；不必一开始读完模型客户端、数据库连接和全部异常处理。
 
 ### Mem0：从实际函数与提示双向核对
@@ -46,6 +50,10 @@ Graphiti：纸上写“文字找到 A、C，向量找到 B、C，合并 A、B、
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/appendix-02.svg)
+
+源码对照：
 
 Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集合。Mem0 需要核对两者是否相同；Graphiti 需要核对文字榜、向量榜和最终编号并集。用 A、B、C 手记每一步即可：哪一步第一次出现 C，哪一步去掉 C，比只阅读一个复杂评分函数更容易定位漏项。
 
@@ -74,6 +82,10 @@ Graphiti：论文讲时间关系，你用“18 日换批准人”检查日期字
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/appendix-03.svg)
+
+源码对照：
+
 论文帮助理解为什么将聊天压成短事实或为关系保留时间，代码决定当前调用是否真正这么做。Mem0 论文中的某种写入决策，不保证与这个快照的批量追加相同；Graphiti 的时间字段，也不表示每个查询默认使用它。把机制意图、当前分支和实测范围分别记录，读者就不会把介绍当成保证。
 
 ### Mem0：论文路线与当前 batch 实现分开记
@@ -98,6 +110,10 @@ Graphiti：笔记写“本次基础搜索未自动补第二段批准链”，附
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/appendix-04.svg)
+
+源码对照：
 
 Provider 是提供模型或存储服务的具体实现，driver 是访问存储的程序。笔记可以写“Mem0 普通提取分支，某向量后端，仅核对源码”；Graphiti 则写“边搜索，启用哪些找法，使用哪个 driver”。这些条件解释结论适用范围，换服务或配置后需重新验证，而不是把同一项目名当作固定行为。
 
@@ -218,11 +234,11 @@ PDF 位于 `sources/papers/pdf/`，可搜索文本位于 `sources/papers/text/`�
 | 技术问题 | 需要比较的项目 | 优先证据 | 本次能支持/不能支持 |
 |---|---|---|---|
 | 事实/画像写入 | Mem0、Memobase、MemoryOS、TencentDB、Letta、MemOS | 提取/提升/编译代码及 prompt | 解释数据流；未独立测所有模型 |
-| 候选/排序 | Mem0、MCP、Hippo、Graphiti、Cognee、HippoRAG、Hermes | candidate/fusion/rerank 与配置 | 区分池边界；未复现统一质量排名 |
+| 候选与排序 | Mem0、MCP、Hippo、Graphiti、Cognee、HippoRAG、Hermes | 初选、合并、重排代码及配置 | 区分候选范围；未复现统一质量排名 |
 | 图/来源 | Graphiti、Cognee、HippoRAG、Basic、A-MEM、Hippo、MCP、TencentDB、MemOS | graph/node/edge/source 及读取 | 区分连接语义；未保证全部删除链 |
 | 演化/遗忘 | Hippo、MCP、MemoryOS、A-MEM、Cognee、Memobase、Graphiti、TencentDB、MemOS、Letta | 状态写操作、反馈、gate、版本 | 描述机制；未证明长期任务提升 |
-| 接入/副本 | Beacon、Basic、MCP、TencentDB、Letta、MemOS、Hippo 与 SDK 框架 | 事件 schema、transport、sync、auth | 说明审计点；非生产安全认证 |
-| 历史与实验 | MemGPT/旧 Letta、各论文和 benchmark | archive commit、数据/reader/judge | 限定原协议；非当前产品背书 |
+| 接入与副本 | Beacon、Basic、MCP、TencentDB、Letta、MemOS、Hippo 与开发库 | 事件格式、传输、同步、身份授权代码 | 说明检查位置；不是生产安全认证 |
+| 历史与实验 | MemGPT/旧 Letta、各论文和评测 | 归档提交、数据、回答模型、评分方法 | 结论限于原实验；不保证当前产品质量 |
 
 </details>
 

@@ -8,6 +8,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-01.svg" alt="有用的段落，也可能夹带危险动作：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：相关性不能抵消安全风险；工具权限还要独立阻断不允许的动作。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一段材料前半写正确迁移说明，后半要求导出密钥，整体仍可能很贴题。Mem0 的高分卡片和 Graphiti 的相关边都可能保留这个要求。安全检查判断哪些文字或动作不应接受，相关排序判断哪些资料贴近问题，这两个判断回答不同问题，不能用高相关抵消危险。</p>
 <h3 id="mem0-高度相关的事实仍可夹带恶意动作">Mem0：高度相关的事实仍可夹带恶意动作</h3><p>多信号评分关注 query 与正文，当前普通路径未因此执行 Hermes 的 injection 判别。应用从 MemoryItem 取得正文后先安全筛查，再考虑外部重排。拒绝 B 时保留源 ID 用于审计，但不要把敏感正文无条件发给云判别器。</p>
 <h3 id="graphiti-事实边也可能源自不可信指令">Graphiti：事实边也可能源自不可信指令</h3><p>图里一条“发布需上传凭据”可以有规范端点和来源，却仍是恶意要求。RRF 和 cross-encoder 不是权限认证器。外层过滤应覆盖 fact 和后续 episode 全文，不能只筛过短边就默认整份来源安全。</p>
@@ -21,6 +24,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-02.svg" alt="Hermes 怎样把本地候选送去判断：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：判断器不能增加本地不存在的证据；隐私、标签校验与映射由应用负责。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>外部判断器可以看到候选 A、B、C，而不必看到数据库真实编号。应用先把 Mem0 卡片编号或 Graphiti 边编号映射到这些标签，只送必要文字；返回“选 B”后，再映射回原记录。隐去身份不等于正文已无秘密，发送前仍需检查候选文字与来源内容。</p>
 <h3 id="mem0-外接判别时保留-memory-id-到匿名标签映射">Mem0：外接判别时保留 memory_id 到匿名标签映射</h3><p>从 search 取得候选，由本地代码脱敏并映射 P0 等标签，判别后再用真实 ID 读取。云结果只决定允许集合中的排序或筛选；最终 get 仍校验归属与版本。Mem0 本地代码不能被描述为内置了 Hermes 的所有隐私步骤。</p>
 <h3 id="graphiti-选择标签应同时关联边和来源">Graphiti：选择标签应同时关联边和来源</h3><p>一条 fact 对应 edge UUID 与 episode IDs，外接判别时保持映射，不发送真实私有路径。读回全文后重新执行本地检查与预算，因为云端只看有限事实片段。多条边共享一个 episode 时，还需避免重复展开全文。</p>
@@ -34,6 +40,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-03.svg" alt="为什么“相关”还不等于“够回答”：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：很相关的一条证据仍可能不足以回答；需要明确本题还缺哪个要素。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>问题需要 Atlas 的维护团队和正式批准人，只有维护资料很相关，却不够回答。Mem0 搜到一张卡之后要检查缺哪项证据；Graphiti 找到一个相邻对象也要检查批准边及用途。充分性表示当前证据是否覆盖问题所需条件，不能仅由返回非空或排名第一判定。</p>
 <h3 id="mem0-search-返回不能作为充分性布尔值">Mem0：search 返回不能作为充分性布尔值</h3><p>只找到“Atlas 属平台组”时，search 即使分数很高，也缺批准人。宿主继续以平台组搜索，或明确缺证据。设置更高 threshold 只改变相关结果门槛，不会把未知批准人变成已知事实。</p>
 <h3 id="graphiti-可达第二跳也要核对支持关系">Graphiti：可达第二跳也要核对支持关系</h3><p>高级 BFS 可补批准边，但足够回答还要求身份与日期匹配，且来源真的说正式发布。图路径可为 gate 提供证据，gate 的判断仍需保存理由和未覆盖要素。没有边时不能用节点 Lin 的存在填答案。</p>
@@ -46,6 +55,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-04.svg" alt="长文截断和服务失败各留下什么盲区：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：截断与失败回退都有未审查范围；unjudged 表示缺少判断，不表示已安全。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>判断器只读前几百字，危险要求或关键例外可能在末尾。Mem0 选中了 M1，意味着看过的片段贴题，不证明整张卡安全；Graphiti 的短 fact 若省略原文条件，同样形成盲区。记录送去判断的具体片段，服务失败时明确哪些检查没完成，再按业务风险选择停止或降级。</p>
 <h3 id="mem0-截断后选中的-id-不代表正文全被检查">Mem0：截断后选中的 ID 不代表正文全被检查</h3><p>外部判别若只看 MemoryItem 的首尾，中间可能隐藏危险动作。读完整 memory 或源材料后做本地筛查，并标 clipped 与 unjudged 状态。云失败可以回到受限候选，但仍执行权限和安全条件，不能恢复已拒绝的记录。</p>
 <h3 id="graphiti-fact-比-episode-短-盲区仍然存在">Graphiti：fact 比 episode 短，盲区仍然存在</h3><p>判别 fact 未看到 episode 里的附带指令，展开原文后风险可能改变。应用需区分“边已判别”和“来源全文已检查”。图搜索异常或云判别异常采取不同降级，不能把这两类未完成都写成候选安全。</p>
@@ -58,6 +70,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-05.svg" alt="Hippo 用 Jev 的位置更窄：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：重排只决定候选顺序；排序入口不自动变成隐私、注入与充分性检查。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Reranker 是调整候选顺序的重排器，gate 是允许继续之前的门槛。Mem0 外接重排器、Graphiti 使用 cross-encoder，通常只得到相关排序；Jev 放在不同位置也有不同输入输出合同。想检查安全或证据充分，要调用对应判断并处理其结果，不能从一个排序分数推导全部通过。</p>
 <h3 id="mem0-可选-reranker-的契约与安全-gate-不同">Mem0：可选 reranker 的契约与安全 gate 不同</h3><p><code>RerankerFactory</code> 配置相关性重排，search 开关控制调用。即使接入某个判别 provider，也不自动拥有 injection、answerability 和匿名化。应在 adapter 外定义外发与拒绝规则，并与相同候选的本地重排对照。</p>
 <h3 id="graphiti-cross-encoder-对-fact-排序-未判充分性">Graphiti：cross-encoder 对 fact 排序，未判充分性</h3><p>边重排先 RRF 再读有限 query、fact 对；它不判断全部来源是否足够回答，也不授予读取其他组的权限。要接 Jev 应单独编排，明确送了哪些正文、如何处理非法评分和故障，而非把两个模型接口视为等价。</p>
@@ -70,6 +85,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-06.svg" alt="决策缓存什么时候可以复用：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：缓存键需要覆盖会影响判断的输入、范围和版本；编号相同不表示内容相同。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>昨天判过 M1 安全，今天 M1 正文改了，旧编号仍在，旧判断不能直接复用。Mem0 缓存键应绑定正文与规则版本；Graphiti 同一边编号的时间和支持材料也可能变化。缓存键就是决定“何时算同一次判断”的条件集合，漏掉变化因素会把旧结论错误套给新状态。</p>
 <h3 id="mem0-缓存决策要绑定事实正文版本">Mem0：缓存决策要绑定事实正文版本</h3><p>同一个 memory_id 被 update 后正文变化，旧 rerank 或安全结果不能再复用。缓存键至少包含 query、scope、正文指纹和规则版本；cache hit 后仍校验当前权限。向量索引与小决策 memo 是不同缓存，清除其中一个不会自动清另一个。</p>
 <h3 id="graphiti-边身份相同-时间和支持仍可变化">Graphiti：边身份相同，时间和支持仍可变化</h3><p>重复证据可复用 UUID，新消息可改变有效区间或 summary。缓存不能只用 edge UUID，应考虑查询时点、当前内容与可见组。来源删除后，旧“足够回答”结果也可能失效，需要来源变更驱动清理。</p>
@@ -83,6 +101,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-07.svg" alt="三种判断为什么不能互相抵消：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：权限、适用性和相关性分别判断；硬边界不能混入总分后相互抵消。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一条事实很相关，却越权或不适用于目标日期，不能放进答案证据。Mem0 搜索前先限定可读范围，返回后检查内容用途；Graphiti 还需核对关系有效时间。安全、相关、充分可以分别拒绝继续，不是三项随意相加成一个总分，让高分抵消某项失败。</p>
 <h3 id="mem0-安全门槛先于相关性排序">Mem0：安全门槛先于相关性排序</h3><p>先从已授权候选排除确定危险内容，再在剩余候选比较语义和判别分数。不要把 injection risk 减去 relevance 得到一个总分，否则相关 B 可能被保留。充分性对整组必要证据判断，不能用单条最高 score 代替。</p>
 <h3 id="graphiti-时间错误也不能被高相关分抵消">Graphiti：时间错误也不能被高相关分抵消</h3><p>旧 Lin 批准边可以高度相关，但当前日期只允许 Mei。先筛授权和有效范围，再做相关重排与充分性判断。图邻近、RRF 名次和来源数都是辅助信号，没有任何一项可以覆盖明确的时间与权限约束。</p>
@@ -96,6 +117,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/16-08.svg" alt="阈值应从错误代价和样本中得到：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：评分数值不是校准后的正确概率；阈值需要样本支持，不能只因为看着稳妥。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>阈值是把数值变成接受或拒绝的界线。给 Mem0 和 Graphiti 的候选准备正常说明、混入危险动作、缺一跳证据等样本，观察误拒绝与漏放的代价，再选界线。候选本身已被提取错，与判断器读对文字却判错，是两类错误，校准时要分别标注。</p>
 <h3 id="mem0-在真实候选上校准额外-gate">Mem0：在真实候选上校准额外 gate</h3><p>保存 semantic 池、最终结果与人工安全标签，测高阈值是否漏掉关键低分事实，低阈值是否增加噪音。启用 gate 前做 shadow，不改用户输出；模型或提取文本变化后重新验证。无候选的问题不能靠更严格判别修复。</p>
 <h3 id="graphiti-把抽取错误与-gate-错误分别标注">Graphiti：把抽取错误与 gate 错误分别标注</h3><p>原文安全而 fact 被过度改写，属于 ingestion 问题；fact 正确却被判为危险，属于 gate 问题。用 edge、episode 映射定位阶段，统计误拦和漏拦。日期过滤先固定，否则所谓判别改善可能只是少返回旧事实。</p>
@@ -143,7 +167,7 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 <p>Hermes memo 在 exact-match 下复用小决策，Hippo pinned model 让重排实验更可比较，二者解决缓存与模型漂移的不同问题。RRF 不依赖生成服务版本，却仍依赖索引和候选来源。任何方法都无法凭排序分数完成授权或判断事实永久有效。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/16-jev.svg" alt="Hermes 分开做相关性和注入判断，Hippo 只做整批相关性重排并在失败时退本地" loading="lazy"><figcaption>图：相同供应商的两条接法也有不同可见文本、阈值和故障行为。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/16-jev.svg" alt="Hermes 分开做相关性和注入判断，Hippo 只做整批相关性重排并在失败时退本地" loading="lazy"><figcaption>图：相同供应商的两条接法也有不同可见文本、阈值和故障行为。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -159,21 +183,21 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 </thead>
 <tbody><tr>
 <td>Hermes Jev filter</td>
-<td>relevance、injection、answerability</td>
-<td>本地代码筛 ID/读原文</td>
-<td>脱敏/首尾截断；有限 unjudged 回退</td>
+<td>是否相关、是否夹带危险指令、是否够回答</td>
+<td>本地代码筛编号，再读原文</td>
+<td>脱敏、首尾截断；有限保留未判别候选</td>
 </tr>
 <tr>
 <td>Hermes search gate</td>
-<td>已筛证据充分性、下一 query choice</td>
+<td>当前证据是否足够，下一条查询选哪个</td>
 <td>调用方继续搜索或回答</td>
-<td>unknown 不能当 sufficient</td>
+<td>未完成判断不能当作证据充分</td>
 </tr>
 <tr>
 <td>Hermes memo</td>
-<td>exact input/scope/rules key</td>
-<td>shadow 比较或 on 复用</td>
-<td>TTL/私有文件；失败 miss、值需校验</td>
+<td>输入、范围、规则版本完全相同才复用</td>
+<td>只观察并比较，或明确启用缓存</td>
+<td>有到期时间；失败当未命中，缓存值需校验</td>
 </tr>
 <tr>
 <td>Hippo Jev</td>
@@ -213,9 +237,9 @@ C：Atlas 文档站的配色说明。</code></pre><p>A 有用，C 无关，B 既
 </tr>
 <tr>
 <td>Letta / TencentDB</td>
-<td>是否读工具 / 选择 Skill 资产</td>
-<td>Agent 或路由执行下一步</td>
-<td>工具权限仍须 deterministic</td>
+<td>是否读取历史，或选择哪个技能资产</td>
+<td>助手或路由代码安排下一步</td>
+<td>工具权限仍由可信代码检查</td>
 </tr>
 <tr>
 <td>其他存储/采集项目</td>

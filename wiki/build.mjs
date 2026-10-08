@@ -4,9 +4,12 @@ import {resolve,join,basename} from 'node:path';
 import {marked} from 'marked';
 import hljs from 'highlight.js';
 import {buildDiagrams} from './render-diagrams.mjs';
+import {buildSourceFlows} from './render-source-flows.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 buildDiagrams(root);
+const sourceFlows=buildSourceFlows(root);
+const usedSourceFlows=new Set();
 const sourceLinks=new Map(JSON.parse(readFileSync(join(root,'sources','maintenance.json'),'utf8')).map(source=>[source.project,source]));
 const chapterDir=join(root,'book','chapters');
 const out=join(root,'wiki');
@@ -24,6 +27,7 @@ const indexBody=`<main id="main" class="book"><div class="eyebrow">From principl
 writeFileSync(join(out,'index.html'),layout('目录',indexBody));
 const searchDocs=[];
 for(const entry of entries){
+  const sourceFlowTexts=[];
   let md=readFileSync(join(chapterDir,entry.slug+'.md'),'utf8');
   md=md.replace(/\]\(\.\.\/\.\.\/sources\/repos\/([^/)]+)(?:\/([^)]*))?\)/g,(_,repo,file='')=>{
     const source=sourceLinks.get(repo);
@@ -33,6 +37,14 @@ for(const entry of entries){
   });
   md=md.replace('](../../examples/mini_memory.py)','](https://github.com/StarDust0083-GP03/agent-memory-from-scratch/blob/main/examples/mini_memory.py)');
   md=md.replace(/\]\(([^)]+)\.md(#[^)]+)?\)/g,']($1.html$2)');
+  md=md.replace(/!\[本例流程\]\(\.\.\/\.\.\/wiki\/assets\/source-flows\/([^/)]+)\.svg\)/g,(_,id)=>{
+    const flow=sourceFlows.get(id);
+    if(!flow || usedSourceFlows.has(id)) throw new Error(`Unknown or repeated source flow: ${id}`);
+    usedSourceFlows.add(id);
+    sourceFlowTexts.push(flow.description);
+    return `<figure class="source-flow"><img src="../../wiki/assets/source-flows/${id}.svg" alt="${esc(flow.title)}：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：${esc(flow.boundary)}</figcaption></figure>`;
+  });
+  md=md.replace(/src="\.\.\/\.\.\/wiki\/assets\//g,'src="../assets/');
   const teaching=md.replace(/<details class="implementation-notes">[\s\S]*?<\/details>/g,'');
   const headings=[...teaching.matchAll(/^##\s+(.+)$/gm)].map(x=>x[1]);
   const html=marked.parse(md);
@@ -42,8 +54,9 @@ for(const entry of entries){
   const label=entry.slug==='00-preface'?'前言':entry.slug==='appendix-sources'?'附录':`第 ${parseInt(entry.slug,10)} 章`;
   const body=`<main id="main" class="book" data-chapter="${entry.slug}"><div class="eyebrow">${label}</div>${toc}<article class="content">${html}</article>${pager}</main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div>`;
   writeFileSync(join(outChapters,entry.slug+'.html'),layout(entry.title,body,'../'));
-  searchDocs.push({title:entry.title,slug:entry.slug,text:md.replace(/```[\s\S]*?```/g,' ').replace(/<figure[\s\S]*?<\/figure>/g,' ').replace(/<\/?[A-Za-z][^>]*>/g,' ').replace(/[#*`>|\[\]()_-]/g,' ').replace(/\s+/g,' ').trim()});
+  searchDocs.push({title:entry.title,slug:entry.slug,text:md.replace(/```[\s\S]*?```/g,' ').replace(/<figure[\s\S]*?<\/figure>/g,' ').replace(/<\/?[A-Za-z][^>]*>/g,' ').replace(/[#*`>|\[\]()_-]/g,' ').replace(/\s+/g,' ').trim()+' '+sourceFlowTexts.join(' ')});
 }
+if(usedSourceFlows.size!==sourceFlows.size) throw new Error('Source flows and chapter references differ');
 writeFileSync(join(out,'assets','search-index.json'),JSON.stringify(searchDocs));
 const searchBody=`<main id="main" class="search"><div class="eyebrow">全书检索</div><h1 class="chapter-title">搜索</h1><input class="search-input" type="search" autofocus placeholder="输入概念、项目或机制" aria-label="搜索电子书"><div id="results"></div></main>`;
 const searchScript=`<script>fetch('assets/search-index.json').then(r=>r.json()).then(d=>{const i=document.querySelector('.search-input'),o=document.querySelector('#results');function run(){const q=i.value.trim().toLowerCase();if(!q){o.innerHTML='<p class="meta">搜索标题与正文。</p>';return}const hits=d.map(x=>({...x,pos:(x.title+' '+x.text).toLowerCase().indexOf(q)})).filter(x=>x.pos>=0).slice(0,30);o.innerHTML=hits.map(x=>{const p=Math.max(0,x.pos-70);return '<article class="result"><a href="chapters/'+x.slug+'.html">'+x.title+'</a><p>'+x.text.slice(p,p+220)+'</p></article>'}).join('')||'<p class="meta">没有结果。</p>'}i.addEventListener('input',run);run()})</script>`;

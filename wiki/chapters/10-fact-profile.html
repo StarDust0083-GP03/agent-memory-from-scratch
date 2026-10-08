@@ -6,6 +6,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-01.svg" alt="同一位用户，两种不同的问题：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：当前画像与具体经历的读取目标不同；用同一段摘要回答一切会丢掉证据。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Alice 的资料可以分成当前默认和具体经历。Mem0 的 user scope 读作“属于这个用户的存取范围”，里面仍有许多不同用途卡片；Graphiti 则将 Alice、Atlas 等对象分开。回答用什么语言，应看 Alice 的默认；发布为何失败，应看 Atlas 的经历，不应把范围相同误认为所有内容都相关。</p>
 <h3 id="mem0-同一个-user-scope-不意味着所有事实都该出现">Mem0：同一个 user scope 不意味着所有事实都该出现</h3><p>默认语言适合直接读取审核后的稳定记录，失败原因适合 query 搜索。普通事实池可以表达两者，但没有自动把语言整理成唯一 profile 字段。应用先决定读哪类内容，再选择 get、get_all 或 search，避免以发布查询的相似度决定沟通偏好。</p>
 <h3 id="graphiti-用户属性与项目经历需要不同主体">Graphiti：用户属性与项目经历需要不同主体</h3><p>语言偏好可以关联 Alice，发布失败关联 Atlas 与对应事件，两者共享来源却不应共享关系范围。以 Alice 为中心找偏好，以 Atlas 为中心找发布资料，读取时仍限定可见组。图把对象区分开，前提是写入正确解析了主体。</p>
@@ -23,6 +26,9 @@ M3：用户报告上周 Atlas 发布漏了迁移检查。</code></pre><p>这些�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-02.svg" alt="Mem0：先形成卡片，再按问题挑选：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：实际拆法依赖提取结果；应用要核验主体、条件和来源，不保证必定三条。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>假设提取器写出 M1、M2、M3，程序要逐条保留正文，再为它们生成搜索用数字。一批写入表示集中处理这些记录，能减少请求次数，却不保证一个失败会撤销全部成功。Mem0 还维护历史与对象关联；Graphiti 对同样原话则维护材料、对象与关系。返回三项时，要确认是哪三种对象，不能只比条数。</p>
 <h3 id="mem0-卡片从模型输出走到两种持久状态">Mem0：卡片从模型输出走到两种持久状态</h3><p>提取 JSON 的 <code>memory</code> 列表后，<code>embed_batch()</code> 为全部有效 text 生成向量。构造 records 时加入 hash、词形和 metadata，批量 insert 写事实，再 <code>batch_add_history()</code> 记录 ADD。接着跨本批事实汇集唯一实体，为实体生成向量并查找已有对象，更新关联 ID。失败时逐条回退或跳过，所以结果应分别核对事实和辅助索引。</p>
 <h3 id="追一次-mem0-调用的输入-内部形状与输出">追一次 Mem0 调用的输入、内部形状与输出</h3><p>下面仅展示已配置 Memory 对象的调用，真实 <code>m</code> 的创建需要选择 LLM、embedding 和 vector store。不要用未声明的模型配置去运行这段代码：</p>
@@ -64,6 +70,9 @@ found = m.search(
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-03.svg" alt="一个细节：Mem0 没看见的卡片不会被关键词救回：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：一条路能找到，不保证最终返回；未进入初选与排名靠后是两种失败。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>把 boost 读成额外加分：一张候选卡谈到 Atlas，查询也谈到 Atlas，它可以得到奖励。但若 M3 根本没被纳入 Mem0 的第一批，给相关对象加分仍可能没有它的位置。Graphiti 的独立全文路可能将这条失败关系找回来，前提是失败信息确实存在于被索引的关系正文。</p>
 <h3 id="mem0-实体-boost-也无法补回-m3">Mem0：实体 boost 也无法补回 M3</h3><p><code>_compute_entity_boosts()</code> 找查询实体关联的 memory IDs，并按匹配相似度和实体关联数量计算 boost。关联特别多的泛化实体会减弱影响。最终 candidates 仍来自 semantic results；M3 仅被 Atlas 实体命中，也未必输出。测试时同时记录三种信号的 ID，而非只看最终 score。</p>
 <h3 id="graphiti-独立全文路可补向量遗漏">Graphiti：独立全文路可补向量遗漏</h3><p>edge RRF 配方同时取全文和 cosine 候选，全文单独找到的失败边可以进入 UUID 并集。若只找到 Atlas 节点，基础边查询仍未完成，应使用组合配置或另查节点周围关系。Graphiti 增加可达路径，但不保证任何缺失事实都能被图救回。</p>
@@ -79,6 +88,9 @@ found = m.search(
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-04.svg" alt="Memobase：提前整理用户资料，经历另放事件：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：事实池和关系图都不直接等于唯一已审核画像；当前值选择与展示由应用完成。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>缓冲区像待整理的一摞输入，flush 表示开始把它们整理成可读状态。Mem0 的普通 add 没有因此成为画像合并服务；Graphiti 读取前序材料是给提取器参考，也不表示这些材料仍在排队。要解释“刚说英文却还读到中文”，分别检查输入接收、整理完成和读取缓存三个时刻。</p>
 <h3 id="mem0-没有-buffer-flush-合并画像的同等协议">Mem0：没有 buffer flush 合并画像的同等协议</h3><p>近期消息用于解释新增事实，历史库保存消息，但普通路径没有 Memobase 的用户 buffer 状态机。AsyncMemory 也只是异步调用形式。若应用想批处理偏好，应自行聚合消息、控制顺序和完成状态，再决定追加或显式修改稳定记录。</p>
 <h3 id="graphiti-previous-episodes-提供理解上下文">Graphiti：previous episodes 提供理解上下文</h3><p><code>retrieve_episodes()</code> 在限定 group 和时间下获取前序材料；调用者也能提供 <code>previous_episode_uuids</code>。它们帮助解释省略表达，不等于正在等待 flush 的消息队列。episode 的抽取完成状态和近期未处理消息，仍需由宿主编排。</p>
@@ -92,6 +104,9 @@ found = m.search(
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-05.svg" alt="两种路线怎样处理同一句例外：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：只有“以后默认英文”才支持长期变更；任务例外不要写成全局偏好。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>“这封邮件英文”可以对应任务 T1，“以后英文”才改变用户默认。Mem0 存成文字卡片时要保留 T1 限定，不覆盖中文默认；Graphiti 可将任务需求和长期偏好表达为不同关系。关系结束或卡片替代之前，要先证明新话改变的是同一个默认字段，而非另一个场景。</p>
 <h3 id="mem0-一次例外追加-永久变更需指定策略">Mem0：一次例外追加，永久变更需指定策略</h3><p>“这封邮件英文”应保留任务限定，不能 update 长期中文卡片；“今后英文”可以产生新默认候选。应用确认后可替代当前视图，保留变更日志。仅用 latest created_at 选择会把补录与单次例外混入，需明确业务生效时间。</p>
 <h3 id="graphiti-同一用户也可以有情境化偏好">Graphiti：同一用户也可以有情境化偏好</h3><p>中文默认与邮件英文可以分别连用户默认和任务需求，不应互相失效。新长期英文关系才可能结束旧中文关系。自定义 schema 允许表示任务节点或限定属性，随后核对被 invalidated 的边，确保结束的是默认关系而非所有中文使用记录。</p>
@@ -105,6 +120,9 @@ found = m.search(
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-06.svg" alt="从下一次读取，反推事实库和画像库的代价：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：稳定必需字段不能只依赖问题相似度；当前记录的选择和版本要明确。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>已知语言卡片是 M1，按编号直接取它，可以避免查询措辞变化使它落选；但 M1 若已改错，每轮都会稳定读错。Graphiti 按用户对象读摘要也有相同风险。确定读取只是保证拿到那个对象，正文正确、日期有效和权限允许仍需另查，尤其是批准人等必须确定的字段。</p>
 <h3 id="mem0-直接读降低漏召回-也放大错误写入">Mem0：直接读降低漏召回，也放大错误写入</h3><p>稳定记录 ID 固定后，<code>get()</code> 可避免 query 表达变化造成遗漏；返回前仍要核对所属身份及当前版本。若 update 错了正文，每轮直接读取都会受影响。历史提供回查，应用须有字段核验、版本切换与缓存失效，不应把稳定读取误认为稳定正确。</p>
 <h3 id="graphiti-summary-热读取需要事实校验规则">Graphiti：summary 热读取需要事实校验规则</h3><p>按已知用户 UUID 读取 summary 可以快速获得个性化入口，却可能含旧属性或过度概括。对语言、环境等必须确定的字段，应读对应有效关系而非随意解析摘要。若缓存 summary，键要包含 group、节点身份与内容版本或受控失效机制。</p>
@@ -119,6 +137,9 @@ found = m.search(
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/10-07.svg" alt="画像里写什么，才不会越整理越偏：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：实际使用一次环境不能证明用户偏好；保存来源要能说明是谁明确说过什么。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Alice 没说默认环境时，应用可以使用自己的测试环境默认，但应标注为应用规则。不要把它填成 Mem0 的用户事实，也不要让 Graphiti 抽成 Alice 的偏好边。未知表示没有证据，不是整理失败；允许空值和请求澄清，比用一个看似完整的字段掩盖猜测更容易纠正。</p>
 <h3 id="mem0-缺失偏好不能靠结构默认伪造">Mem0：缺失偏好不能靠结构默认伪造</h3><p>候选未提及部署环境时，不应由应用为 metadata 补一个看似用户事实的值。业务默认可以另标来源。对“简短回答”与“本次详细讲解”，assembler 明确当前要求优先，SDK 搜索没有自动解决偏好与指令优先级。</p>
 <h3 id="graphiti-属性抽取应允许未知与情境">Graphiti：属性抽取应允许未知与情境</h3><p>用户 schema 定义字段，并不要求模型从没有证据的聊天猜出值。节点属性和偏好边应保留来源与限定，任务细节不要直接压进永久 summary。抽样比较 episode、属性、fact 和 summary，可发现同一次猜测在多层被写成确定值。</p>
@@ -173,7 +194,7 @@ found = m.search(
 <p>Basic/Hippo/文件规则也能保存偏好，Cognee 可以经 schema 或 preference 相关管线组织个性化知识，MCP 可以存带类型内容；这里应明确表示“能够表达此内容”，不是“已自动实现同一种画像合并”。A-MEM、HippoRAG 的笔记/文档结构同样可以含偏好文本，但不据此称为画像优先产品。Beacon 和 Hermes 分别只提供输入证据与读取选择。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/10-fact-profile.svg" alt="Mem0 查询事实与 Memobase 先合并画像再直接读取的读写不对称" loading="lazy"><figcaption>图：在线延迟下降来自写入阶段更多整理，代价是更新滞后和合并风险。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/10-fact-profile.svg" alt="Mem0 查询事实与 Memobase 先合并画像再直接读取的读写不对称" loading="lazy"><figcaption>图：在线延迟下降来自写入阶段更多整理，代价是更新滞后和合并风险。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -195,15 +216,15 @@ found = m.search(
 </tr>
 <tr>
 <td>Memobase</td>
-<td>用户 buffer flush、topic/subtopic merge</td>
-<td>profile 直接读、event 搜索</td>
-<td>原文保留与并发 flush 配置</td>
+<td>集中处理用户待整理消息，按主题合并属性</td>
+<td>直接读画像，另搜索事件</td>
+<td>原文保留，以及同一用户的并发处理</td>
 </tr>
 <tr>
 <td>MemoryOS</td>
-<td>热中期 pages 分析为完整 profile</td>
-<td>长期画像加多层知识召回</td>
-<td>heat/promotion 与冷纠正可见性</td>
+<td>分析高热度主题中的页面，形成完整画像</td>
+<td>读取画像，同时分层搜索知识</td>
+<td>低频明确纠正是否及时可见</td>
 </tr>
 <tr>
 <td>TencentDB</td>
@@ -213,9 +234,9 @@ found = m.search(
 </tr>
 <tr>
 <td>Letta Code</td>
-<td>Agent self-edit core/deferred</td>
-<td>core 编译常驻，详情主动读</td>
-<td>commit/recompile、规则评审</td>
+<td>助手编辑核心规则或详细文件</td>
+<td>核心随输入出现，详情主动读取</td>
+<td>版本提交、后续输入更新、规则评审</td>
 </tr>
 <tr>
 <td>MemOS</td>
@@ -249,9 +270,9 @@ found = m.search(
 </tr>
 <tr>
 <td>Beacon、Hermes</td>
-<td>trace 或判别候选</td>
-<td>供下游提取/选择</td>
-<td>不维护用户画像 source of truth</td>
+<td>提供活动日志或筛选已有候选</td>
+<td>供后续提取或选择</td>
+<td>不维护权威用户画像</td>
 </tr>
 </tbody></table>
 </details>

@@ -22,6 +22,10 @@ Graphiti：记成“Alice→偏好→中文”“今天的任务→环境→演�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/02-01.svg)
+
+源码对照：
+
 同一段原话可以整理成“Atlas 昨天发布失败”“Alice 默认中文”“发布前检查迁移”三条不同用途的文字。Mem0 可能把它们存成三张短记录，具体拆法由提取结果决定。Graphiti 则要辨认分别是谁的偏好、哪个项目的经历、什么操作的要求，再形成相应关系；谈到同一个项目，不表示它们都适用于今天的动作。
 
 ### Mem0：拆分依赖提取提示，不是固定四张表
@@ -48,6 +52,10 @@ Graphiti：把“迁移检查先于正式发布”保存为关系。图能帮助
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/02-02.svg)
+
+源码对照：
 
 “经历”“事实”“流程”先是本书解释用途的标签。给一条文字贴上“流程”，不会让 Mem0 变出执行按钮；Graphiti 把“检查先于发布”连成关系，也没有执行检查。Schema 是应用规定的对象与字段格式，比如项目有名称、任务有日期；它约束怎样保存，不证明内容已经审核。
 
@@ -92,6 +100,10 @@ Graphiti：保存“Alice 的 Atlas 默认环境是预发布”，并连回会�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/02-03.svg)
+
+源码对照：
+
 假设记录 M1 的正文是“Atlas 默认预发布”，还要记它属于 Alice、来自哪次表达。Mem0 将正文和这些附加字段一起保存，应用负责赋予项目范围和来源含义。Graphiti 可以把默认环境关系接到 Atlas 对象，另留材料编号和有效日期。两个结构都需要避免把今天收到的文字误当作今天才开始有效。
 
 ### Mem0：教学字段要映射到真实 payload
@@ -116,6 +128,10 @@ Graphiti：失败报告只写了怀疑，关系正文却写成确定原因。应
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/02-04.svg)
+
+源码对照：
 
 原话说“我怀疑失败因为迁移没跑”，事实记录若改成“失败由迁移造成”，就丢了怀疑程度。Mem0 的变更历史能帮助看记录怎么改过，但不自动证明根因。Graphiti 的对象摘要若写成确定结论，同样要退回关系正文和来源材料，检查是哪一句支持它。摘要更短，证据并没有因此更强。
 
@@ -143,6 +159,10 @@ Graphiti：先读取 Alice 的语言偏好，再查 Atlas 的发布要求。两�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/02-05.svg)
+
+源码对照：
 
 今天问迁移，不一定顺便搜到“默认中文”。应用接 Mem0 时，可以将已确认的语言偏好直接读取，再搜索发布经历；接 Graphiti 时，可以读 Alice 的偏好关系，再读 Atlas 的发布资料。这是两次用途不同的读取，不能让一次问题相似度决定用户每轮都需要的默认属性。
 
@@ -174,6 +194,10 @@ Graphiti：语言偏好和部署环境分别是一条关系。环境改成测试
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/02-06.svg)
+
+源码对照：
 
 一张卡片若同时写语言、环境、批准人，改批准人时可能误动另外两项。Mem0 用小记录便于定位要改的正文；Graphiti 用独立关系便于定位哪个连接改变。比如中文默认继续保留，只纠正 Atlas 的批准关系。记录拆小之后，项目、任务与日期仍要写清，否则只是把一段含糊文字拆成多段。
 
@@ -293,12 +317,12 @@ Hippo 默认把记忆写成 observation 而非 assertion；Hermes Jev Skills 还
 | 项目 | 原始或主要对象 | 派生/组织结构 | 不应误读成 |
 |---|---|---|---|
 | Mem0 | 消息与短事实 payload | hash、entity 链接、时间 metadata | 默认双时间事实边 |
-| Memobase | blob / buffer | topic/subtopic profile、event | 每轮立即更新的画像 |
-| Graphiti | episode | entity、带时间 fact edge、summary | 摘要可替代原始证据 |
+| Memobase | 原始输入和待处理区 | 按主题整理的画像字段、事件列表 | 每轮立即更新的画像 |
+| Graphiti | 一次收到的原始材料 | 对象、带时间关系、对象摘要 | 摘要可替代原始证据 |
 | Cognee | 文档/块、typed entries | schema 图、dataset、多索引 | 一份固定聊天 schema |
 | HippoRAG | passage 与三元组 | phrase/fact/passages 索引与图 | 会话用户画像服务 |
-| MemoryOS | QA page | 主题 session、heat、profile/知识 | KV/参数化资源管理 |
-| MemOS | cube 配置与可选模块 | text、act、para、pref | 所有 cube 同时启用全部形态 |
+| MemoryOS | 问答页面 | 主题段、访问热度、画像与知识 | 模型计算缓存或参数资源管理 |
+| MemOS | 资源容器配置与可选模块 | 文本、模型状态、参数适配、偏好 | 每个容器都启用全部形态 |
 | Hippo | 带类型的本地记录/轨迹 | strength、outcome、来源与图 | 被强化就已验证为真 |
 | A-MEM | MemoryNote content | context、keywords、tags、links | 带历史有效区间的事实库 |
 | Letta Code | 自动 recall 与可编辑文件 | core/index/deferred/skills | 文件一改本轮 prompt 就变 |

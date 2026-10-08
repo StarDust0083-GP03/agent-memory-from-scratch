@@ -15,6 +15,10 @@ Graphiti：把同一句话留成材料，再从中整理长期默认和今日安
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/03-01.svg)
+
+源码对照：
+
 把输入交给程序，到把输入真正写进数据库，中间可能出错。Mem0 若在提取模型调用时断开，原话未必已进入内部消息历史；Graphiti 在内存中建立 E1 对象，也不表示图数据库已保存 E1。需要不丢原话的应用，可以先在自己的事件表写入这条消息，再请求整理；失败时用原文重做。
 
 ### Mem0：消息保存在提取流程的收尾阶段
@@ -47,6 +51,10 @@ Graphiti：一条关系连 Atlas 与长期默认环境，另一条连今天的�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/03-02.svg)
+
+源码对照：
+
 给 Mem0 的新话包含“以后预发布”和“今天测试”，期望输出是长期默认与单次任务两张有条件的卡片。Graphiti 要将“Atlas 的默认环境”与“这次演练的环境”区别表达。提取器是提出这些陈述的模型，近期资料帮助它解释省略词；它仍可能漏掉“今天”，所以核验对象是实际生成的文字与关系。
 
 ### Mem0：一次提取同时参考旧事实与近期消息
@@ -73,6 +81,10 @@ Graphiti：两份文档都说“Atlas 由平台组维护”。整理后不必产
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/03-03.svg)
+
+源码对照：
 
 新旧卡片文字完全一样，可以用文字指纹比较；“默认预发布”和“默认部署到预发布”却是不同文字，指纹不会自动认出同义。Mem0 先让提取器看到部分旧卡，再做本次能看到的精确查重。Graphiti 还比较关系两端是谁、正文是否同义、日期是否一致；例如同一 Atlas 的同一默认环境，才可能复用旧关系。
 
@@ -101,6 +113,10 @@ Graphiti：确认这是长期变更后，让“默认测试”的关系在今天
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/03-04.svg)
+
+源码对照：
+
 库里已有“默认测试”，新话说“以后默认预发布”。Mem0 的普通写入可增加新卡，但旧卡仍可能留着，应用要定义当前默认如何选。Graphiti 若判断它是同一默认关系的变化，可新增预发布关系并结束旧关系的有效时间。所谓结束是保留旧事实曾经成立的日期，不是把那段历史抹掉。
 
 ### Mem0：自动追加与显式更新是两条路径
@@ -128,6 +144,10 @@ Graphiti：一份批准人文档已进入处理队列，关系尚未保存。此
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/03-05.svg)
+
+源码对照：
+
 Async 表示调用等待期间，程序有机会做其他工作；它不等于任务已可靠排到另一个进程。Mem0 或 Graphiti 正在请求模型时，进程退出都可能中断整理。持久队列则先把待做任务存下，由工作程序处理，并记录成功或失败。想让用户立即得到回复，应用需另建这条接收与处理路径。
 
 ### Mem0：AsyncMemory 没有替应用建立持久队列
@@ -152,6 +172,10 @@ Graphiti：应用保存清洗后的检查报告，并把“本次 Atlas 检查�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/03-06.svg)
+
+源码对照：
 
 工具输出可能有密码、文件路径和几十行堆栈。应用先挑出“Atlas 本次迁移检查未通过”等可保存内容，再交给记忆层。Mem0 可直接保存已审核文字，避免模型再次总结；Graphiti 收到同样材料仍通常要找对象和关系。输入是日志，并不意味着日志中每个词都值得成为长期事实或图中对象。
 
@@ -180,6 +204,10 @@ Graphiti：猜测来自聊天，确认来自工具报告。保存时区分这两
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/03-07.svg)
+
+源码对照：
+
 “可能迁移没跑”是待核验猜测，不能直接升级成今后必须重跑迁移的流程。Mem0 提取出的卡片应保留“可能”；Graphiti 建出的关系也应保留报告来源和条件。提取提示是交给模型的整理要求，能引导表达，但不能证明猜测已由工具验证，后续仍需业务审核。
 
 ### Mem0：新增事实的选择发生在模型提示里
@@ -206,6 +234,10 @@ Graphiti：文档处理到一半失败，重试前先查材料和关系是否已
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/03-08.svg)
+
+源码对照：
 
 一次请求提出 M1、M2，M1 已保存，M2 因向量服务失败没有完成，整批再试可能再次处理 M1。Graphiti 也可能在多项对象操作之间失败。原事件编号回答“这是哪次输入”，记忆或材料编号回答“它已产生哪些结果”；应用保存这个对应表，才能先查询完成状态，再补未完成部分。
 
@@ -316,7 +348,7 @@ MemoryOS 的 session merge 则比较主题摘要/关键词，把 pages 放入主
 
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/03-write-path.svg" alt="Mem0、Memobase、Graphiti 和显式文件编辑的写入与生效流程对比" loading="lazy"><figcaption>图：抽取、flush、resolution 和 commit 的完成语义不同。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/03-write-path.svg" alt="Mem0、Memobase、Graphiti 和显式文件编辑的写入与生效流程对比" loading="lazy"><figcaption>图：提取完成、批次整理完成、关系核对完成和版本提交完成，表示不同状态。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -337,9 +369,9 @@ MemoryOS 的 session merge 则比较主题摘要/关键词，把 pages 放入主
 | Letta Code | Agent 编辑后 commit | core/deferred/Skill 文件 | 未提交或未重新编译 |
 | Basic Memory | 文件/MCP 编辑后同步 | entity/observation/relation | 同步延迟、链接/并发编辑 |
 | MCP Memory Service | 客户端 store、可选巩固 | content/hash 与冷路径聚类 | store 不等于价值筛选 |
-| Agent Beacon | harness 动作事件 | 动作 identity 与统一字段 | coverage/fidelity、秘密捕获 |
-| TencentDB | L0 捕获与后台提取 | L1 新旧候选 batch judgment | 无候选时直存；隔离不可复用错 |
-| Hermes Jev Skills | 小决策 memo；非事实提取 | exact-match key | 不能替代长期写入管线 |
+| Agent Beacon | 助手运行环境产生动作 | 按事件编号去重，统一日志字段 | 动作有没有漏采、直接观察还是推断、是否含秘密 |
+| TencentDB | 保存会话，再后台提取 | 先搜旧候选，再集中判断新旧记忆 | 没找到候选会直接保存；写入去重与读取范围不能混用 |
+| Hermes Jev Skills | 缓存小决策，不提取长期事实 | 只有输入及范围完全相同时才复用 | 不能替代长期写入流程 |
 | MemGPT / 旧 Letta | 论文模型调用写工具 | core/archival 内容 | 依赖模型正确触发；旧仓非当前实现 |
 
 </details>

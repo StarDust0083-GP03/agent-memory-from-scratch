@@ -15,6 +15,10 @@ Graphiti：语言偏好连到 Alice，失败经历连到那次发布任务。查
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/10-01.svg)
+
+源码对照：
+
 Alice 的资料可以分成当前默认和具体经历。Mem0 的 user scope 读作“属于这个用户的存取范围”，里面仍有许多不同用途卡片；Graphiti 则将 Alice、Atlas 等对象分开。回答用什么语言，应看 Alice 的默认；发布为何失败，应看 Atlas 的经历，不应把范围相同误认为所有内容都相关。
 
 ### Mem0：同一个 user scope 不意味着所有事实都该出现
@@ -51,6 +55,10 @@ Graphiti：同一句话分别记录 Alice 的偏好、Atlas 的数据库和发�
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/10-02.svg)
+
+源码对照：
 
 假设提取器写出 M1、M2、M3，程序要逐条保留正文，再为它们生成搜索用数字。一批写入表示集中处理这些记录，能减少请求次数，却不保证一个失败会撤销全部成功。Mem0 还维护历史与对象关联；Graphiti 对同样原话则维护材料、对象与关系。返回三项时，要确认是哪三种对象，不能只比条数。
 
@@ -122,6 +130,10 @@ Graphiti：E42 的关系可由文字搜索单独找到，再参与合并。仍�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/10-03.svg)
+
+源码对照：
+
 把 boost 读成额外加分：一张候选卡谈到 Atlas，查询也谈到 Atlas，它可以得到奖励。但若 M3 根本没被纳入 Mem0 的第一批，给相关对象加分仍可能没有它的位置。Graphiti 的独立全文路可能将这条失败关系找回来，前提是失败信息确实存在于被索引的关系正文。
 
 ### Mem0：实体 boost 也无法补回 M3
@@ -156,6 +168,10 @@ Graphiti：分别记“Alice→语言→中文”“Alice→时区→上海”�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/10-04.svg)
+
+源码对照：
+
 缓冲区像待整理的一摞输入，flush 表示开始把它们整理成可读状态。Mem0 的普通 add 没有因此成为画像合并服务；Graphiti 读取前序材料是给提取器参考，也不表示这些材料仍在排队。要解释“刚说英文却还读到中文”，分别检查输入接收、整理完成和读取缓存三个时刻。
 
 ### Mem0：没有 buffer flush 合并画像的同等协议
@@ -183,6 +199,10 @@ Graphiti：英文要求连到邮件任务，中文偏好连到 Alice。只有“
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/10-05.svg)
+
+源码对照：
+
 “这封邮件英文”可以对应任务 T1，“以后英文”才改变用户默认。Mem0 存成文字卡片时要保留 T1 限定，不覆盖中文默认；Graphiti 可将任务需求和长期偏好表达为不同关系。关系结束或卡片替代之前，要先证明新话改变的是同一个默认字段，而非另一个场景。
 
 ### Mem0：一次例外追加，永久变更需指定策略
@@ -209,6 +229,10 @@ Graphiti：应用先定位 Alice，再读取她当前的语言关系。若把“
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/10-06.svg)
+
+源码对照：
 
 已知语言卡片是 M1，按编号直接取它，可以避免查询措辞变化使它落选；但 M1 若已改错，每轮都会稳定读错。Graphiti 按用户对象读摘要也有相同风险。确定读取只是保证拿到那个对象，正文正确、日期有效和权限允许仍需另查，尤其是批准人等必须确定的字段。
 
@@ -238,6 +262,10 @@ Graphiti：没有用户来源，就不建立“Alice 偏好测试”的关系。
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/10-07.svg)
+
+源码对照：
 
 Alice 没说默认环境时，应用可以使用自己的测试环境默认，但应标注为应用规则。不要把它填成 Mem0 的用户事实，也不要让 Graphiti 抽成 Alice 的偏好边。未知表示没有证据，不是整理失败；允许空值和请求澄清，比用一个看似完整的字段掩盖猜测更容易纠正。
 
@@ -376,16 +404,16 @@ Basic/Hippo/文件规则也能保存偏好，Cognee 可以经 schema 或 prefere
 | 项目/实现 | 偏好怎样进入稳定视图 | 在线访问 | 与 Memobase 不同的责任 |
 |---|---|---|---|
 | Mem0 | 推断 add 为新增短事实 | query 多信号评分 | 多条偏好需时间/语境消歧 |
-| Memobase | 用户 buffer flush、topic/subtopic merge | profile 直接读、event 搜索 | 原文保留与并发 flush 配置 |
-| MemoryOS | 热中期 pages 分析为完整 profile | 长期画像加多层知识召回 | heat/promotion 与冷纠正可见性 |
+| Memobase | 集中处理用户待整理消息，按主题合并属性 | 直接读画像，另搜索事件 | 原文保留，以及同一用户的并发处理 |
+| MemoryOS | 分析高热度主题中的页面，形成完整画像 | 读取画像，同时分层搜索知识 | 低频明确纠正是否及时可见 |
 | TencentDB | L0/L1 到场景/core、prompt 版本 | Proxy 高层注入/低层工具 | scope/资产与生成溯源 |
-| Letta Code | Agent self-edit core/deferred | core 编译常驻，详情主动读 | commit/recompile、规则评审 |
+| Letta Code | 助手编辑核心规则或详细文件 | 核心随输入出现，详情主动读取 | 版本提交、后续输入更新、规则评审 |
 | MemOS | 可选 pref/text module | 依 backend/宿主组织 | 模块选择不等于固定字段协议 |
 | Graphiti | entity/edge/summary 中组织偏好 | 图/全文/语义与时间筛选 | 实体消歧和边失效 |
 | Cognee | schema/typed entries/个性化管线 | 按配置 recall | 路由与反馈设置需要核对 |
 | Hippo、Basic、MCP | 偏好内容存为本地记录/笔记/typed memory | 检索或显式读取 | 由应用定义稳定属性与合并规则 |
 | A-MEM、HippoRAG | 笔记/文档可表达偏好 | 关联检索 | 不能只因有文本就称画像服务 |
-| Beacon、Hermes | trace 或判别候选 | 供下游提取/选择 | 不维护用户画像 source of truth |
+| Beacon、Hermes | 提供活动日志或筛选已有候选 | 供后续提取或选择 | 不维护权威用户画像 |
 
 </details>
 

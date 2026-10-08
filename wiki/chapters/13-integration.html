@@ -5,6 +5,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-01.svg" alt="代码已经会存和取，怎样让真实助手调用它：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：只接保存没有读取，或只建图没有回答前查询，都不会自动让助手用上历史。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>在助手代码里找到两处位置：回答前读取历史，任务后保存允许记忆的新材料。Mem0 放进这两个位置即可形成存取闭环；Graphiti 还可能把材料整理作为独立服务，查询作为另一服务。Ingestion 就是接收并整理输入的过程，query 是读取问题；部署分开后仍要记录何时整理完成。</p>
 <h3 id="mem0-生成前读取-生成后写入需要业务安排">Mem0：生成前读取、生成后写入需要业务安排</h3><p>应用在调用回答模型前执行 search 并组装结果，任务结束后把审核或待提取消息交 add。也可以把搜索暴露为模型工具。两种接法的检索触发者不同，SDK 没有自动知道你的任务生命周期，应分别记录输入和调用时机。</p>
 <h3 id="graphiti-ingestion-与-query-服务可分开部署">Graphiti：ingestion 与 query 服务可分开部署</h3><p>接收事件后后台 await add_episode，查询端用固定 group 和搜索配方返回关系。必须让近期未处理纠正仍进入当前回答。图服务返回候选并不替宿主调度发布工具，服务化只是把调用边界放到了网络上。</p>
@@ -20,6 +23,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-02.svg" alt="MCP Memory Service：让不同客户端叫到同一个服务：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：协议封装不自动提供认证授权；服务端不能把客户端传来的身份当可信事实。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>MCP 是让客户端以约定协议调用服务工具的一种方式。把 Mem0 搜索或 Graphiti 查询包成 MCP 工具后，模型可以提议查什么，服务端仍应从已验证身份确定用户或组。模型若在参数里写 Bob，不能因此获得 Bob 的 Atlas 资料；传输协议不会替服务做最终授权。</p>
 <h3 id="mem0-工具封装不能让模型替用户挑-scope">Mem0：工具封装不能让模型替用户挑 scope</h3><p>MCP server 可以内部调用 Memory，但 user_id 应由认证会话解析，工具参数只接查询和允许的业务类型。传输认证之后还要在每次 search、get 和 update 检查对象归属。按 ID 接口尤其不能因 ID 难猜就省略授权。</p>
 <h3 id="graphiti-mcp-的-group-ids-也是隔离参数">Graphiti：MCP 的 group_ids 也是隔离参数</h3><p>服务应将 caller 映射为允许的 groups，限定 search 和直接 UUID 读取。即使高级工具允许查询节点，也不能开放任意全图 driver 操作。MCP 协议标准化消息，不标准化 Graphiti 与别的记忆服务的边和来源语义。</p>
@@ -34,6 +40,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-03.svg" alt="Basic Memory：把人能编辑的笔记作为原始资料：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：改了文件不会自动刷新所有派生库；同步成功也要检查旧状态是否仍参与读取。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>人把 Markdown 里的默认环境改了，数据库中的旧派生记录不会凭空消失。Mem0 接入文件时需决定重写哪张卡；Graphiti 可以把文件版本作为不同材料，但要检查旧关系是否该结束。同步策略就是定义文件变化如何对应新增、修改与删除，原文可编辑与搜索状态已更新是两件事。</p>
 <h3 id="mem0-文件可以是输入-数据库仍需同步策略">Mem0：文件可以是输入，数据库仍需同步策略</h3><p>人审笔记通过 infer=False 保存，metadata 记录路径、文档版本和来源 ID。文件改名或正文修改不会自动通知 SDK；应用根据稳定文档身份 update 或重新提取，避免旧文本与新文本共存而无版本说明。</p>
 <h3 id="graphiti-文件版本可以各自成为来源-episode">Graphiti：文件版本可以各自成为来源 episode</h3><p>新版本输入保留来源描述和版本映射，抽出的关系与旧关系进行解析。修改一份文件不等于原 episode 原文也被改写；原始经历与当前知识需分角色。删除文件时还要决定旧来源保留政策与派生边清理，不能只删搜索入口。</p>
@@ -48,6 +57,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-04.svg" alt="Agent Beacon：把“做过什么”留成可以核对的时间线：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：助手自己的猜测不是工具结果；采集、提取和事实验证是不同步骤。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Trace 指工具和任务的执行记录，可能包括参数、输出与时间。Mem0 可从脱敏结果整理教训，Graphiti 可从事件材料形成带来源关系；两者都不应把密码或完整生产日志直接永久化。原始事件负责核对做过什么，派生事实负责下次复用，保存范围和保留时间可以不同。</p>
 <h3 id="mem0-工具-trace-应先脱敏再形成事实">Mem0：工具 trace 应先脱敏再形成事实</h3><p>把失败命令与验证输出摘要交给 add，写 source ID、session 与工具调用映射。普通事实提取不捕获完整工具顺序，role 字段也不能证明根因。入口保留可追溯 trace，让“已修复”的模型文字回到实际测试结果核验。</p>
 <h3 id="graphiti-episode-序列可保存事件顺序线索">Graphiti：episode 序列可保存事件顺序线索</h3><p>事件分别作为 episode，saga 可把相关经历关联起来。observed 与 inferred 等证据等级来自采集器，应在来源或自定义属性中保留。图抽取的因果关系仍是派生判断，不能仅凭先修改后成功就宣布该修改是唯一原因。</p>
@@ -62,6 +74,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-05.svg" alt="TencentDB：多人共享时，先决定谁能看到哪份资产：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：能读关系不表示能读所有原文；权限需要覆盖每一种实际读取入口。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>ACL 是访问控制规则，例如 Alice 能读自己项目，审核员能读团队发布资料。Mem0 的 user、agent、run 字段与 Graphiti 的 group 字段帮助定位数据，但请求者写出这些值不证明有权使用。服务先判断能访问哪些对象，再构造过滤条件，按编号读取也要遵守同一判断。</p>
 <h3 id="mem0-user-agent-run-不等于完整团队-acl">Mem0：user、agent、run 不等于完整团队 ACL</h3><p>这些 scope 限定事实所属范围，应用还需解析共享项目、成员权限和撤销。稳定项目教训不宜全部锁在临时 run 下；私有用户事实也不能为跨会话方便去掉过滤。团队资产管理和直接 ID 读取必须由外层一致执行。</p>
 <h3 id="graphiti-group-是图分区-不是授权证明">Graphiti：group 是图分区，不是授权证明</h3><p>调用者传 group_id 并不表示有权访问。服务先验证身份，再选择组与可共享关系；跨组查询需有明确授权策略。把两个团队的同名 Atlas 放进同一组会增加消歧难度，因此建图分区和业务可见性应一起设计。</p>
@@ -75,6 +90,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-06.svg" alt="把一次失败从工具输出交到下一次任务：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：一次失败不自动支持通用强规则；源事件和长期流程之间需要业务核验。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>工具事件 T7 可能让 Mem0 产生 M1、M2，也可能让 Graphiti 产生材料 E1、多个节点和关系。应用保存 T7 到实际返回编号的对应表，才能回答“这条教训来自哪次运行”和“重试该补什么”。这些编号分别标识原事件和派生对象，不能因为都长得像 UUID 就随意互换。</p>
 <h3 id="mem0-为一次事件维护派生-memory-ids">Mem0：为一次事件维护派生 memory IDs</h3><p>入口保存工具事件，提取 results 中的 ID 与原 source 关联，下一任务 search 后记录 packed IDs。纠正时用映射定位受影响事实，不靠相似句猜哪张卡来自该事件。事实结果 ID 随写入生成，稳定源 ID 应由应用拥有。</p>
 <h3 id="graphiti-保存-addepisoderesults-的实际身份">Graphiti：保存 AddEpisodeResults 的实际身份</h3><p>返回 episode、nodes 和 edges，应用应存 episode UUID 及原事件映射。下一任务从边的 episodes 回到原材料，便能检查教训从哪来。重复边可能复用旧 UUID，所以新增事件不等于每次新增一条边；来源和事实身份需分别关联。</p>
@@ -88,6 +106,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-07.svg" alt="多个入口同时写入时，怎样避免摘要套摘要：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：来源条数不等于独立证据数；跨入口重复整理可能放大同一错误猜测。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>聊天摘要写一次“迁移是根因”，任务报告再抄一次，同一猜测就经过两个入口。Mem0 两张卡片文字不同，指纹去重未必认出；Graphiti 两份材料也不代表独立观察。保留它们共同引用的原事件，才能避免把转述次数当作证据数量，再不断生成更强的总结。</p>
 <h3 id="mem0-hash-去重不能识别跨摘要转述">Mem0：hash 去重不能识别跨摘要转述</h3><p>同一事件被三个入口改写为不同 text，hash 都不同，甚至可能进入不同 scope。先统一事件 ID 和唯一提取责任，再让其他入口只传引用或视图。将源 ID 放 metadata 后仍需外层幂等检查，SDK 不会自动据它合并所有转述。</p>
 <h3 id="graphiti-多个-episode-不一定是多份独立证据">Graphiti：多个 episode 不一定是多份独立证据</h3><p>图可能将三份摘要解析为同一边并增加 episodes，来源列表因此增长。需标明 derived_from 关系或外部映射，区分原始观察与二次概括。摘要再进入提取器会提高漂移风险，不应把重复支持数量当作真实性增强。</p>
@@ -101,6 +122,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/13-08.svg" alt="权限撤销，要沿着实际读取路径走：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：仅让搜索为空不足以完成撤权；直接读取和来源回查必须同时检查。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Alice 离开团队后，搜索结果、直接读取、原文回查与缓存都应停止暴露团队材料。Mem0 过滤搜索还不够，已知 M1 编号的读取也需核验；Graphiti 隐藏关系后，按 E1 取原材料也不能绕过权限。沿实际访问路径逐项检查，权限撤销才不会只作用于一个入口。</p>
 <h3 id="mem0-撤销后要覆盖搜索与按-id-读取">Mem0：撤销后要覆盖搜索与按 ID 读取</h3><p>filters 限制 search，但应用之前缓存的 MemoryItem、固定 ID 与已打包 prompt 仍可能含正文。失去项目权限后清理该 caller 的注入缓存，并在 get、update、delete 前核验归属。用户看不到最终回答不证明服务没有读取旧私有数据。</p>
 <h3 id="graphiti-关系与来源全文都要经过授权">Graphiti：关系与来源全文都要经过授权</h3><p>事实边限定了 group，后续按 episodes 读取全文也应检查组和来源权限。节点 UUID 入口、中心距离查询和直接图工具同样不能绕过服务。权限变更后使缓存失效，并检查下次输入是否还包含旧 fact 或 summary。</p>
@@ -179,7 +203,7 @@
 <p>例如 A 用户的 trace 经提取写入团队 Skill 后，B Agent 使用它，审计应能从 B 的 prompt/Skill version 回到共享资产和脱敏来源，且 A 请求删除时知道哪些派生内容需处理。这是组合系统的新增责任，不由 MCP 协议自动提供。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/13-integration.svg" alt="服务、文件、trace 与请求代理分别跨越不同输入、存储和上下文边界" loading="lazy"><figcaption>图：统一出口不等于统一原文，保留每层 owner 与身份映射。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/13-integration.svg" alt="服务、文件、trace 与请求代理分别跨越不同输入、存储和上下文边界" loading="lazy"><figcaption>图：统一出口不等于统一原文，保留每层 owner 与身份映射。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -189,7 +213,7 @@
 <tr>
 <th>项目</th>
 <th>主要接入方式</th>
-<th>source of truth / 控制者</th>
+<th>原始资料在哪，谁管理</th>
 <th>组合时额外责任</th>
 </tr>
 </thead>
@@ -207,15 +231,15 @@
 </tr>
 <tr>
 <td>Agent Beacon</td>
-<td>hook/plugin/OTLP/poll</td>
-<td>runtime JSONL/各运行日志</td>
-<td>coverage、脱敏、下游提炼</td>
+<td>事件回调、插件、遥测或轮询</td>
+<td>统一事件文件及各次运行日志</td>
+<td>漏采检查、脱敏、后续教训提炼</td>
 </tr>
 <tr>
 <td>TencentDB</td>
-<td>Adapter/SDK/MemoryProxy</td>
-<td>Core、Knowledge、资产服务各分工</td>
-<td>身份、callback、注入缓存与撤销</td>
+<td>适配器、开发库或请求代理</td>
+<td>会话、知识及资产服务分别管理</td>
+<td>身份验证、处理完成通知、输入缓存与撤销</td>
 </tr>
 <tr>
 <td>Mem0</td>
@@ -279,7 +303,7 @@
 </tr>
 <tr>
 <td>旧 Letta</td>
-<td>archive/历史教程</td>
+<td>归档版本及历史教程</td>
 <td>历史版本</td>
 <td>只用于复现，当前接 Letta Code</td>
 </tr>

@@ -22,6 +22,10 @@ Graphiti：Lin 的批准关系在 18 日结束，Mei 的从 18 日开始。应�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/06-01.svg)
+
+源码对照：
+
 “9 日由 Lin 批准”“18 日起由 Mei 批准”，历史问题查 15 日应选 Lin，当前问题可能选 Mei。Mem0 的到期时间是控制何时不再展示一张卡，不完整表达它在现实中何时成立。Graphiti 的关系可以保留开始与结束时间；搜索时应用仍需把目标日期明确带入，不能只拿分数最高的关系回答。
 
 ### Mem0：到期隐藏与现实有效区间不同
@@ -50,6 +54,10 @@ Graphiti：这条关系记“12 日生效、20 日录入”。问“15 日规则
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/06-02.svg)
+
+源码对照：
 
 ### 把 Graphiti 的“某日有效”写成实际过滤
 
@@ -110,6 +118,10 @@ Graphiti：前一句连到本次发布任务，后一句才改变 Atlas 的长�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/06-03.svg)
+
+源码对照：
+
 同一句“由 Mei 批准”可能是更换批准人，也可能只针对某次演练。Mem0 追加文字后，需要应用或读取逻辑保留这项区别；Graphiti 解析模型也须先判断是否与旧默认矛盾，才决定结束哪条旧关系。日期字段记录裁决结果，不能替代对两句话适用范围的理解。
 
 ### Mem0：追加保留分歧，裁决仍需应用
@@ -144,6 +156,10 @@ Graphiti：两个 Atlas 分别连到各自的团队。若误合成同一对象�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/06-04.svg)
+
+源码对照：
+
 Alice 与 Bob 的项目都叫 Atlas，文字相同但不能共用批准人。Mem0 的实体关联帮助找涉及某个对象的卡片，仍需正确范围。Graphiti 若把两个 Atlas 合成同一编号，边就接到同一对象，错误会延伸到后续查询。身份解析的结果要看编号与来源，不能只看显示名称。
 
 ### Mem0：实体关联使用规范文本和近邻匹配
@@ -171,6 +187,10 @@ Graphiti：补录材料会影响 12 日以后的历史视图。应用检查新�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/06-05.svg)
+
+源码对照：
+
 用户 20 日补录“12 日默认已改预发布”，另一条 19 日收到的消息仍讲测试。按最后入库时间选值会出错。Mem0 需要应用保留原事件和业务版本；Graphiti 即使保存了关系有效期，也要区别“当时现实是什么”与“我们当时已知道什么”。后一个问题还涉及录入时间和历史观察方式。
 
 ### Mem0：历史回答需要外层事件和版本
@@ -197,6 +217,10 @@ Graphiti：测试环境连到今天的演练任务，预发布连到项目长期
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/06-06.svg)
+
+源码对照：
 
 “今天测试”可以作用于演练任务 T1，“以后预发布”作用于项目长期默认。Mem0 的 scope 表示存取范围，应用要规定当前任务记录如何覆盖一般默认。Graphiti 可用任务对象或关系条件保留 T1，不让它结束项目默认边。连的是哪个对象、谈的是哪种用途，要在裁决冲突前确定。
 
@@ -310,8 +334,8 @@ TencentDB Wiki 是文档页面与链接图，CodeGraph 是符号/调用结构；
 
 | 项目 | 时间/冲突怎样处理 | 图或版本的实际用途 | 不能据此认定 |
 |---|---|---|---|
-| Graphiti | episode reference + valid/invalid/created/expired | 时变事实、来源、BFS 等搜索 | 模型抽取永不误判 |
-| Hippo | 显式 conflict/supersession；时间价值另算 | 可选限跳图排名/邻居扩展 | strength 能裁定事实真伪 |
+| Graphiti | 材料参考日、关系开始与结束日、系统记录时间 | 查询变化中的关系，回查来源，按配置找邻居 | 模型抽取永不误判 |
+| Hippo | 明确记录冲突和替代；另算随时间变化的价值 | 可选的邻域排序或补充搜索 | 价值分能裁定事实真伪 |
 | MCP Service | 可选相似度区间 + 创建时间启发式 | CONTRADICTED_BY、association/typed edges | 已证明语义矛盾或双时间 |
 | TencentDB | L1 候选批量判断、高层归纳 | Wiki 链接、CodeGraph、资产版本 | 所有 L0 至 L3 都是时间图边 |
 | Mem0 | 追加事实、时间 metadata、显式更新 | entity 到 memory 的索引 | entity boost 是完整关系图 |
@@ -321,7 +345,7 @@ TencentDB Wiki 是文档页面与链接图，CodeGraph 是符号/调用结构；
 | HippoRAG | passage/fact provenance 和增量知识 | seeds/PPR 关联召回 | 当前/历史状态自动裁决 |
 | A-MEM | 改描述与 tag/link | 近邻关联网络 | 旧描述有有效区间 |
 | Basic Memory | 正文/语义时间与文件历史 | 人工 relation、URI 展开 | Git 自动提供 as_of 查询 |
-| Letta Code | commit/recompile 版本生效 | core 与 deferred 发现 | 编译时间等于事实生效时间 |
+| Letta Code | 提交后，后续提示编译才使用新版本 | 小核心常驻，详细文件按需打开 | 输入更新日等于现实生效日 |
 | MemOS | textual 后端与配置决定 | cube 元数据、图/向量资源 | KV/LoRA 可逐事实时间查询 |
 | Beacon | 动作时间与 observed/inferred | 可审计 session 时间线 | 事件日志已经完成知识冲突裁决 |
 | Hermes Jev Skills | 日期锚定、候选判别 | 不持有长期事实图 | relevance 概率能决定历史真相 |

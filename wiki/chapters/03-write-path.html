@@ -6,6 +6,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-01.svg" alt="先别急着总结，把原话留住：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 的内部消息保存与 Graphiti 的最终保存都可能尚未发生；入口留原文要由应用保证。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>把输入交给程序，到把输入真正写进数据库，中间可能出错。Mem0 若在提取模型调用时断开，原话未必已进入内部消息历史；Graphiti 在内存中建立 E1 对象，也不表示图数据库已保存 E1。需要不丢原话的应用，可以先在自己的事件表写入这条消息，再请求整理；失败时用原文重做。</p>
 <h3 id="mem0-消息保存在提取流程的收尾阶段">Mem0：消息保存在提取流程的收尾阶段</h3><p>正常路径通过 <code>self.db.save_messages()</code> 保存消息，包括没有提取出新事实的情况。但 LLM 调用失败会抛出 <code>LLMError</code>，尚未走到最后的消息保存。需要可靠捕获时，应用应在调用 <code>add()</code> 前持久化原事件，不能把 SDK 内部的近期消息缓存当成先写日志的保证。</p>
 <h3 id="graphiti-建立-episode-对象不等于已经落库">Graphiti：建立 episode 对象不等于已经落库</h3><p><code>add_episode()</code> 先创建带 content、来源描述、<code>created_at</code> 和 <code>valid_at</code> 的 episode 对象，之后抽取、解析，最终由 <code>_process_episode_data()</code> 保存。抽取失败可能发生在保存之前。因此也应先在入口保存原事件，再后台提交，失败后依据稳定事件 ID 重试。</p>
@@ -20,6 +23,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-02.svg" alt="提取：把长期变更和本次例外拆开：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：结构化结果能解析，不表示“以后”和“今天”解释正确；要核对生成内容。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>给 Mem0 的新话包含“以后预发布”和“今天测试”，期望输出是长期默认与单次任务两张有条件的卡片。Graphiti 要将“Atlas 的默认环境”与“这次演练的环境”区别表达。提取器是提出这些陈述的模型，近期资料帮助它解释省略词；它仍可能漏掉“今天”，所以核验对象是实际生成的文字与关系。</p>
 <h3 id="mem0-一次提取同时参考旧事实与近期消息">Mem0：一次提取同时参考旧事实与近期消息</h3><p><code>generate_additive_extraction_prompt()</code> 接收新消息、最近消息、已召回事实和自定义指令。旧 UUID 被映射为短整数标签供提示使用，减少生成虚构标识的机会；输出解析为 <code>memory</code> 列表中的 <code>text</code>。这条普通路径生成新增事实，不能依据过时 docstring 推断它仍自动执行 UPDATE 或 DELETE。</p>
 <h3 id="graphiti-先抽对象-再抽对象间的限定关系">Graphiti：先抽对象，再抽对象间的限定关系</h3><p>实体抽取与消歧提供规范端点，边抽取结合前序 episode 和 <code>reference_time</code> 理解“以后”和“本次”。应用可在 <code>custom_extraction_instructions</code> 中强调默认与例外区别，但仍应查看生成边是否保留任务条件。结构化 JSON 合法，只证明字段能解析，不证明语义正确。</p>
@@ -33,6 +39,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-03.svg" alt="去重：重复文字和重复意思是两件事：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：文字 hash 只能认出完全相同的文字；旧记录未进入候选时，语义查重也可能漏掉。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>新旧卡片文字完全一样，可以用文字指纹比较；“默认预发布”和“默认部署到预发布”却是不同文字，指纹不会自动认出同义。Mem0 先让提取器看到部分旧卡，再做本次能看到的精确查重。Graphiti 还比较关系两端是谁、正文是否同义、日期是否一致；例如同一 Atlas 的同一默认环境，才可能复用旧关系。</p>
 <h3 id="mem0-hash-去重的边界是本批次与召回旧记录">Mem0：hash 去重的边界是本批次与召回旧记录</h3><p>代码对提取正文计算 MD5，与 <code>seen_hashes</code> 和 <code>existing_hashes</code> 比较。前者防止本批重复，后者只包含本次召回的旧记录；全库其他位置的相同正文仍可能漏过。同义句 hash 不同，而提取提示只能对看见的旧事实避免重复，无法保证全库语义唯一。</p>
 <h3 id="graphiti-先精确去重-再比较关系候选">Graphiti：先精确去重，再比较关系候选</h3><p><code>resolve_extracted_edges()</code> 用源 UUID、目标 UUID 和规范化 fact 去掉本批完全重复。随后查询两端节点间已有边，混合搜索重复候选，并另搜可能失效的相关边，交给关系解析模型。它比较对象、事实与时间，代价比文本指纹大；旧边未进入候选时，语义去重也可能漏掉。</p>
@@ -46,6 +55,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-04.svg" alt="变化：保留旧事实，还是修改当前视图：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 普通 add 不自动关闭旧默认；Graphiti 新增关系后也要检查旧关系是否正确失效。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>库里已有“默认测试”，新话说“以后默认预发布”。Mem0 的普通写入可增加新卡，但旧卡仍可能留着，应用要定义当前默认如何选。Graphiti 若判断它是同一默认关系的变化，可新增预发布关系并结束旧关系的有效时间。所谓结束是保留旧事实曾经成立的日期，不是把那段历史抹掉。</p>
 <h3 id="mem0-自动追加与显式更新是两条路径">Mem0：自动追加与显式更新是两条路径</h3><p>普通 <code>add()</code> 保留新事实，不自动关闭旧默认。应用确认变更后，可以显式 <code>update()</code> 修改当前记录；历史库保存 UPDATE 前后正文，但这不是现实有效区间。需要历史默认时，另保留带生效日的版本记录和查询规则，不要仅按 <code>updated_at</code> 回答。</p>
 <h3 id="graphiti-重复与失效结果分开返回">Graphiti：重复与失效结果分开返回</h3><p>边解析返回 <code>resolved_edges</code>、<code>invalidated_edges</code> 和 <code>new_edges</code>。重复可能复用已有 UUID，新状态可能让旧边结束；摘要更新只用新边。应用既要核对新预发布关系，也要核对旧测试关系的结束日，不能只统计新增条数就宣布变更正确。</p>
@@ -59,6 +71,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-05.svg" alt="为什么有些项目没有马上处理：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：异步调用不等于耐进程退出的后台队列；收到请求与整理完成必须分开显示。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Async 表示调用等待期间，程序有机会做其他工作；它不等于任务已可靠排到另一个进程。Mem0 或 Graphiti 正在请求模型时，进程退出都可能中断整理。持久队列则先把待做任务存下，由工作程序处理，并记录成功或失败。想让用户立即得到回复，应用需另建这条接收与处理路径。</p>
 <h3 id="mem0-asyncmemory-没有替应用建立持久队列">Mem0：AsyncMemory 没有替应用建立持久队列</h3><p>异步 API 允许调用者等待模型和存储工作，不表示请求一返回就有耐进程故障的后台任务。同步或异步普通写入都要完成提取与存储流程。若要移出回复热路径，应由应用配置持久队列，跟踪接收、处理中和完成状态，当前消息仍直接进入当前回答。</p>
 <h3 id="graphiti-单个-episode-内并行-关联-episode-仍需有序">Graphiti：单个 episode 内并行，关联 episode 仍需有序</h3><p>实现用异步任务并行部分抽取和 embedding；<code>add_episode()</code> 的说明仍建议关联输入顺序提交并等待。因为后一个事件可能依赖前一个的节点或事实。多个独立 group 的请求可以按隔离范围组织并发，但不能由“async”推断任意乱序写入都有相同结果。</p>
@@ -71,6 +86,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-06.svg" alt="文件和工具事件怎样进入这条管线：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：infer=False 跳过提取，不负责去秘密；提交 Graphiti 的日志仍会进入抽取流程。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>工具输出可能有密码、文件路径和几十行堆栈。应用先挑出“Atlas 本次迁移检查未通过”等可保存内容，再交给记忆层。Mem0 可直接保存已审核文字，避免模型再次总结；Graphiti 收到同样材料仍通常要找对象和关系。输入是日志，并不意味着日志中每个词都值得成为长期事实或图中对象。</p>
 <h3 id="mem0-infer-false-适合已经审核的文本">Mem0：infer=False 适合已经审核的文本</h3><p>传入已筛选的工具教训并设 <code>infer=False</code>，会逐条保存非 system 消息，记录 role 和可选 actor，并生成 embedding。它跳过事实提取，不会自动知道文件版本、失败根因或敏感字段。应用要先清理原日志，并在 metadata 中保存来源和适用范围。</p>
 <h3 id="graphiti-文件与工具输出可作为-episode-材料">Graphiti：文件与工具输出可作为 episode 材料</h3><p><code>episode_body</code> 接收文本，<code>source</code> 区分消息、文本或 JSON 等输入形态，<code>source_description</code> 解释来源。把工具输出提交进去后，仍会经历抽取与解析；异常堆栈可能包含许多不值得建成实体的词。通过 schema 和提取指令限定关注对象，并保留原事件以便核验。</p>
@@ -84,6 +102,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-07.svg" alt="怎样判断一句话值得长期保存：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：能保存成记录或关系，不表示它值得成为长期规则；规则升级需要业务审核。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>“可能迁移没跑”是待核验猜测，不能直接升级成今后必须重跑迁移的流程。Mem0 提取出的卡片应保留“可能”；Graphiti 建出的关系也应保留报告来源和条件。提取提示是交给模型的整理要求，能引导表达，但不能证明猜测已由工具验证，后续仍需业务审核。</p>
 <h3 id="mem0-新增事实的选择发生在模型提示里">Mem0：新增事实的选择发生在模型提示里</h3><p>提取器试图筛出有用陈述，但普通路径没有一个经任务结果验证的价值评审器。应用可以先过滤闲聊和秘密，再要求候选保留“可能”“本次”等语义；返回成功之后抽样检查事实正文。重要性 metadata 若没有读取逻辑配合，也只是被保存的业务字段。</p>
 <h3 id="graphiti-能成为关系不意味着值得常规召回">Graphiti：能成为关系不意味着值得常规召回</h3><p>图可表达大量临时事实，抽取 schema 决定哪些对象和属性有位置保存。高连接度但无用的节点会增大搜索噪音，所以输入筛选与类型设计也是价值控制。图中的 source 和时间帮助审查证据，却没有代替业务判断失败猜测能否升级为流程规则。</p>
@@ -97,6 +118,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/03-08.svg" alt="写入失败后，怎样安全地再试一次：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：事件编号与派生编号要有对应；add_episode 的 uuid 参数不是任意新事件的幂等创建键。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>一次请求提出 M1、M2，M1 已保存，M2 因向量服务失败没有完成，整批再试可能再次处理 M1。Graphiti 也可能在多项对象操作之间失败。原事件编号回答“这是哪次输入”，记忆或材料编号回答“它已产生哪些结果”；应用保存这个对应表，才能先查询完成状态，再补未完成部分。</p>
 <h3 id="mem0-批量回退可能产生部分成功">Mem0：批量回退可能产生部分成功</h3><p>批量 embedding 失败会逐条尝试，批量插入与历史写入也有逐条回退。某些错误被记录后流程继续，返回记录来自构造好的 <code>records</code>，因此不能只看 results 就推断每个存储都一致。重试前按 ID 核对事实、历史和实体链接，入口维护稳定事件与派生 ID 映射。</p>
 <h3 id="graphiti-uuid-参数不能直接当作任意幂等创建键">Graphiti：uuid 参数不能直接当作任意幂等创建键</h3><p>当前 <code>add_episode(uuid=...)</code> 会尝试读取已有 episode，而不是无条件用这个 UUID 创建新对象。应用不能把一个尚不存在的随机事件 ID 填进去就宣称幂等。应保存事件到 episode UUID 的映射和处理状态，检查实际落库，再决定重试或重建；还要防止旧边失效动作被重复执行。</p>
@@ -154,7 +178,7 @@
 <p>对于文件写入，Basic 的 parser 只把明确 observation/link 结构化，Letta 的 commit 只确认文件版本可编译，两者不会自动保证内容没有矛盾。Beacon 事件 ID 去重针对同一动作重复采集，不针对“两个失败是否属于同一根因”。这些操作需要不同标注集，不能统一用一个重复率验收。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/03-write-path.svg" alt="Mem0、Memobase、Graphiti 和显式文件编辑的写入与生效流程对比" loading="lazy"><figcaption>图：抽取、flush、resolution 和 commit 的完成语义不同。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/03-write-path.svg" alt="Mem0、Memobase、Graphiti 和显式文件编辑的写入与生效流程对比" loading="lazy"><figcaption>图：提取完成、批次整理完成、关系核对完成和版本提交完成，表示不同状态。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -242,21 +266,21 @@
 </tr>
 <tr>
 <td>Agent Beacon</td>
-<td>harness 动作事件</td>
-<td>动作 identity 与统一字段</td>
-<td>coverage/fidelity、秘密捕获</td>
+<td>助手运行环境产生动作</td>
+<td>按事件编号去重，统一日志字段</td>
+<td>动作有没有漏采、直接观察还是推断、是否含秘密</td>
 </tr>
 <tr>
 <td>TencentDB</td>
-<td>L0 捕获与后台提取</td>
-<td>L1 新旧候选 batch judgment</td>
-<td>无候选时直存；隔离不可复用错</td>
+<td>保存会话，再后台提取</td>
+<td>先搜旧候选，再集中判断新旧记忆</td>
+<td>没找到候选会直接保存；写入去重与读取范围不能混用</td>
 </tr>
 <tr>
 <td>Hermes Jev Skills</td>
-<td>小决策 memo；非事实提取</td>
-<td>exact-match key</td>
-<td>不能替代长期写入管线</td>
+<td>缓存小决策，不提取长期事实</td>
+<td>只有输入及范围完全相同时才复用</td>
+<td>不能替代长期写入流程</td>
 </tr>
 <tr>
 <td>MemGPT / 旧 Letta</td>

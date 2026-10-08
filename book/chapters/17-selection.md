@@ -15,6 +15,10 @@ Graphiti：助手知道平台组维护 Atlas，却找不到正式批准人。试
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/17-01.svg)
+
+源码对照：
+
 如果失败是几天后忘了迁移教训，Mem0 的短记录存取就值得先试；如果失败是维护团队、批准人和变更日期分散在多份材料，Graphiti 的关系与时间更贴题。先说明要避免哪种具体错误，再挑机制，才能知道试用时应查看哪种中间结果。
 
 ### Mem0：选择 SDK 的理由应落在事实管线上
@@ -40,6 +44,10 @@ Graphiti：先写“Atlas 由平台组维护”“平台组发布由 Lin 批准�
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/17-02.svg)
+
+源码对照：
+
 Baseline 是比较新方案之前的简单对照。给 Mem0 直接保存几条审核文字，再查是否正确返回；给 Graphiti 只输入维护与批准两份材料，核对对象、边与来源。小到能手工解释每个结果，之后增加提取、重排或时间变化，才看得清哪里开始出错。
 
 ### Mem0：用直接保存建立最短 baseline
@@ -64,6 +72,10 @@ Graphiti：批准关系已保存，查询却用了今天而非目标日期。先
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/17-03.svg)
+
+源码对照：
 
 同样没返回 A，可能是 Mem0 第一批未找到它，也可能找到后被排低。Graphiti 可能只找到 Atlas 节点，却缺批准关系。先检查候选单位与编号，再试词搜索、额外查询或邻域扩展；不必一看到漏项就换整个数据库，更不能只调最后的排序权重。
 
@@ -92,6 +104,10 @@ Graphiti：需要回答变更前后批准人时，保存关系有效区间并按
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/17-04.svg)
+
+源码对照：
+
 问当前默认环境，几张审核卡与明确读取规则可能足够；问 15 日批准人，则需要历史有效性。Mem0 可以由应用另存版本并查询，Graphiti 提供关系时间与解析，但也要过滤正确日期。比较的是写入、纠正和查询整条链要承担多少工作，不是哪个项目字段更多。
 
 ### Mem0：长期版本可由外层补，成本需明确
@@ -117,6 +133,10 @@ Graphiti：测试 Alice 只能查自己的 Atlas，也不能凭 Bob 的材料编
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/17-05.svg)
+
+源码对照：
+
 多人共享时，先列哪些用户能读哪个项目、关系和原文，再实现查询入口。Mem0 自定义 metadata 字段能承载项目名，却不会自动认证它；Graphiti group 能分区，却不证明调用者属于组。服务端将真实权限转成筛选条件，才能避免模型或客户端自行选中别人的资料。
 
 ### Mem0：共享范围不能用任意客户端 metadata 代替
@@ -141,6 +161,10 @@ Graphiti：试用必须答对批准链、历史日期和同名项目三类题，
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/17-06.svg)
+
+源码对照：
 
 试用通过可以要求：正确教训能被当前输入使用，单次例外不改默认，越权查询得不到资料，模型失败后原文可重试。Mem0 另外核对卡片与历史一致，Graphiti 另外核对对象合并、旧关系结束和来源回查。把条件写成可检查结果，不用“效果不错”代替验收。
 
@@ -171,6 +195,10 @@ Graphiti：后来要回答跨团队、跨日期的批准问题，再试关系和
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+![本例流程](../../wiki/assets/source-flows/17-07.svg)
+
+源码对照：
+
 Atlas 初期只有几条发布教训，可以先用 Mem0 明确存取与注入位置。出现多团队批准链及批准人变更，再用 Graphiti 小图检验两份来源与日期查询。迁移要同时检查旧卡片如何转成新对象和关系，不能将旧正文搬进去就认定新结构已经正确。
 
 ### Mem0：Atlas 初期可以只采用少量路径
@@ -197,6 +225,10 @@ Graphiti：新增邻域扩展带回很多其他项目关系，却没补齐批准
 
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
+
+![本例流程](../../wiki/assets/source-flows/17-08.svg)
+
+源码对照：
 
 新评分增加费用却没有补回必要卡片，可以撤掉额外排序；新图扩展不断把不同平台组合并，可以先缩小自动建图范围。Mem0 与 Graphiti 都应保留简单可复现的对照与原材料。撤回某项复杂机制，不等于删除历史，更不等于免去权限和当前状态检查。
 
@@ -227,7 +259,7 @@ Graphiti：新增邻域扩展带回很多其他项目关系，却没补齐批准
 | 快速 SDK 接入 | Mem0 | 核对 OSS/托管边界与成本 |
 | 动态事实与时间查询 | Graphiti | 先验证结构化抽取可靠性 |
 | 企业异构知识平台 | Cognee | 有平台运维与 schema 团队 |
-| Stateful/self-edit Agent | Letta Code | 需要 Agent 管理 core context |
+| 让助手主动读历史、修改长期规则 | Letta Code | 愿意审核修改，并验证后续输入是否生效 |
 | 本地人机知识库 | Basic Memory | 接受 AGPL，偏显式笔记 |
 | 自托管多客户端 | MCP Memory Service | 需要 auth/remote MCP/REST |
 | Coding trace 复用 | Agent Beacon | 先解决敏感 trace 治理 |
@@ -240,19 +272,19 @@ Graphiti：新增邻域扩展带回很多其他项目关系，却没补齐批准
 
 ### 阶段 1：可控事实库
 
-先实现 `remember / recall / supersede / delete`，带 user scope、source、valid time、token budget。建立 50 至 200 条真实 query 标注集。
+先做保存、读取、替代和删除四个动作，并记录所属用户、来源、生效日期和输入长度预算。多人使用时，这一步就要验证权限。先把十条真实问题逐题检查清楚，数据积累后再扩到 50 至 200 条，标出每题需要的证据和预期行为。
 
 ### 阶段 2：混合检索与反馈
 
-增加 BM25 + embedding + RRF，记录候选与 outcome。若重排成为瓶颈，再引入 cross-encoder 或 Jev，并先 shadow。
+当精确词或不同说法容易漏掉时，试全文与向量两路搜索，再按名次融合，记录候选和任务结果。若正确证据已入池却总排得太低，再试模型重排；先只记录新排序、不改变回答，确认收益后才启用。
 
 ### 阶段 3：层级和生命周期
 
-加入 working/episodic/semantic，异步巩固、冲突、衰减和 Skill promotion。删除和重建必须可验证。
+当历史增长确实造成干扰时，再区分近期任务、具体经历和稳定知识，按需要增加后台整理、纠正或价值衰减。提炼出的技能先评审和回放，不能直接启用；整理后仍要能删除和重建。
 
-### 阶段 4：图与团队治理
+### 阶段 4：关系与共享资料
 
-只有当多跳、时间事实、跨来源 entity 和共享资产成为主要失败模式时，再引入 temporal graph、ACL、Agent Loadout 与多 Agent memory exchange。
+当答案需要跨文档连接或历史状态时，再试带时间的关系图。团队共享则按实际需求安排：谁能读什么，必须在开放共享之前落实，不能等到第四阶段。资产集合和多个助手之间的资料交换，只有需要这些功能时才增加。
 
 ## 最终检查表
 
@@ -310,7 +342,7 @@ Graphiti：新增邻域扩展带回很多其他项目关系，却没补齐批准
 | MCP Memory Service | 多客户端统一服务 | 单客户端本地 DB | 每路 auth/scope、同步/删除 |
 | TencentDB | 团队资产/Loadout/知识工具 | 小范围共享笔记 + ACL | 撤销、版本、服务链与注入一致 |
 | Beacon | 跨 harness 行为证据 | 单 runtime 原生日志 | capture coverage、fidelity 与脱敏 |
-| Hermes Jev Skills | 判别/filter/搜索控制 | 本地 rerank + deterministic checks | shadow/graded、云费用、故障回退 |
+| Hermes Jev Skills | 筛选候选、判断是否继续搜索 | 本地重排加代码检查 | 只观察模式与逐题评分、云费用、故障回退 |
 | 旧 Letta | 复现历史论文/API | 当前 Letta Code 对照 | 锁定 archive 版本，不作新生产入口 |
 
 </details>

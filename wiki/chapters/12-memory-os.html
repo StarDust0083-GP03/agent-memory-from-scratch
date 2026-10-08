@@ -5,6 +5,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-01.svg" alt="四个项目，都在“整理记忆”，整理的却不是同一件东西：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：整理变短不是正确性证明；记录和关系都可能把本来有限的要求扩大。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>“整理记忆”可能只是从长话形成短卡，也可能改变对象摘要或事实时间。Mem0 主要让新话形成可搜索陈述，并关联谈到的对象；Graphiti 还要决定对象是不是同一个、关系是否重复或变化。理解整理时，先写出被改的是正文、索引、摘要还是有效期，避免把它们混成一次自动学习。</p>
 <h3 id="mem0-组织主要发生在事实提取和实体关联">Mem0：组织主要发生在事实提取和实体关联</h3><p>普通路径从近期消息得到短事实，再维护实体到 memory IDs 的索引。它没有同名的短中长期 page 提升，也不管理 KV 或 LoRA。应用可以借鉴分层思路，但应把新增加的队列、热度与摘要任务标成外层组件。</p>
 <h3 id="graphiti-演化主要发生在身份-关系和摘要">Graphiti：演化主要发生在身份、关系和摘要</h3><p>新 episode 可以改变实体归一结果、旧边有效时间和节点 summary。可选社区更新整理更高层区域，但不是按访问热度把 QA 搬到长期层。描述“会学习”时，应指出究竟哪类图对象被改动。</p>
@@ -21,6 +24,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-02.svg" alt="MemoryOS：近期问答装满后，搬到按主题组织的页面：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：参考近期消息不等于自动建立长期主题层；对象摘要不能代替具体关系证据。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>参考最近几句，是为了理解“以后都这样”；把多次经历提升成主题页面，是另一个处理动作。Mem0 读取近期消息，Graphiti 读取前序材料，都可帮助当前抽取，却没有因此形成 MemoryOS 的层级页面。是否长期保留、何时合并、下一次按什么入口读取，要分别检查。</p>
 <h3 id="mem0-近期十条消息是提取上下文-不是-page-层">Mem0：近期十条消息是提取上下文，不是 page 层</h3><p><code>get_last_messages(..., limit=10)</code> 帮助解释“那个环境”，并未把移出的消息自动提升成主题 pages。消息持久化与提取窗口限制也不是同一回事。若要主题分层，需要独立整理任务和 source 映射，再将候选按需保存或读取。</p>
 <h3 id="graphiti-previous-episodes-与主题提升不同">Graphiti：previous episodes 与主题提升不同</h3><p>前序 episode 为抽取提供上下文，saga 可关联一组经历，社区可聚合实体区域。它们不自动采用 MemoryOS 的容量与 heat 阈值。选择时看需要事件顺序还是主题页，而不是把所有带 session 的结构归为同一层。</p>
@@ -35,6 +41,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-03.svg" alt="Hippo：内容可以不变，影响力随时间和结果变化：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：使用热度、优先级与事实有效区间不同；不要仅因记录冷门就视为事实改变。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>旧教训今天仍正确，却很少再用，可以降低优先级；旧批准人今天已不负责，则要停止当作当前事实。Mem0 需要业务评分表达前一种变化，Graphiti 的关系结束时间表达后一种变化。热度是使用价值信号，有效性是事实是否成立，两者不能共用一个数值随意替代。</p>
 <h3 id="mem0-价值变化需要业务评分配合">Mem0：价值变化需要业务评分配合</h3><p>普通 search 的关键信号是语义、关键词和实体，outcome 或 half-life metadata 不会自动被当作 Hippo 的 strength。外层重排可以注入审核后的价值因子，但应单独消融。到期隐藏是离散政策，不能伪装成连续遗忘实验。</p>
 <h3 id="graphiti-事实时间与访问价值应分字段">Graphiti：事实时间与访问价值应分字段</h3><p><code>invalid_at</code> 不能用来表达“最近很少被用到”，否则历史查询会把正确事实误当成现实失效。可在外层记录访问和任务结果，再影响排序，不改事实有效区间。社区或节点高连接度也不是成功使用次数。</p>
@@ -49,6 +58,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-04.svg" alt="A-MEM：新笔记可以改变旧笔记的理解线索：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：纠正不止改正文；所有会影响下一次读取的派生表示都要核对。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>将“迁移失败”纠正成“配置错误”，Mem0 应使之后的文字和向量搜索指向新正文；Graphiti 则要检查事实关系与对象摘要是否仍保留旧猜测。索引重建是让查找结构对应新内容，不是模型重新学习参数；只改一处显示文字，其他搜索线索可能仍旧。</p>
 <h3 id="mem0-更新正文会重建检索描述">Mem0：更新正文会重建检索描述</h3><p>显式 update 改 <code>data</code>、hash、词形和 embedding，并重新链接实体。它直接改变事实正文，不是只调整 A-MEM 的邻居 context。若只需补搜索线索，应用应分开保存原始陈述与派生描述，避免把新猜测写成旧事件的确定内容。</p>
 <h3 id="graphiti-summary-更新与时间边维护同时存在">Graphiti：summary 更新与时间边维护同时存在</h3><p>新增关系可影响节点摘要，也可使旧关系失效。二者分别改变发现线索和事实状态。核验新根因时，既查看原 episode 和具体 fact，也检查 summary 是否过度确定；摘要演化不能取代带条件的证据。</p>
@@ -63,6 +75,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-05.svg" alt="MemOS：先认清管理的是文本还是模型资源：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：这两条路径都没有把文字训练进模型，也不自动复用模型的计算缓存。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>Mem0 为文字保存的向量，是搜索用数字，Graphiti 的对象或关系向量也如此。模型激活则是模型计算内部产生的中间数值，模型参数是长期权重。把正文向量存进库，没有让下一次模型计算自动继承上次内部状态，也没有更新它的权重。这三类数字必须按用途区分。</p>
 <h3 id="mem0-embedding-向量不是模型激活记忆">Mem0：embedding 向量不是模型激活记忆</h3><p>向量存储保存文本表征，用来比较问题与事实，不能作为回答模型的 KV cache 加载。事实摘要也没有训练模型权重。即使 provider 缓存计算，仍应与应用记忆存取分开描述，删除向量只处理外部检索数据。</p>
 <h3 id="graphiti-图索引也不管理参数化知识">Graphiti：图索引也不管理参数化知识</h3><p>图中的 fact embedding 和节点连接是外部显式资源。Graphiti 不通过这些字段保存或加载 LoRA。LLM client 用模型生成抽取结果，模型是否保留供应商请求数据属于另一政策问题，不能把图删除理解为模型遗忘。</p>
@@ -74,6 +89,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-06.svg" alt="把四条路线放回你的实际问题：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：增加摘要层未必解决漏候选或错端点；先找到具体断点。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>漏掉迁移卡片，先查它是否存下、是否进入 Mem0 候选，未必需要复杂层级整理。需要追问上周批准人、默认何日改变时，Graphiti 的关系与时间更贴题。选机制先对应失败：找不到文字、接不上关系、选错历史版本，分别需要不同处理，不因名字带“OS”就认定功能更完整。</p>
 <h3 id="mem0-先判断问题是否还在候选层">Mem0：先判断问题是否还在候选层</h3><p>若事实正文正确而找不到，观察语义池与全文信号；若原话已被错误提取，先修写入。只有明确需要长期整理时才增加巩固任务。SDK 接法较小，但不自动承担所有演化责任，外层改动应有独立版本。</p>
 <h3 id="graphiti-需要变化关系时才用边维护收益">Graphiti：需要变化关系时才用边维护收益</h3><p>若主要失败是同名身份或历史批准人，resolution 与时间边直接相关；若仅正文措辞不易命中，先比较全文和向量。图后端与抽取成本只有在对应失败改善后才值得保留，不应为“分层”一词默认引入。</p>
@@ -89,6 +107,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-07.svg" alt="同一条纠正进入四种系统，会发生什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：自动新增不保证当前规则已换对；旧记录、旧关系的读取策略仍需核验。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>用户把“发布前手动检查”纠正为“检查已由流水线自动完成”，Mem0 追加新卡后旧卡仍可能被搜索到；Graphiti 若把新条件当成同一规则变化，应核对哪些旧边结束。读取时应保留“确认自动检查结果”的实际含义，不能再要求人工重复操作，也不能误读为完全无需检查。</p>
 <h3 id="mem0-自动检查的新规则不会自动取代旧卡">Mem0：自动检查的新规则不会自动取代旧卡</h3><p>新消息可追加“流水线自动检查”，旧手动要求仍可能搜索命中。应用审核后明确更新当前规则或维护业务替代版本，必要时设到期。仅降低旧记录相关性，无法表达“失败时人工介入”这个新条件。</p>
 <h3 id="graphiti-纠正要检查失效边和新增条件">Graphiti：纠正要检查失效边和新增条件</h3><p>新 episode 抽取自动检查关系与人工介入条件，resolution 可能关闭旧手工步骤。应核对旧边结束时间、新边适用范围和 summary。若流水线只用于生产环境，不能把演练流程也失效；条件提取仍需反例测试。</p>
@@ -102,6 +123,9 @@
 <details class="source-example">
 <summary>源码与边界（选读）</summary>
 
+<figure class="source-flow"><img src="../assets/source-flows/12-08.svg" alt="分层省下的工作，可能会在维护时回来：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：没有原始材料就可能无法恢复条件；重建运行完成也不证明旧错误已清除。</figcaption></figure>
+
+<p>源码对照：</p>
 <p>重建表示从保留资料重新生成可读状态。Mem0 若只剩短摘要，原先的“本次例外”可能已无法还原；Graphiti 即使保留原材料，新提取也可能得到不同对象合并和时间判断。重建前后对照原文、身份、条件和当前答案，不能只确认数据库重新能搜索。</p>
 <h3 id="mem0-重建不能只依赖摘要">Mem0：重建不能只依赖摘要</h3><p>保留入口事件和提取版本，才能在 prompt 变化后重新形成事实；消息历史和现存卡片不足以保证完整工具轨迹。删除 source 时也要追外层巩固摘要，否则节省输入的派生视图可能继续泄漏原内容。</p>
 <h3 id="graphiti-重建要核对实体与时间是否重现">Graphiti：重建要核对实体与时间是否重现</h3><p>从同一批 episode 按顺序重建，比较规范节点、关系支持和有效区间，而非只比较总节点数。模型输出可能变化，因此版本和中间结果重要。summary 是可重新生成的视图，但重新生成不保证逐字一致，需要业务事实验收。</p>
@@ -172,7 +196,7 @@ effective_half_life = half_life_days × reward_factor</code></pre><p>half-life �
 <p>KV/LoRA 仅是 MemOS 多形态路线中的模型资源。Letta 编译小 core 或 TencentDB 尽量稳定 Proxy 前缀可以改善普通上游缓存利用，但不是把 KV 导出为可移植 MemCube；Hermes memo 缓存小决策也与模型 activation 无关。没有兼容性证据时，不应把参数化记忆当作可交换文本资产。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/12-memory-os.svg" alt="MemOS 管资源、MemoryOS 提升层级、Hippo 管价值寿命、A-MEM 改笔记关联" loading="lazy"><figcaption>图：四种状态变化要分别测，不能共用一个“学习率”解释。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/12-memory-os.svg" alt="MemOS 管资源、MemoryOS 提升层级、Hippo 管价值寿命、A-MEM 改笔记关联" loading="lazy"><figcaption>图：四种状态变化要分别测，不能共用一个“学习率”解释。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
@@ -188,27 +212,27 @@ effective_half_life = half_life_days × reward_factor</code></pre><p>half-life �
 </thead>
 <tbody><tr>
 <td>MemOS</td>
-<td>text/act/para/pref 可选 cube modules</td>
-<td>scheduler/feedback/load/dump</td>
-<td>文本检索或资源加载；模型兼容</td>
+<td>可选文本、模型状态、参数适配和偏好模块</td>
+<td>调度任务、反馈、资源加载与导出</td>
+<td>文本检索或资源加载；检查模型兼容</td>
 </tr>
 <tr>
 <td>MemoryOS</td>
-<td>short QA/mid sessions/long profile</td>
-<td>容量、主题相似、heat</td>
-<td>粗到细 page 与长期知识；摘要漏信息</td>
+<td>近期问答、中期主题、长期画像</td>
+<td>容量、主题相似度、访问热度</td>
+<td>先主题后页面，再读长期知识；摘要可能漏信息</td>
 </tr>
 <tr>
 <td>Hippo</td>
-<td>buffer/episode/semantic、value</td>
-<td>recall/outcome/time/sleep</td>
-<td>blend/RRF/重排；误强化与删除链</td>
+<td>待整理内容、经历、教训及价值</td>
+<td>检索命中、使用结果、时间、巩固</td>
+<td>融合与重排；检查误强化和删除范围</td>
 </tr>
 <tr>
 <td>A-MEM</td>
-<td>笔记属性/link 网络</td>
-<td>新笔记与近邻演化</td>
-<td>Chroma+links；索引刷新与 k 截断</td>
+<td>笔记描述与链接网络</td>
+<td>新笔记改变附近旧笔记</td>
+<td>近邻后补链接；检查索引刷新及最终条数截断</td>
 </tr>
 <tr>
 <td>Memobase</td>
@@ -242,9 +266,9 @@ effective_half_life = half_life_days × reward_factor</code></pre><p>half-life �
 </tr>
 <tr>
 <td>Hermes memo</td>
-<td>exact-match/TTL 小决策缓存</td>
-<td>shadow/on、过期和容量清理</td>
-<td>cache hit/miss；不是 KV 或事实层级</td>
+<td>输入完全匹配、带到期时间的小决策缓存</td>
+<td>只观察或启用复用，按时间和容量清理</td>
+<td>命中才复用；不是模型计算缓存或事实分层</td>
 </tr>
 <tr>
 <td>Graphiti/HippoRAG/Basic</td>
