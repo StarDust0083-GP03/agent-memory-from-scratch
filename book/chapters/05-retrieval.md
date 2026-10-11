@@ -74,6 +74,46 @@ Graphiti：关系正文写“Atlas 发布遇到 E42”。文字搜索可用 E42 
 
 余弦相似度比较两个向量的方向。拿一个二维玩具例子，查询向量为 `(1, 0)`，候选为 `(0.8, 0.6)`，两者长度都为 1，相似度就是 0.8；候选若是 `(0, 1)`，相似度是 0。真实向量的每个坐标通常没有可直接命名的含义，这个算例只解释方向比较。
 
+<figure class="concept-diagram" tabindex="0">
+<svg viewBox="0 0 760 300" role="img" aria-labelledby="v5-cos-title v5-cos-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="v5-cos-title">二维玩具例子的余弦相似度</title>
+<desc id="v5-cos-desc">查询向量 q(1,0) 与候选 a(0.8,0.6) 夹角约 37 度，余弦约 0.8；查询与候选 b(0,1) 垂直，余弦为 0。两向量长度都为 1，余弦只比较方向，不表示内容为真。</desc>
+<g fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.5">
+<path d="M200 250H398"/><path d="M390 245l9 5-9 5"/>
+<path d="M200 250V72"/><path d="M195 80l5-9 5 9"/>
+<circle cx="200" cy="250" r="150" stroke-dasharray="4 6" stroke-opacity=".28"/>
+<path d="M200 235h15v15"/>
+</g>
+<g fill="none" stroke="currentColor" stroke-width="2.5">
+<path d="M200 250L350 250"/><path d="M342 245l9 5-9 5"/>
+<path d="M200 250L320 160"/><path d="M311 164l11-1-4 10"/>
+<path d="M200 250L200 100"/><path d="M195 108l5-9 5 9"/>
+</g>
+<path d="M230 250A30 30 0 0 0 224 232" fill="none" stroke="currentColor" stroke-opacity=".7"/>
+<g fill="currentColor" font-size="15">
+<text x="188" y="268" font-size="13">O</text>
+<text x="356" y="256">q (1,0)</text>
+<text x="326" y="152">a (0.8,0.6)</text>
+<text x="206" y="94">b (0,1)</text>
+<text x="238" y="235" font-size="13">θ</text>
+</g>
+<g fill="currentColor">
+<text x="450" y="86" font-size="16" font-weight="600">余弦相似度 cos θ</text>
+<text x="450" y="132" font-size="15">a (0.8,0.6)</text>
+<rect x="450" y="140" width="230" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="450" y="140" width="184" height="18" rx="3" fill="currentColor" fill-opacity=".3"/>
+<text x="672" y="154" font-size="15" text-anchor="end" style="font-variant-numeric:tabular-nums">0.80</text>
+<text x="450" y="196" font-size="15">b (0,1)</text>
+<rect x="450" y="204" width="230" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="450" y="204" width="2" height="18" fill="currentColor"/>
+<text x="672" y="218" font-size="15" text-anchor="end" style="font-variant-numeric:tabular-nums">0.00</text>
+<text x="450" y="258" font-size="13" fill-opacity=".75">两向量长度都为 1；cos 只比较方向。</text>
+<text x="450" y="280" font-size="13" fill-opacity=".75">相似度 0.8 不等于“八成可信”。</text>
+</g>
+</svg>
+<figcaption>图：q 与 a 夹角小，余弦 0.8；q 与 b 垂直，余弦 0。相似的只是方向，不是事实。</figcaption>
+</figure>
+
 向量搜索可能把 B 找出来，也可能混入语义上接近却属于另一任务的内容。相似度高表达“看起来有关”，不是“这条事实已经验证”。项目名、时间和权限仍需单独处理。
 
 Mem0：记录写“上线前核验数据库结构”，问题问“发布前要查迁移吗”。把两段文字变成可比较的数字后，有机会认出意思相近，取回这条记录。
@@ -102,6 +142,51 @@ Graphiti：关系写“平台组维护 Atlas”，问题问“Atlas 的负责人
 ## 先合候选，还是只给已有候选加分
 
 继续用开头的三条记录：假设向量搜索找到 A、C，关键词搜索找到 A、B。如果合并两路结果，A、B、C 都有机会参加后续排序；如果只给向量池里的记录加分，B 没入池就无法被补回来。A 同时被两路找到，合并时只保留一份。
+
+<figure class="concept-diagram" tabindex="0">
+<svg viewBox="0 0 760 220" role="img" aria-labelledby="v5-merge-title v5-merge-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="v5-merge-title">候选并集与池内加分对 B 的不同结果</title>
+<desc id="v5-merge-desc">并集召回把关键词命中 {A,B} 与向量命中 {A,C} 合并成 {A,B,C}，B 可以参加排序；池内加分只有语义池 {A,C}，关键词只能提高 A 的分数，B 不在池中，无法进入最终集合。</desc>
+<g fill="currentColor" font-size="16" font-weight="600">
+<text x="16" y="28">并集召回：B 有机会</text>
+<text x="388" y="28">池内加分：B 仍进不来</text>
+</g>
+<g fill="none" stroke="currentColor">
+<rect x="16" y="48" width="150" height="36" rx="6"/>
+<rect x="16" y="108" width="150" height="36" rx="6"/>
+<rect x="212" y="70" width="152" height="64" rx="8" stroke-width="1.5"/>
+</g>
+<text x="91" y="71" fill="currentColor" font-size="15" text-anchor="middle">关键词 {A, B}</text>
+<text x="91" y="131" fill="currentColor" font-size="15" text-anchor="middle">向量 {A, C}</text>
+<text x="288" y="98" fill="currentColor" font-size="15" text-anchor="middle">候选 {A, B, C}</text>
+<text x="288" y="120" fill="currentColor" font-size="13" text-anchor="middle" fill-opacity=".75">B 可被排序</text>
+<g fill="none" stroke="currentColor" stroke-width="1.5">
+<path d="M166 66L206 86"/><path d="M208 78L212 90L200 94"/>
+<path d="M166 126L206 114"/><path d="M206 123L212 112L201 106"/>
+</g>
+<g fill="currentColor" font-size="13" fill-opacity=".75">
+<text x="16" y="170">两路候选按 UUID/集合合并，</text>
+<text x="16" y="190">重复的 A 只保留一份。</text>
+</g>
+<g fill="none" stroke="currentColor">
+<rect x="388" y="48" width="150" height="36" rx="6" stroke-width="1.5"/>
+<rect x="388" y="112" width="150" height="36" rx="6" stroke-dasharray="5 4"/>
+<rect x="560" y="112" width="170" height="36" rx="6" stroke-dasharray="5 4" stroke-opacity=".5"/>
+</g>
+<text x="463" y="71" fill="currentColor" font-size="15" text-anchor="middle">语义池 {A, C}</text>
+<text x="463" y="135" fill="currentColor" font-size="15" text-anchor="middle">关键词命中 A</text>
+<text x="645" y="135" fill="currentColor" font-size="15" text-anchor="middle" fill-opacity=".6">B 命中关键词</text>
+<path d="M463 110V90" fill="none" stroke="currentColor" stroke-dasharray="5 4"/>
+<path d="M458 98l5-8 5 8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+<text x="546" y="98" fill="currentColor" font-size="13" fill-opacity=".75">只给池内加分</text>
+<text x="645" y="170" fill="currentColor" font-size="13" text-anchor="middle" fill-opacity=".75">不在池 → 不进排序</text>
+<g fill="currentColor" font-size="13" fill-opacity=".75">
+<text x="388" y="190">池外的 B 无法靠加分补进来，</text>
+<text x="388" y="210">必须先扩大或补足候选。</text>
+</g>
+</svg>
+<figcaption>图：同样的两路命中，合并候选能评到 B，池内加分只抬高 A；差别的根源是 B 有没有进池。</figcaption>
+</figure>
 
 这正是 MCP 和当前本地 Mem0 路径的一处区别。MCP 的 hybrid，也就是混合检索，会合并全文和向量的候选。Mem0 先多取一些语义候选，再用关键词和实体信号调整这个池里的分数。两者都利用多种信号，但能看见的内容不同。
 
@@ -142,6 +227,37 @@ BM25 的 12 分与余弦的 0.8 不在同一量尺上。RRF（倒数排名融合
 取教学常量 `k=60`，一条记录在关键词第 1、向量第 4，总分约为 `1/61 + 1/64 = 0.0320`。另一条只在向量第 1，总分约为 `1/61 = 0.0164`。第一条得到两路支持，因此这次会排得更高。
 
 MCP 支持这种融合及其他加权方法，Graphiti 也可以通过配置选择 RRF。Hippo 融合后还会结合寿命和价值等因素。常量与额外因子要按实际配置看，刚才的算例不是三个项目共同的默认输出。
+
+<figure class="concept-diagram" tabindex="0">
+<svg viewBox="0 0 760 320" role="img" aria-labelledby="v5-rrf-title v5-rrf-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="v5-rrf-title">奖励两路支持：两种常量的 RRF 得分</title>
+<desc id="v5-rrf-desc">教学公式 k=60 时，关键词第 1、向量第 4 得 1/61+1/64 约 0.0320，只在向量第 1 得 1/61 约 0.0164；Graphiti 默认 rank_const=1 时，全文第 1、向量第 4 得 1+1/4=1.25，只在向量第 1 得 1.00。两者得到两路支持的记录都排得更高，但常量不同，不能逐条对比绝对值。</desc>
+<g fill="currentColor">
+<text x="16" y="30" font-size="16" font-weight="600">教学公式 k=60：贡献 = 1/(60 + 名次)</text>
+<text x="16" y="66" font-size="15">关键词 #1 + 向量 #4</text>
+<text x="16" y="104" font-size="15">只在向量 #1</text>
+<rect x="210" y="52" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="210" y="52" width="329" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
+<text x="582" y="66" font-size="15" style="font-variant-numeric:tabular-nums">0.0320</text>
+<rect x="210" y="90" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="210" y="90" width="169" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
+<text x="582" y="104" font-size="15" style="font-variant-numeric:tabular-nums">0.0164</text>
+<text x="16" y="134" font-size="13" fill-opacity=".75">两路支持约为单路的 2 倍；k 越大，头部名次差影响越小。</text>
+
+<text x="16" y="188" font-size="16" font-weight="600">Graphiti 默认 rank_const=1：贡献 = 1/(i+1)</text>
+<text x="16" y="224" font-size="15">全文 #1 + 向量 #4</text>
+<text x="16" y="262" font-size="15">只在向量 #1</text>
+<rect x="210" y="210" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="210" y="210" width="360" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
+<text x="582" y="224" font-size="15" style="font-variant-numeric:tabular-nums">1.25</text>
+<rect x="210" y="248" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="210" y="248" width="288" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
+<text x="582" y="262" font-size="15" style="font-variant-numeric:tabular-nums">1.00</text>
+<text x="16" y="292" font-size="13" fill-opacity=".75">默认常量不同：不能用 0.0320 与本地 1.25 逐条对比。</text>
+</g>
+</svg>
+<figcaption>图：两条快照都按名次给分、都奖励多路支持，但 <code>k=60</code> 与 <code>rank_const=1</code> 的绝对分不能混用。</figcaption>
+</figure>
 
 Mem0：A 的语义分为 0.8，文字和对象各贡献 0.5、0.2。这次查询三种信号都有结果，除以 2.5 后合分为 0.6。除数按实现中的 `1 + 1 + 0.5` 计算，不是三项的平均值；0.6 也不代表六成可信。
 
@@ -190,6 +306,36 @@ BM25 通过 sigmoid 规范化。若 query 归一后不超过三个词，当前�
 
 按排序取前 k 条通常叫 top-k，它限制条数，不限制总长度。排序后还要打包。假设留给记忆的预算是 300 token，A 需要 80，B 需要 260，它们一起就超额。程序可以只放 A，或取 B 中有来源的必要片段，但不能仅因为 `top_k=2` 就把两条全文强塞进去。这里的数字是假设目标 tokenizer 已经算出的值。
 
+<figure class="concept-diagram" tabindex="0">
+<svg viewBox="0 0 760 290" role="img" aria-labelledby="v5-budget-title v5-budget-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="v5-budget-title">条数排序之后是按 token 长度打包</title>
+<desc id="v5-budget-desc">记忆预算 300 token 时，A 占 80 可以装入，还剩 220；top-2 想把 A(80) 与 B(260) 一起装入共 340，超过上限 40，超出部分必须裁掉，或者只取 B 中带来源的必要片段。</desc>
+<g fill="currentColor">
+<text x="16" y="30" font-size="16" font-weight="600">记忆预算 300 token：只装 A</text>
+<rect x="16" y="48" width="600" height="32" rx="4" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="16" y="48" width="160" height="32" rx="4" fill="currentColor" fill-opacity=".3"/>
+<text x="96" y="69" font-size="14" text-anchor="middle">A 80</text>
+<text x="216" y="69" font-size="13" fill-opacity=".75">剩余 220</text>
+<path d="M616 40V88" fill="none" stroke="currentColor" stroke-dasharray="4 4"/>
+<text x="624" y="69" font-size="13">300 上限</text>
+
+<text x="16" y="140" font-size="16" font-weight="600">想同时装 A + B：340 &gt; 300</text>
+<rect x="16" y="158" width="600" height="32" rx="4" fill="none" stroke="currentColor" stroke-opacity=".4"/>
+<rect x="16" y="158" width="160" height="32" rx="4" fill="currentColor" fill-opacity=".3"/>
+<text x="96" y="179" font-size="14" text-anchor="middle">A 80</text>
+<rect x="176" y="158" width="440" height="32" fill="currentColor" fill-opacity=".18"/>
+<text x="396" y="179" font-size="14" text-anchor="middle">B 260（裁到 220）</text>
+<rect x="616" y="158" width="80" height="32" fill="none" stroke="currentColor" stroke-dasharray="4 4"/>
+<text x="656" y="179" font-size="13" text-anchor="middle">超出 40</text>
+<path d="M616 150V198" fill="none" stroke="currentColor" stroke-dasharray="4 4"/>
+
+<text x="16" y="240" font-size="13" fill-opacity=".75">top_k 限制条数，token 预算限制总长度；超出的部分必须裁掉，</text>
+<text x="16" y="260" font-size="13" fill-opacity=".75">或者只取 B 中带来源的必要片段。</text>
+</g>
+</svg>
+<figcaption>图：<code>top_k=2</code> 选出 A 与 B，但 80 + 260 超过 300 token 的预算，打包必须裁剪或改取片段。</figcaption>
+</figure>
+
 固定偏好也不必每次搜索。Memobase 可以直接读画像，Letta 的核心记忆已经随输入出现，Basic Memory 在已知笔记 URI 时直接打开。检索方式应服务于“本次需要哪些信息”，而不是让所有信息都经过同一个向量 top-k。
 
 Mem0：搜索先取回十条，应用让重排器把“先检查迁移”排到前面。当前只装得下两条，再选两条组装输入；排得靠前与最终装进去是两步。
@@ -223,6 +369,44 @@ Graphiti：重排先把正式发布的批准关系放前面，应用再选取对
 
 进入候选仍不代表进入最终输入。假设 A 排第六，应用只取五条，问题发生在排序截断；假设 A 排第一但全文太长，被预算打包跳过，问题发生在打包。前者可以比较重排，后者需要决定是否取带来源的必要片段，或者调整记忆与其他输入的配额。扩大 top-k 只会改变其中一个边界。
 
+<figure class="concept-diagram" tabindex="0">
+<svg viewBox="0 0 760 246" role="img" aria-labelledby="v5-funnel-title v5-funnel-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="v5-funnel-title">四站核对一条记录为什么没有进入输入</title>
+<desc id="v5-funnel-desc">按顺序核对：记录是否保存在库里、是否进入候选池、排序后是否被 top-k 保留、是否被 token 预算装进输入。在哪一站消失就查哪一站；权限或时间过滤造成的漏召回常是正确行为。</desc>
+<g fill="none" stroke="currentColor">
+<rect x="11" y="58" width="168" height="66" rx="8"/>
+<rect x="201" y="58" width="168" height="66" rx="8"/>
+<rect x="391" y="58" width="168" height="66" rx="8"/>
+<rect x="581" y="58" width="168" height="66" rx="8"/>
+<rect x="197" y="54" width="176" height="74" rx="10" stroke-dasharray="5 4" stroke-width="1.5"/>
+</g>
+<g fill="currentColor" font-size="14" font-weight="600" text-anchor="middle">
+<text x="95" y="86">① 库里存了吗</text>
+<text x="285" y="86">② 进候选了吗</text>
+<text x="475" y="86">③ 排序后留下了吗</text>
+<text x="665" y="86">④ 装进输入了吗</text>
+</g>
+<g fill="currentColor" font-size="12.5" text-anchor="middle" fill-opacity=".72">
+<text x="95" y="108">get(id) + scope</text>
+<text x="285" y="108">关键词 / 向量路</text>
+<text x="475" y="108">rerank / top-k</text>
+<text x="665" y="108">token 打包</text>
+</g>
+<g fill="none" stroke="currentColor" stroke-width="1.5">
+<path d="M179 91h18"/><path d="M190 86l9 5-9 5"/>
+<path d="M369 91h18"/><path d="M380 86l9 5-9 5"/>
+<path d="M559 91h18"/><path d="M570 86l9 5-9 5"/>
+</g>
+<path d="M285 128V148" fill="none" stroke="currentColor" stroke-dasharray="5 4"/>
+<text x="285" y="164" fill="currentColor" font-size="13" text-anchor="middle" fill-opacity=".75">A 在这一站消失，先查这一站</text>
+<g fill="currentColor" font-size="13" fill-opacity=".75">
+<text x="11" y="204">权限或时间过滤造成的漏召回，常常是正确行为；先查作用域，再调相似度。</text>
+<text x="11" y="226">扩大 top_k 只改变 ③ 的边界，不会影响 ① ②。</text>
+</g>
+</svg>
+<figcaption>图：保存、入池、排序、打包四站各查一件事；在哪一站消失，就先查那一站的边界。</figcaption>
+</figure>
+
 Mem0：迁移教训没有出现在回答里。依次检查：库里有没有→初选有没有→排序后有没有→发给模型的消息里有没有。在哪一站消失，就先查哪一站。
 
 Graphiti：批准关系搜不到。先确认关系已保存，再查是否限定错项目或日期，最后看它是否被结果数量限制截掉；别先扩大到所有人的资料。
@@ -249,6 +433,38 @@ Graphiti：批准关系搜不到。先确认关系已保存，再查是否限定
 ## 留给记忆的预算要从完整调用里算
 
 模型窗口同时容纳系统规则、当前消息、工具结果、记忆和输出。假设一个教学调用允许总计 8,000 token，已有输入占 4,000，计划预留 2,000 给回答，再留 1,000 给后续工具结果，剩下的记忆空间只有 1,000。这些数字不是推荐配置，而是说明不能把整个窗口都当成搜索结果的容量。
+
+<figure class="concept-diagram" tabindex="0">
+<svg viewBox="0 0 760 170" role="img" aria-labelledby="v5-window-title v5-window-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="v5-window-title">记忆只占完整调用窗口的一小块</title>
+<desc id="v5-window-desc">一个总计 8,000 token 的教学调用里，系统与当前输入占 4,000，回答预留 2,000，后续工具结果 1,000，留给记忆的只有 1,000；不能把整个窗口都当成搜索结果容量。</desc>
+<text x="16" y="30" fill="currentColor" font-size="16" font-weight="600">完整调用窗口 8,000 token</text>
+<g fill="currentColor">
+<rect x="16" y="48" width="310" height="34" fill-opacity=".28"/>
+<rect x="326" y="48" width="155" height="34" fill-opacity=".18"/>
+<rect x="481" y="48" width="77.5" height="34" fill-opacity=".12"/>
+<rect x="558.5" y="48" width="77.5" height="34" fill-opacity=".22"/>
+</g>
+<g fill="none" stroke="currentColor" stroke-opacity=".55">
+<rect x="16" y="48" width="620" height="34"/>
+<path d="M326 48v34M481 48v34M558.5 48v34"/>
+</g>
+<g fill="currentColor" font-size="13" text-anchor="middle">
+<text x="171" y="70">系统 / 当前输入 4,000</text>
+<text x="403" y="70">回答预留 2,000</text>
+<text x="520" y="70">工具</text>
+<text x="597" y="70">记忆</text>
+</g>
+<g fill="currentColor">
+<rect x="16" y="96" width="12" height="12" fill-opacity=".28"/><text x="34" y="107" font-size="13">系统/当前输入 4,000</text>
+<rect x="250" y="96" width="12" height="12" fill-opacity=".18"/><text x="268" y="107" font-size="13">回答预留 2,000</text>
+<rect x="452" y="96" width="12" height="12" fill-opacity=".12"/><text x="470" y="107" font-size="13">工具结果 1,000</text>
+<rect x="632" y="96" width="12" height="12" fill-opacity=".22"/><text x="650" y="107" font-size="13">记忆 1,000</text>
+<text x="16" y="146" font-size="13" fill-opacity=".75">记忆只占窗口的一小块，不能把整个窗口当成搜索结果的容量。</text>
+</g>
+</svg>
+<figcaption>图：模型窗口的输入、回答预留和工具结果都要先扣掉，剩下的才是记忆能用的 token。</figcaption>
+</figure>
 
 在这 1,000 token 内，十条同义发布教训通常不如一条明确规则加一份具体失败证据。去重因此也属于上下文打包：它让有限空间覆盖不同的必要信息。对于批准人这样的多跳问题，A 和 B 构成一组证据；仅放排名更高的 A，虽然句句相关，却无法回答。打包可以考虑证据组合，而不只是逐条选最高分。
 
@@ -396,7 +612,7 @@ Cognee 的 session lexical 与不同 graph/chunk/Skill retriever，MemOS 的 bac
 
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/05-retrieval.svg" alt="语义池 boost、两路并集、配置化图搜索和 PPR 的候选边界比较" loading="lazy"><figcaption>图：每行返回证据的边界不同；相同 hybrid 标签不表示相同算法。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/05-retrieval.svg" alt="同一批命中中 B 能否进入最终集合：Mem0 池内加分、MCP 与 Graphiti 合并候选、HippoRAG 图扩散" loading="lazy"><figcaption>图：向量找到 A、C，关键词找到 A、B；同样写着 hybrid，B 能否进入最终集合并不相同。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>项目对照速查（选读）</summary>
