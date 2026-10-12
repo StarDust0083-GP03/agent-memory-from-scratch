@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 484" role="img" aria-labelledby="persistence-title persistence-desc">
+<title id="persistence-title">两个进程读同一个数据库文件</title>
+<desc id="persistence-desc">第一次进程将 Alice 的教训写入 SQLite 并提交后退出；第二次进程重新打开文件，按 Alice 读取。Bob 在这个新数据库中没有记录。</desc>
+<style>svg{--paper:#faf7ef;--ink:#252820;--muted:#696b61;--accent:#29564c;--rule:#d9d2c3;color:var(--ink);font-family:system-ui,sans-serif}text{fill:currentColor;font-size:20px}path,line,rect,circle,ellipse{stroke:currentColor;stroke-width:1.5} .small{font-size:17px;fill:var(--muted)}.focal{color:var(--accent)}.paper{fill:var(--paper)}.rule{stroke:var(--rule)}@media(prefers-color-scheme:dark){svg{--paper:#151512;--ink:#e5e0d5;--muted:#aaa79d;--accent:#87b7a8;--rule:#39382f}}</style>
+<defs><marker id="persistence-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke"/></marker></defs>
+
+<path d="M220 96V148" fill="none" marker-end="url(#persistence-arrow)" /><path d="M220 264V312" fill="none" marker-end="url(#persistence-arrow)" />
+<g><rect class="paper" x="60" y="16" width="320" height="80" rx="6"/><text x="220" y="46" text-anchor="middle" class="">进程 1：remember</text><text x="220" y="72" text-anchor="middle" class="small">写入 Alice 的改代码教训</text></g>
+<g class="focal"><path class="paper" d="M100 168C100 140 340 140 340 168V240C340 268 100 268 100 240Z"/>
+<ellipse class="paper" cx="220" cy="168" rx="120" ry="20"/>
+<text x="220" y="218" text-anchor="middle" class="">tutorial.db</text>
+</g>
+<text x="236" y="130" text-anchor="start" class="small">commit 后退出</text>
+<g><rect class="paper" x="60" y="312" width="320" height="80" rx="6"/><text x="220" y="342" text-anchor="middle" class="">进程 2：recall</text><text x="220" y="368" text-anchor="middle" class="small">重开文件，按用户筛选</text></g>
+<text x="220" y="434" text-anchor="middle" class="">Alice → 教训 + 来源</text>
+<text x="220" y="466" text-anchor="middle" class="small">Bob → []（本实验中无记录）</text>
+
+</svg>

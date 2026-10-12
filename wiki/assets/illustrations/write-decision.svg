@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 536" role="img" aria-labelledby="write-decision-title write-decision-desc">
+<title id="write-decision-title">本次例外与长期变更分开保存</title>
+<desc id="write-decision-desc">原话先保存并提取带条件的候选；本次用 npm 只属于当前任务，不修改默认包管理器；今后用 pnpm 才是长期变更，确认后保留旧默认的历史。</desc>
+<style>svg{--paper:#faf7ef;--ink:#252820;--muted:#696b61;--accent:#29564c;--rule:#d9d2c3;color:var(--ink);font-family:system-ui,sans-serif}text{fill:currentColor;font-size:20px}path,line,rect,circle,ellipse{stroke:currentColor;stroke-width:1.5} .small{font-size:17px;fill:var(--muted)}.focal{color:var(--accent)}.paper{fill:var(--paper)}.rule{stroke:var(--rule)}@media(prefers-color-scheme:dark){svg{--paper:#151512;--ink:#e5e0d5;--muted:#aaa79d;--accent:#87b7a8;--rule:#39382f}}</style>
+<defs><marker id="write-decision-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke"/></marker></defs>
+
+<path d="M220 96V132" fill="none" marker-end="url(#write-decision-arrow)" />
+<path d="M140 192H108Q100 192 100 200V280" fill="none" marker-end="url(#write-decision-arrow)" />
+<path d="M300 192H332Q340 192 340 200V280" fill="none" marker-end="url(#write-decision-arrow)" />
+<path d="M100 368V408" fill="none" marker-end="url(#write-decision-arrow)" /><path d="M340 368V408" fill="none" marker-end="url(#write-decision-arrow)" />
+<g><rect class="paper" x="60" y="16" width="320" height="80" rx="6"/><text x="220" y="46" text-anchor="middle" class="">先保存原话</text><text x="220" y="72" text-anchor="middle" class="small">以后默认用 pnpm，今天先用 npm</text></g>
+<path class="paper" d="M220 132L300 192L220 252L140 192Z"/>
+<text x="220" y="188" text-anchor="middle" class="">提取候选</text><text x="220" y="216" text-anchor="middle" class="small">检查适用范围</text>
+<text x="24" y="264" text-anchor="start" class="small">本次</text><text x="364" y="264" text-anchor="start" class="small">今后</text>
+<g><rect class="paper" x="20" y="280" width="160" height="88" rx="6"/><text x="100" y="310" text-anchor="middle" class="">任务例外</text><text x="100" y="336" text-anchor="middle" class="small">本次用 npm</text></g>
+<g class="focal"><rect class="paper" x="260" y="280" width="160" height="88" rx="6"/><text x="340" y="310" text-anchor="middle" class="">长期变更</text><text x="340" y="336" text-anchor="middle" class="small">默认用 pnpm</text></g>
+<g><rect class="paper" x="20" y="408" width="160" height="64" rx="6"/><text x="100" y="447" text-anchor="middle" class="">默认不变</text></g>
+<g class="focal"><rect class="paper" x="260" y="408" width="160" height="64" rx="6"/><text x="340" y="447" text-anchor="middle" class="">旧默认留历史</text></g>
+<text x="220" y="514" text-anchor="middle" class="small">边界不明确时先确认，不猜永久规则</text>
+
+</svg>

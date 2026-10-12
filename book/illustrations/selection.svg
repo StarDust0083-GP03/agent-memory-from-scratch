@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 424" role="img" aria-labelledby="selection-title selection-desc">
+<title id="selection-title">按失败位置选下一步</title>
+<desc id="selection-desc">先定位具体失败：别人的资料进入结果就修权限，正确资料未进入候选就修召回，候选正确但未进入输入就修打包，跨材料证据断开才考虑关系连接。</desc>
+<style>svg{--paper:#faf7ef;--ink:#252820;--muted:#696b61;--accent:#29564c;--rule:#d9d2c3;color:var(--ink);font-family:system-ui,sans-serif}text{fill:currentColor;font-size:20px}path,line,rect,circle,ellipse{stroke:currentColor;stroke-width:1.5} .small{font-size:17px;fill:var(--muted)}.focal{color:var(--accent)}.paper{fill:var(--paper)}.rule{stroke:var(--rule)}@media(prefers-color-scheme:dark){svg{--paper:#151512;--ink:#e5e0d5;--muted:#aaa79d;--accent:#87b7a8;--rule:#39382f}}</style>
+<defs><marker id="selection-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke"/></marker></defs>
+
+<text x="24" y="30" text-anchor="start" class="">你遇到的失败</text><text x="276" y="30" text-anchor="start" class="">先修哪里</text>
+<path d="M244 92H276" fill="none" marker-end="url(#selection-arrow)" /><path d="M244 180H276" fill="none" marker-end="url(#selection-arrow)" /><path d="M244 268H276" fill="none" marker-end="url(#selection-arrow)" /><path d="M244 356H276" fill="none" marker-end="url(#selection-arrow)" />
+<g><rect class="paper" x="16" y="60" width="228" height="64" rx="6"/><text x="130" y="99" text-anchor="middle" class="">混入别人的资料</text></g><g class="focal"><rect class="paper" x="280" y="60" width="144" height="64" rx="6"/><text x="352" y="99" text-anchor="middle" class="">身份与范围</text></g>
+<g><rect class="paper" x="16" y="148" width="228" height="64" rx="6"/><text x="130" y="187" text-anchor="middle" class="">记录没进入候选</text></g><g><rect class="paper" x="280" y="148" width="144" height="64" rx="6"/><text x="352" y="187" text-anchor="middle" class="">召回</text></g>
+<g><rect class="paper" x="16" y="236" width="228" height="64" rx="6"/><text x="130" y="275" text-anchor="middle" class="">候选没进入输入</text></g><g><rect class="paper" x="280" y="236" width="144" height="64" rx="6"/><text x="352" y="275" text-anchor="middle" class="">打包预算</text></g>
+<g><rect class="paper" x="16" y="324" width="228" height="64" rx="6"/><text x="130" y="363" text-anchor="middle" class="">跨材料证据断开</text></g><g><rect class="paper" x="280" y="324" width="144" height="64" rx="6"/><text x="352" y="363" text-anchor="middle" class="">关系连接</text></g>
+
+</svg>

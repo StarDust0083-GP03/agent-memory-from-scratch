@@ -13,18 +13,16 @@ rg -n '_search_vector_store|_compute_entity_boosts' \
 
 搜索会告诉你定义和调用的位置。打开函数后，先看输入的 query 和 filters，再追向量候选、关键词或实体信号、最终排序和返回。遇到辅助函数，只追会改变候选集合或分数的部分，不必立即理解每个异常和配置类。
 
+<details class="source-example">
+<summary>项目例子与源码（选读）</summary>
+
 Mem0：带着“默认中文”读写入代码，只记录它先变成哪条文字、最终写到哪里。再读搜索，看返回正文是否相同，不必先记所有类名。
 
-Graphiti：带着“Atlas 由平台组维护”读代码，记录原文、两个对象和维护关系分别在哪里生成。沿来源编号回查，确认关系仍有原文支持。
-
-<details class="source-example">
-<summary>源码与边界（选读）</summary>
+Graphiti：带着“Todo 由前端组维护”读代码，记录原文、两个对象和维护关系分别在哪里生成。沿来源编号回查，确认关系仍有原文支持。
 
 ![本例流程](../../wiki/assets/source-flows/appendix-01.svg)
 
-源码对照：
-
-初读只追一个问题：“这句原话最后存成什么？”Mem0 从 add 的输入走到卡片正文，Graphiti 从原材料走到对象与关系。遇到函数名，先看它收什么、返回什么，再回到 Atlas 示例给变量填值；不必一开始读完模型客户端、数据库连接和全部异常处理。
+初读只追一个问题：“这句原话最后存成什么？”Mem0 从 add 的输入走到卡片正文，Graphiti 从原材料走到对象与关系。遇到函数名，先看它收什么、返回什么，再回到 Todo 示例给变量填值；不必一开始读完模型客户端、数据库连接和全部异常处理。
 
 ### Mem0：从实际函数与提示双向核对
 
@@ -44,16 +42,14 @@ Graphiti：带着“Atlas 由平台组维护”读代码，记录原文、两个
 
 这种追踪方法也适用于 A-MEM 的 links 追加与最终 k 截断、Letta 的文件提交与后续编译、Memobase 的写入与 flush。追最后真正被读取的状态，才能验证前面处理有没有影响结果。
 
+<details class="source-example">
+<summary>项目例子与源码（选读）</summary>
+
 Mem0：纸上写“初选 A、B，最后返回 B”。追查正确记录 C 时，立即知道它在初选前就漏了，不必先分析最后排名。
 
 Graphiti：纸上写“文字找到 A、C，向量找到 B、C，合并 A、B、C”。再看最后保留哪些关系，就能区分遗漏发生在搜索还是合并之后。
 
-<details class="source-example">
-<summary>源码与边界（选读）</summary>
-
 ![本例流程](../../wiki/assets/source-flows/appendix-02.svg)
-
-源码对照：
 
 Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集合。Mem0 需要核对两者是否相同；Graphiti 需要核对文字榜、向量榜和最终编号并集。用 A、B、C 手记每一步即可：哪一步第一次出现 C，哪一步去掉 C，比只阅读一个复杂评分函数更容易定位漏项。
 
@@ -69,22 +65,20 @@ Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集�
 
 ## 用论文学习机制，再核对当前代码
 
-读 HippoRAG 论文，可以先找问题设定、索引图、查询种子和传播流程。把“Atlas → 平台组 → 批准人”的教学例子放进去，看看每一处需要什么节点或证据。再读实验，确认作者固定了哪个 reader、比较什么基线。
+读 HippoRAG 论文，可以先找问题设定、索引图、查询种子和传播流程。把“Todo → 前端组 → 评审人”的教学例子放进去，看看每一处需要什么节点或证据。再读实验，确认作者固定了哪个 reader、比较什么基线。
 
 之后打开当前 `HippoRAG.py`，看事实与段落种子怎样组合。论文第一版和后续实现可能不同，不能把图示的每个细节都套到当前目录。Graphiti 的时间论文、MemoryOS 的提升论文和 MemOS 的模型资源论文也应这样读。
 
 不懂术语时，先找它在数据路径里的作用：输入什么、改什么、返回什么。知道作用之后，再研究公式和配置，比先记一页缩写更容易。
 
-Mem0：论文介绍记忆更新，你用“默认测试→默认预发布”检查当前代码。若普通写入仍留下两条，就把这个观察记下来，别用论文图替代实际调用行为。
-
-Graphiti：论文讲时间关系，你用“18 日换批准人”检查日期字段和查询条件。保存日期与正确筛出 15 日的关系，都要分别核对。
-
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>项目例子与源码（选读）</summary>
+
+Mem0：论文介绍记忆更新，你用“默认用 npm→默认用 pnpm”检查当前代码。若普通写入仍留下两条，就把这个观察记下来，别用论文图替代实际调用行为。
+
+Graphiti：论文讲时间关系，你用“18 日换评审人”检查日期字段和查询条件。保存日期与正确筛出 15 日的关系，都要分别核对。
 
 ![本例流程](../../wiki/assets/source-flows/appendix-03.svg)
-
-源码对照：
 
 论文帮助理解为什么将聊天压成短事实或为关系保留时间，代码决定当前调用是否真正这么做。Mem0 论文中的某种写入决策，不保证与这个快照的批量追加相同；Graphiti 的时间字段，也不表示每个查询默认使用它。把机制意图、当前分支和实测范围分别记录，读者就不会把介绍当成保证。
 
@@ -104,16 +98,14 @@ Graphiti：论文讲时间关系，你用“18 日换批准人”检查日期字
 
 本书下列索引保留源码、论文和 2026-09-21 快照，便于复查机制，不把代码阅读当作全项目性能复现。托管服务宣称、开源代码行为和你的运行结果要分别标注，以后版本变化时才知道哪条结论需要重查。
 
+<details class="source-example">
+<summary>项目例子与源码（选读）</summary>
+
 Mem0：笔记写“本版本关键词只给初选记录加分”，附版本和评分函数位置。升级后用那条漏掉的 E42 记录再试，检查结论是否仍成立。
 
-Graphiti：笔记写“本次基础搜索未自动补第二段批准链”，附版本、入口和测试材料。以后更换查询方式时，能复查变化，而不是只留一句“图会多跳”。
-
-<details class="source-example">
-<summary>源码与边界（选读）</summary>
+Graphiti：笔记写“本次基础搜索未自动补第二段评审链”，附版本、入口和测试材料。以后更换查询方式时，能复查变化，而不是只留一句“图会多跳”。
 
 ![本例流程](../../wiki/assets/source-flows/appendix-04.svg)
-
-源码对照：
 
 Provider 是提供模型或存储服务的具体实现，driver 是访问存储的程序。笔记可以写“Mem0 普通提取分支，某向量后端，仅核对源码”；Graphiti 则写“边搜索，启用哪些找法，使用哪个 driver”。这些条件解释结论适用范围，换服务或配置后需重新验证，而不是把同一项目名当作固定行为。
 
@@ -224,10 +216,10 @@ PDF 位于 `sources/papers/pdf/`，可搜索文本位于 `sources/papers/text/`�
 
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/appendix-sources.svg" alt="源码、实验和部署三种结论分别追踪到 commit/config、协议和实际运行记录" loading="lazy"><figcaption>图：证据类型不同，支持的结论范围也不同；本次仍是本地快照审阅。</figcaption></figure>
-
 <details class="comparison-reference">
-<summary>项目对照速查（选读）</summary>
+<summary>项目对照图与速查（选读）</summary>
+
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/appendix-sources.svg" alt="源码、实验和部署三种结论分别追踪到 commit/config、协议和实际运行记录" loading="lazy"><figcaption>图：证据类型不同，支持的结论范围也不同；本次仍是本地快照审阅。</figcaption></figure>
 
 ## 本章对照结论
 

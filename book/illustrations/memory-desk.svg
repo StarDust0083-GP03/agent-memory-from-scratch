@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 440" role="img" aria-labelledby="memory-desk-title memory-desk-desc">
+<title id="memory-desk-title">柜子里的记录，桌上的上下文</title>
+<desc id="memory-desk-desc">外部存储里有改代码教训、语言偏好和旧日志；应用只把本次需要的改代码教训放入当前上下文，模型据此先跑提醒测试。</desc>
+<style>svg{--paper:#faf7ef;--ink:#252820;--muted:#696b61;--accent:#29564c;--rule:#d9d2c3;color:var(--ink);font-family:system-ui,sans-serif}text{fill:currentColor;font-size:20px}path,line,rect,circle,ellipse{stroke:currentColor;stroke-width:1.5} .small{font-size:17px;fill:var(--muted)}.focal{color:var(--accent)}.paper{fill:var(--paper)}.rule{stroke:var(--rule)}@media(prefers-color-scheme:dark){svg{--paper:#151512;--ink:#e5e0d5;--muted:#aaa79d;--accent:#87b7a8;--rule:#39382f}}</style>
+<defs><marker id="memory-desk-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke"/></marker></defs>
+
+<path d="M220 184V240" fill="none" marker-end="url(#memory-desk-arrow)" />
+<path d="M220 332V372" fill="none" marker-end="url(#memory-desk-arrow)" />
+<rect class="paper" x="88" y="32" width="264" height="152" rx="4"/>
+<path class="rule" d="M88 84H352M88 136H352" fill="none"/>
+<text x="220" y="66" text-anchor="middle" class="">改代码教训：先跑提醒测试</text>
+<text x="220" y="118" text-anchor="middle" class="small">语言偏好：默认中文</text>
+<text x="220" y="170" text-anchor="middle" class="small">旧日志：上次提醒功能改坏了</text>
+<text x="20" y="24" text-anchor="start" class="small">外部存储</text>
+<text x="236" y="220" text-anchor="start" class="small">应用选出相关记录</text>
+<g class="focal">
+<path class="paper" d="M64 252H376V332H64Z"/>
+<path d="M48 332H392M76 332V356M364 332V356" fill="none"/>
+<text x="220" y="282" text-anchor="middle" class="">当前上下文</text>
+<text x="220" y="312" text-anchor="middle" class="small">本次任务 + 改代码教训</text>
+</g>
+<text x="220" y="406" text-anchor="middle" class="">模型：先运行提醒测试</text>
+
+</svg>

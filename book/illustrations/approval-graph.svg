@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 468" role="img" aria-labelledby="approval-graph-title approval-graph-desc">
+<title id="approval-graph-title">跨两份材料找到评审人</title>
+<desc id="approval-graph-desc">材料一说明Todo由前端组维护，材料二说明前端组代码由 Lin 评审；通过同一前端组对象连接两份证据，才能支持评审人答案，历史关系不等于本次已通过评审。</desc>
+<style>svg{--paper:#faf7ef;--ink:#252820;--muted:#696b61;--accent:#29564c;--rule:#d9d2c3;color:var(--ink);font-family:system-ui,sans-serif}text{fill:currentColor;font-size:20px}path,line,rect,circle,ellipse{stroke:currentColor;stroke-width:1.5} .small{font-size:17px;fill:var(--muted)}.focal{color:var(--accent)}.paper{fill:var(--paper)}.rule{stroke:var(--rule)}@media(prefers-color-scheme:dark){svg{--paper:#151512;--ink:#e5e0d5;--muted:#aaa79d;--accent:#87b7a8;--rule:#39382f}}</style>
+<defs><marker id="approval-graph-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke"/></marker></defs>
+
+<path d="M220 84V160" fill="none" marker-end="url(#approval-graph-arrow)" /><path d="M220 232V312" fill="none" marker-end="url(#approval-graph-arrow)" />
+<text x="240" y="122" text-anchor="start" class="small">由…维护</text>
+<text x="240" y="274" text-anchor="start" class="small">代码由…评审</text>
+<g><rect class="paper" x="100" y="12" width="240" height="72" rx="6"/><text x="220" y="55" text-anchor="middle" class="">Todo</text></g>
+<g class="focal"><rect class="paper" x="100" y="160" width="240" height="72" rx="6"/><text x="220" y="203" text-anchor="middle" class="">前端组</text></g>
+<g><rect class="paper" x="100" y="312" width="240" height="72" rx="6"/><text x="220" y="355" text-anchor="middle" class="">Lin</text></g>
+<text x="24" y="144" text-anchor="start" class="small">来源：材料 1</text>
+<text x="24" y="296" text-anchor="start" class="small">来源：材料 2</text>
+<text x="220" y="440" text-anchor="middle" class="small">找到评审人 ≠ 本次已经通过评审</text>
+
+</svg>

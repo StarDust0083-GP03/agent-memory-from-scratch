@@ -10,39 +10,39 @@
 cd examples
 lab=$(mktemp -d)
 python3 mini_memory.py --db "$lab/tutorial.db" remember \
-  "Atlas 发布前检查数据库迁移" --user alice \
+  "Todo 提交代码前跑提醒测试" --user alice \
   --kind procedural --source session-42
 python3 mini_memory.py --db "$lab/tutorial.db" recall \
-  "Atlas 发布检查" --user alice
+  "Todo 提交检查" --user alice
 ```
 
 第一条命令打印一个随机 ID，实际值每次不同。第二条输出 JSON，也就是用字段和值表示数据的文本，其中应该包含刚保存的正文、来源和评分分项。两条命令是两次独立进程：第二次能读到记录，说明持久化确实发生了，而不是仅留在第一次程序的变量里。
+
+<figure class="lesson-illustration"><img src="../../wiki/assets/illustrations/persistence.svg" alt="两个独立进程通过 tutorial.db 保存和读取教训" loading="lazy" width="440"><figcaption>第二个进程重新读取成功，才证明教训没有只留在内存中。</figcaption></figure>
 
 再换用户试一次：
 
 ```bash
 python3 mini_memory.py --db "$lab/tutorial.db" recall \
-  "Atlas 发布检查" --user bob
+  "Todo 提交检查" --user bob
 ```
 
 这个新数据库里没有 Bob 的数据，应返回空列表 `[]`。代码先按 `user_id` 取符合条件的记录，再计算相关性。这里的用户参数是教学用的过滤条件，不是登录认证；实际应用必须从可信身份得到它。
 
-Mem0：本章手工输入“发布前检查迁移”，而 Mem0 可以先从“昨天漏检导致发布失败”中提取短记录。检查提取结果是否保留“检查”，别误变成“每次重跑迁移”。
-
-Graphiti：给它一份“Atlas 由平台组维护”的文档，检查整理出的关系是否连对项目和团队。本章 SQLite 程序没有这个整理步骤，不能用它证明图服务已经跑通。
-
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>项目例子与源码（选读）</summary>
+
+Mem0：本章手工输入“提交代码前跑提醒测试”，而 Mem0 可以先从“昨天漏检导致提醒功能改坏了”中提取短记录。检查提取结果是否保留“检查”，别误变成“每次重写提醒模块”。
+
+Graphiti：给它一份“Todo 由前端组维护”的文档，检查整理出的关系是否连对项目和团队。本章 SQLite 程序没有这个整理步骤，不能用它证明图服务已经跑通。
 
 ![本例流程](../../wiki/assets/source-flows/04-01.svg)
-
-源码对照：
 
 本章程序直接把你写好的教训存入 SQLite，不请模型猜怎样总结。Mem0 的直接保存模式也可以跳过事实提取，但仍要配置生成向量等依赖，不能把它当成纯标准库实验。Graphiti 的普通材料写入还需提取对象与关系，所以“跟做本章成功”尚不能证明两套服务已搭好。
 
 ### Mem0：零模型实验可以映射到直接保存路径
 
-教学 SQLite 不调用模型。Mem0 的相近入口是 `add(..., infer=False)`，它不提取事实，但仍调用 embedding 并连接配置的存储，不能理解为零依赖。调用教学形态为 `m.add("Atlas 发布前检查迁移", user_id="alice", infer=False)`，检索则用 `m.search("Atlas 发布", filters={"user_id": "alice"})`。这些调用需要先配置 provider。
+教学 SQLite 不调用模型。Mem0 的相近入口是 `add(..., infer=False)`，它不提取事实，但仍调用 embedding 并连接配置的存储，不能理解为零依赖。调用教学形态为 `m.add("Todo 提交代码前跑提醒测试", user_id="alice", infer=False)`，检索则用 `m.search("Todo 改代码", filters={"user_id": "alice"})`。这些调用需要先配置 provider。
 
 ### Graphiti：从 episode 开始会引入抽取依赖
 
@@ -66,18 +66,16 @@ with sqlite3.connect(sys.argv[1]) as db:
 PY
 ```
 
-应看到 Alice、发布检查正文和 `session-42`。这个查询没有调用任何模型，帮助我们把“数据存在哪”与“模型会不会使用”分开。
-
-Mem0：一条记录可读作“17 号，Alice 的 Atlas 发布前检查迁移”。搜索时按 Alice 筛选，更新时按 17 号定位；正文和身份都不能只存在聊天界面里。
-
-Graphiti：一份文档保存原话，两个对象保存 Atlas 和平台组，一条关系保存谁维护谁。查错时能分别检查“原话错了”还是“对象连错了”。
+应看到 Alice、提交检查正文和 `session-42`。这个查询没有调用任何模型，帮助我们把“数据存在哪”与“模型会不会使用”分开。
 
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>项目例子与源码（选读）</summary>
+
+Mem0：一条记录可读作“17 号，Alice 的 Todo 提交代码前跑提醒测试”。搜索时按 Alice 筛选，更新时按 17 号定位；正文和身份都不能只存在聊天界面里。
+
+Graphiti：一份文档保存原话，两个对象保存 Todo 和前端组，一条关系保存谁维护谁。查错时能分别检查“原话错了”还是“对象连错了”。
 
 ![本例流程](../../wiki/assets/source-flows/04-02.svg)
-
-源码对照：
 
 在最小程序里，一行可以保存编号、正文、用户和时间。接 Mem0 后，还要区分事实后端中的卡片与历史 SQLite 中的消息和变化。Graphiti 则至少区分原材料、谈论对象及事实关系，并保存相互引用。看到一个数据库文件存在，只证明某种状态可能保留，不证明这些不同对象都已写齐。
 
@@ -87,7 +85,7 @@ Graphiti：一份文档保存原话，两个对象保存 Atlas 和平台组，�
 
 ### Graphiti：一次写入形成多个有关联的对象
 
-保存包含 episode、实体节点、事实边及 episode 与实体的关联，driver 承担持久化。读取 episode 的原文与搜索事实边是不同访问路径。验证持久化时应在新连接中按 UUID 读取各类对象，并检查来源链接，而非只看图界面出现一个 Atlas 节点。
+保存包含 episode、实体节点、事实边及 episode 与实体的关联，driver 承担持久化。读取 episode 的原文与搜索事实边是不同访问路径。验证持久化时应在新连接中按 UUID 读取各类对象，并检查来源链接，而非只看图界面出现一个 Todo 节点。
 
 </details>
 
@@ -95,22 +93,20 @@ Graphiti：一份文档保存原话，两个对象保存 Atlas 和平台组，�
 
 `recall()` 先筛用户和有效时间，再比较问题与每条记录。它给词语重叠、hash 向量相似度、新近程度、重要性等信号分别加权，最后从高到低排序。
 
-比如问题含“Atlas”“发布”“检查”，这些字词也出现在记录里，词重叠会提供相关性信号。Hash 向量把词映射到固定数量的数字位置，再比较两段文字的方向；它只是词袋近似，主要根据字词计数比较，不能指望它识别一般的同义表达。
+比如问题含“Todo”“提交”“检查”，这些字词也出现在记录里，词重叠会提供相关性信号。Hash 向量把词映射到固定数量的数字位置，再比较两段文字的方向；它只是词袋近似，主要根据字词计数比较，不能指望它识别一般的同义表达。
 
 所以本章先观察 `lexical` 和 `semantic` 分项，不把某次搜索命中当成模型理解语言的证明。真正项目里，MCP、Hippo、Mem0 等可以使用全文索引或 embedding，过滤、候选和打包这些位置仍要存在。
 
-Mem0：问题是“上线前要核验什么”，记录写“发布前检查迁移”。两句话字面不同，按意思比较仍可能找到它；进入候选后，再计算最终次序。
-
-Graphiti：问“谁负责 Atlas”，文字搜索可能找到“Atlas”，按意思搜索可能找到“平台组维护项目”。合并结果后，应用检查找出的关系是否真的回答负责者。
-
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>项目例子与源码（选读）</summary>
+
+Mem0：问题是“改完代码后要测什么”，记录写“提交代码前跑提醒测试”。两句话字面不同，按意思比较仍可能找到它；进入候选后，再计算最终次序。
+
+Graphiti：问“谁负责 Todo”，文字搜索可能找到“Todo”，按意思搜索可能找到“前端组维护项目”。合并结果后，应用检查找出的关系是否真的回答负责者。
 
 ![本例流程](../../wiki/assets/source-flows/04-03.svg)
 
-源码对照：
-
-玩具程序认出共享词语，是为了让结果能手算。Mem0 用真实向量衡量意思接近，再参考词和对象关联；Graphiti 可比较关系正文向量，也可按配置找对象摘要或材料。换一种候选单位，分数就比较另一种文字，不能把“节点很相关”直接理解成“批准关系已找到”。
+玩具程序认出共享词语，是为了让结果能手算。Mem0 用真实向量衡量意思接近，再参考词和对象关联；Graphiti 可比较关系正文向量，也可按配置找对象摘要或材料。换一种候选单位，分数就比较另一种文字，不能把“节点很相关”直接理解成“评审关系已找到”。
 
 ### Mem0：真实 embedding 后还有多信号评分
 
@@ -128,27 +124,25 @@ Graphiti：问“谁负责 Atlas”，文字搜索可能找到“Atlas”，按�
 
 ```bash
 old=$(python3 mini_memory.py --db "$lab/tutorial.db" remember \
-  "Atlas 默认部署到测试环境" --user alice)
+  "Todo 默认用 npm" --user alice)
 python3 mini_memory.py --db "$lab/tutorial.db" remember \
-  "Atlas 默认部署到预发布环境" --user alice --supersedes "$old"
+  "Todo 默认用 pnpm" --user alice --supersedes "$old"
 python3 mini_memory.py --db "$lab/tutorial.db" recall \
-  "Atlas 默认部署环境" --user alice
+  "Todo 默认包管理器" --user alice
 ```
 
 `supersedes` 的意思是“取代”。代码把旧记录的 `valid_to` 写为本次时间，当前查询应不再返回旧默认。它没有自动理解矛盾，是我们明确告诉了它哪条被取代。
 
 旧正文还在数据库里。需要查历史时，Python API 的 `recall(as_of=...)` 可以指定时间；CLI 没有对应参数，不要自行添加不存在的命令选项。第 6 章会解释为什么这还不等于完整的双时间系统。
 
-Mem0：原记录是“默认测试”。新话说“默认预发布”，应用确认长期变更后，定位旧记录更新，或另存新版并明确选择规则；单纯新增不保证旧记录退出。
-
-Graphiti：长期默认确实改变时，核对旧环境关系的结束日期和新关系的开始日期。只看“有了预发布关系”，还不能证明“测试”已不再作为当前默认。
-
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>项目例子与源码（选读）</summary>
+
+Mem0：原记录是“默认用 npm”。新话说“默认用 pnpm”，应用确认长期变更后，定位旧记录更新，或另存新版并明确选择规则；单纯新增不保证旧记录退出。
+
+Graphiti：长期默认确实改变时，核对旧包管理器关系的结束日期和新关系的开始日期。只看“有了 pnpm 关系”，还不能证明“npm”已不再作为当前默认。
 
 ![本例流程](../../wiki/assets/source-flows/04-04.svg)
-
-源码对照：
 
 最小程序用“新记录取代旧记录”表达业务规则，这个字段不会因为换后端而自动存在。接 Mem0 时，需要应用维护取代关系或显式更新；接 Graphiti 时，可核对新旧默认关系与有效时间。程序应能解释为什么保留旧历史、为什么当前选择新值，而不是只比较哪条最后写入。
 
@@ -158,7 +152,7 @@ Graphiti：长期默认确实改变时，核对旧环境关系的结束日期和
 
 ### Graphiti：替代发生在语义与时间解析中
 
-新 episode 说明“18 日起默认预发布”，提取新关系并比较相关旧边，可能让测试关系的 `invalid_at` 为 18 日。它比手工给旧 ID 自动化程度高，也更可能误判单次例外。实验必须核对边字段及历史过滤返回，不能只看新边写入成功。
+新 episode 说明“18 日起默认用 pnpm”，提取新关系并比较相关旧边，可能让测试关系的 `invalid_at` 为 18 日。它比手工给旧 ID 自动化程度高，也更可能误判单次例外。实验必须核对边字段及历史过滤返回，不能只看新边写入成功。
 
 </details>
 
@@ -168,23 +162,21 @@ Graphiti：长期默认确实改变时，核对旧环境关系的结束日期和
 
 ```bash
 python3 mini_memory.py --db "$lab/tutorial.db" context \
-  "Atlas 发布" --user alice --budget 80
+  "Todo 改代码" --user alice --budget 80
 ```
 
 `context()` 最多先取 20 个候选，逐条判断是否放得下，超出的长记录会被跳过。这里用字符数近似 token，还没有把标题和所有格式开销计入，因此预算不是目标模型的精确 token 保证。
 
 另外，`recall()` 默认增加命中记录的访问计数，哪怕后来没有装进输入。这是为了演示强化而保留的简化，不能把它当可靠成功反馈。你已经可以指着代码说出三个不同位置：挑候选、装输入、记录结果。
 
-Mem0：搜回五条教训，当前输入只装得下两条。应用优先放“先检查迁移”和“生产需审批”，不把五条长文全部硬塞给模型。
-
-Graphiti：问批准人，只把维护关系、批准关系及必要原文片段放入输入。整份组织通讯录虽然被查到，也不必一起发送。
-
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>项目例子与源码（选读）</summary>
+
+Mem0：搜回五条教训，当前输入只装得下两条。应用优先放“先跑提醒测试”和“生产需审批”，不把五条长文全部硬塞给模型。
+
+Graphiti：问评审人，只把维护关系、评审关系及必要原文片段放入输入。整份组织通讯录虽然被查到，也不必一起发送。
 
 ![本例流程](../../wiki/assets/source-flows/04-05.svg)
-
-源码对照：
 
 返回五条记录，如果每条都是长文，仍可能塞不进模型。Mem0 的 top_k 和 Graphiti 的 num_results 表示最多返回多少项，不是输入长度预算。应用可以先选少量短事实，必要时再取原文，最后计算总长度；一条有来源的关键教训往往比五段重复背景更适合当前任务。
 
@@ -204,22 +196,20 @@ Graphiti：问批准人，只把维护关系、批准关系及必要原文片段
 
 进入 `recall()` 后，先看 SQL 查询得到哪些行。Bob 得到空列表，应发生在这一步；如果先算全库分数再删除 Alice 的结果，输出也可能是空，但内部已经触及了不该读取的内容。这个顺序在小数据库里性能差别不大，在真实服务里却决定了身份隔离能否贯彻到搜索内部。
 
-接下来，每条可读记录得到分数。词重叠和 hash 向量会同时受到字面表达影响，因此示例中的两项并不构成两个完全独立的理解能力。你可以保存“上线前核对数据库结构”，再用“发布迁移检查”搜索，观察结果怎样变化。若搜索不理想，这个实验揭示的是当前词袋近似的限制，不能据此判断真正的 embedding 模型也一定失败。
+接下来，每条可读记录得到分数。词重叠和 hash 向量会同时受到字面表达影响，因此示例中的两项并不构成两个完全独立的理解能力。你可以保存“改完日期格式后核对提醒时间”，再用“改代码提醒测试”搜索，观察结果怎样变化。若搜索不理想，这个实验揭示的是当前词袋近似的限制，不能据此判断真正的 embedding 模型也一定失败。
 
-最后，`context()` 将候选转换为一段文字。这里才发生模型输入的组装，而本程序没有实际调用模型。命令打印出历史教训，证明应用已经拿到可以注入的文本；至于模型会不会检查迁移，还需要在宿主助手中接入并观察工具行为。把这两种实验分开，才能知道失败究竟来自数据管线还是决策执行。
+最后，`context()` 将候选转换为一段文字。这里才发生模型输入的组装，而本程序没有实际调用模型。命令打印出历史教训，证明应用已经拿到可以注入的文本；至于模型会不会跑提醒测试，还需要在宿主助手中接入并观察工具行为。把这两种实验分开，才能知道失败究竟来自数据管线还是决策执行。
 
-`supersedes` 也值得从调用者的角度理解。程序没有读懂“测试”与“预发布”互相替代，是你把旧 ID 交给它，明确发出替代要求。确定性机制容易测试，语义判断却需要另外的规则或模型。先运行显式替代，有助于确认存储与历史查询正常；以后增加自动冲突检测时，才不至于把判断错误和数据库错误混在一起。
+`supersedes` 也值得从调用者的角度理解。程序没有读懂“npm”与“pnpm”互相替代，是你把旧 ID 交给它，明确发出替代要求。确定性机制容易测试，语义判断却需要另外的规则或模型。先运行显式替代，有助于确认存储与历史查询正常；以后增加自动冲突检测时，才不至于把判断错误和数据库错误混在一起。
+
+<details class="source-example">
+<summary>项目例子与源码（选读）</summary>
 
 Mem0：沿着“用户说默认中文→提取出偏好→保存→搜索→放入回答消息”逐站检查。若记录已保存但回答仍用英文，就从搜索和消息组装两步继续查。
 
-Graphiti：沿着“读维护文档→认出 Atlas 和平台组→保存关系→查询→核对原文”检查。若答案找错团队，先看对象是否被认成另一个同名平台组。
-
-<details class="source-example">
-<summary>源码与边界（选读）</summary>
+Graphiti：沿着“读维护文档→认出 Todo 和前端组→保存关系→查询→核对原文”检查。若答案找错团队，先看对象是否被认成另一个同名前端组。
 
 ![本例流程](../../wiki/assets/source-flows/04-06.svg)
-
-源码对照：
 
 追一次 Mem0 调用，可在纸上记“输入消息→候选正文→保存字段→返回正文→模型消息”。追 Graphiti 则记“原材料→对象编号→关系两端→来源编号→回答证据”。每个箭头都写下当前值，发现“这里仍是原句，那里已改成强规则”时，才知道错误在哪一步出现。
 
@@ -229,7 +219,7 @@ Graphiti：沿着“读维护文档→认出 Atlas 和平台组→保存关系�
 
 ### Graphiti：沿 episode、UUID 映射、edge、SearchResults 读
 
-追 `add_episode()` 时保留一个临时 Atlas UUID，观察 resolution 后对应哪个规范节点，再检查边的两个端点和 episode 引用。追搜索时核对配置启用了哪类对象和哪条召回路。这样可以把“图里有内容”拆成已存、能到达、被选中和实际读到。
+追 `add_episode()` 时保留一个临时 Todo UUID，观察 resolution 后对应哪个规范节点，再检查边的两个端点和 episode 引用。追搜索时核对配置启用了哪类对象和哪条召回路。这样可以把“图里有内容”拆成已存、能到达、被选中和实际读到。
 
 </details>
 
@@ -249,7 +239,7 @@ Graphiti：沿着“读维护文档→认出 Atlas 和平台组→保存关系�
 ```bash
 cd examples
 python3 mini_memory.py --db demo.db remember \
-  "发布前必须检查数据库迁移" --user team --kind procedural \
+  "提交代码前必须跑提醒测试" --user team --kind procedural \
   --importance 0.9 --confidence 0.95 --source incident-42
 ```
 
@@ -258,7 +248,7 @@ python3 mini_memory.py --db demo.db remember \
 ## 2. 召回
 
 ```bash
-python3 mini_memory.py --db demo.db recall "怎么发布" --user team
+python3 mini_memory.py --db demo.db recall "怎么改提醒功能" --user team
 ```
 
 示例同时计算：
@@ -278,9 +268,9 @@ score = 0.42 lexical
 
 ```bash
 old=$(python3 mini_memory.py --db demo.db remember \
-  "生产部署使用 Docker" --user team)
+  "新项目默认用 npm" --user team)
 python3 mini_memory.py --db demo.db remember \
-  "生产部署已迁移到 Kubernetes" --user team --supersedes "$old"
+  "新项目默认用 pnpm" --user team --supersedes "$old"
 ```
 
 旧记录没有消失，而是写入 `valid_to`。当前查询只返回新事实；历史查询可传 `as_of`。这比字符串覆盖多一个字段，却换来时间推理和审计能力。
@@ -288,7 +278,7 @@ python3 mini_memory.py --db demo.db remember \
 ## 4. 控制上下文预算
 
 ```bash
-python3 mini_memory.py --db demo.db context "部署检查" --user team --budget 200
+python3 mini_memory.py --db demo.db context "Todo 提交检查" --user team --budget 200
 ```
 
 `context()` 不是简单 top-k：它继续选取候选，直到近似 token 预算耗尽。真实系统应使用目标模型 tokenizer，并给不同记忆类型留配额，例如核心约束 30%、任务经验 40%、背景事实 30%。
@@ -300,7 +290,7 @@ python3 mini_memory.py --db demo.db forget-decayed --user team
 python3 mini_memory.py --db demo.db forget-decayed --user team --apply
 ```
 
-示例按最后访问时间、重要性与置信度计算指数衰减。默认只预览，显式 `--apply` 才失效记录。这是生产命令应有的安全默认。
+示例按最后访问时间、重要性与置信度计算指数衰减。默认只预览，显式 `--apply` 才失效记录。这是写文件命令应有的安全默认。
 
 ## 6. 运行测试
 
@@ -333,10 +323,10 @@ SQL 先用 user/time 缩小范围，再逐条算分，解释了“过滤”和�
 
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/04-from-scratch.svg" alt="最小实现先 SQL 过滤再评分和强化，随后预算打包，替代记录保留历史" loading="lazy"><figcaption>图：预算选择晚于召回强化，示例的简化边界应明确保留在解释中。</figcaption></figure>
-
 <details class="comparison-reference">
-<summary>项目对照速查（选读）</summary>
+<summary>项目对照图与速查（选读）</summary>
+
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/04-from-scratch.svg" alt="最小实现先 SQL 过滤再评分和强化，随后预算打包，替代记录保留历史" loading="lazy"><figcaption>图：预算选择晚于召回强化，示例的简化边界应明确保留在解释中。</figcaption></figure>
 
 ## 本章对照结论
 

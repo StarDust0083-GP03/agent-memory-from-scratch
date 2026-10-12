@@ -55,14 +55,20 @@ for slug in entries:
     if references != expected:
         errors.append(f'source flow/order mismatch: {slug}')
     flow_references.update(references)
-    visible = re.sub(r'<details class="source-example">.*?</details>', '', teaching, flags=re.S)
-    for title, section in re.findall(r'^## ([^\n]+)\n(.*?)(?=^## |\Z)', visible, re.M | re.S):
-        if title == '动手检查':
-            continue
+    examples = re.findall(r'<details class="source-example">(.*?)</details>', teaching, re.S)
+    for i, section in enumerate(examples, 1):
+        if '<summary>项目例子与源码（选读）</summary>' not in section:
+            errors.append(f'missing optional example label: {slug}: {i}')
         for project in ('Mem0', 'Graphiti'):
-            examples = re.findall(rf'^{project}：(.+)$', section, re.M)
-            if len(examples) != 1 or len(examples[0]) > 180:
-                errors.append(f'expected one short visible {project} example: {slug}: {title}')
+            short = re.findall(rf'^{project}：(.+)$', section, re.M)
+            if len(short) != 1 or len(short[0]) > 180:
+                errors.append(f'expected one short optional {project} example: {slug}: {i}')
+    visible = re.sub(r'<details class="source-example">.*?</details>', '', teaching, flags=re.S)
+    if re.search(r'^(Mem0|Graphiti)：', visible, re.M):
+        errors.append(f'project comparison outside optional notes: {slug}')
+    sections = re.findall(r'^## ([^\n]+)', visible, re.M)
+    if len(examples) != len([title for title in sections if title != '动手检查']):
+        errors.append(f'concept/example coverage mismatch: {slug}')
     if md.count('## 本章对照结论') != 1:
         errors.append(f'expected one closing comparison: {slug}')
     elif not re.search(r'^\|.+\|$', md.split('## 本章对照结论')[1], re.M):
@@ -144,4 +150,4 @@ else:
 if errors:
     print('\n'.join(errors))
     sys.exit(1)
-print(f'OK: {len(entries)} tutorials/exercises, short project examples, {len(flows)} source flows, optional notes, closing tables, accessible SVGs, links/images and search index verified')
+print(f'OK: {len(entries)} tutorials/exercises, optional project examples, {len(flows)} source flows, optional notes, closing tables, accessible SVGs, links/images and search index verified')

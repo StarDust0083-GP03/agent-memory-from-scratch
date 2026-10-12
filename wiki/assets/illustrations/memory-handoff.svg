@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 520" role="img" aria-labelledby="memory-handoff-title memory-handoff-desc">
+<title id="memory-handoff-title">一条教训怎样进入下一次任务</title>
+<desc id="memory-handoff-desc">本次提醒时间异常产生原话，应用保存有来源的教训；下次改代码前检索并组装上下文，模型仍需用当前工具结果验证。</desc>
+<style>svg{--paper:#faf7ef;--ink:#252820;--muted:#696b61;--accent:#29564c;--rule:#d9d2c3;color:var(--ink);font-family:system-ui,sans-serif}text{fill:currentColor;font-size:20px}path,line,rect,circle,ellipse{stroke:currentColor;stroke-width:1.5} .small{font-size:17px;fill:var(--muted)}.focal{color:var(--accent)}.paper{fill:var(--paper)}.rule{stroke:var(--rule)}@media(prefers-color-scheme:dark){svg{--paper:#151512;--ink:#e5e0d5;--muted:#aaa79d;--accent:#87b7a8;--rule:#39382f}}</style>
+<defs><marker id="memory-handoff-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" fill="none" stroke="context-stroke"/></marker></defs>
+
+<path d="M220 96V128" fill="none" marker-end="url(#memory-handoff-arrow)" /><path d="M220 208V244" fill="none" marker-end="url(#memory-handoff-arrow)" /><path d="M220 324V356" fill="none" marker-end="url(#memory-handoff-arrow)" />
+<g><rect class="paper" x="60" y="16" width="320" height="80" rx="6"/><text x="220" y="46" text-anchor="middle" class="">本次经历</text><text x="220" y="72" text-anchor="middle" class="small">Todo 的提醒时间改错了</text></g>
+<g><rect class="paper" x="60" y="128" width="320" height="80" rx="6"/><text x="220" y="158" text-anchor="middle" class="">保存有边界的教训</text><text x="220" y="184" text-anchor="middle" class="small">提交前跑测试 · 来源 session-42</text></g>
+<g><rect class="paper" x="60" y="244" width="320" height="80" rx="6"/><text x="220" y="274" text-anchor="middle" class="">下次任务前取回</text><text x="220" y="300" text-anchor="middle" class="small">只查当前用户与项目</text></g>
+<g class="focal"><rect class="paper" x="60" y="356" width="320" height="80" rx="6"/><text x="220" y="386" text-anchor="middle" class="">组装本轮输入</text><text x="220" y="412" text-anchor="middle" class="small">任务 + 教训 + 来源</text></g>
+<text x="220" y="478" text-anchor="middle" class="small">修改后用测试结果判断是否完成</text>
+
+</svg>

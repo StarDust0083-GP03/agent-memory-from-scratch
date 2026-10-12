@@ -15,6 +15,11 @@ const chapterDir=join(root,'book','chapters');
 const out=join(root,'wiki');
 const outChapters=join(out,'chapters');
 mkdirSync(outChapters,{recursive:true});
+const illustrations=join(out,'assets','illustrations');
+mkdirSync(illustrations,{recursive:true});
+for(const file of readdirSync(join(root,'book','illustrations'))){
+  if(file.endsWith('.svg')) copyFileSync(join(root,'book','illustrations',file),join(illustrations,file));
+}
 const summary=readFileSync(join(root,'book','SUMMARY.md'),'utf8');
 const entries=[...summary.matchAll(/^\d+\. \[([^\]]+)\]\(chapters\/([^)]+)\.md\)$/gm)].map((m,i)=>({title:m[1],slug:m[2],index:i+1}));
 marked.use({gfm:true,renderer:{
@@ -23,7 +28,9 @@ marked.use({gfm:true,renderer:{
 }});
 const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function layout(title,body,depth='',extra='') {return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>${esc(title)} · Agent Memory from Scratch</title><link rel="stylesheet" href="${depth}assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="${depth}index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="${depth}search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header>${body}</div>${extra}<script src="${depth}assets/wiki.js"></script></body></html>`;}
-const indexBody=`<main id="main" class="book"><div class="eyebrow">From principles to working code</div><h1 class="home-title">Agent Memory<br>from Scratch</h1><p class="deck">跟着一个 Atlas 发布助手，从保存第一条教训开始，逐步学会检索、纠正、遗忘与技能复用。每章有具体推演和动手检查，再对照 16 个项目理解真实实现。</p><p class="meta">17 章教程 + 前言与附录 · 16 个源码仓库 · 11 篇论文 · 资料快照 2026-09-21</p><section class="resume" data-resume hidden><div class="meta">上次读到</div><a href="#">继续阅读</a></section><nav class="chapters" aria-label="全书目录">${entries.map(e=>`<a class="chapter-row" href="chapters/${e.slug}.html"><span class="num">${e.slug==='00-preface'?'序':e.slug==='appendix-sources'?'附':e.slug.slice(0,2)}</span><span>${esc(e.title)}</span><span class="arrow">→</span></a>`).join('')}</nav><p class="source-note">初学时先读例子与动手检查；准备接入时再展开实现笔记。源码和论文保存在本地 sources/，教学示例与项目实测分开标注。</p></main>`;
+const groups=[['从一条教训开始',0,5],['让记忆在任务中起作用',5,9],['对照真实实现',9,14],['验证、接入与选择',14,19]];
+const chapterRow=e=>`<a class="chapter-row" href="chapters/${e.slug}.html"><span class="num">${e.slug==='00-preface'?'序':e.slug==='appendix-sources'?'附':e.slug.slice(0,2)}</span><span>${esc(e.title)}</span><span class="arrow">→</span></a>`;
+const indexBody=`<main id="main" class="book"><h1 class="home-title">Agent Memory<br>from Scratch</h1><p class="deck">写邮件、修提醒 bug、找代码评审人：从这些小事理解记忆怎样保存、找回和纠正。第 4 章用 SQLite 从零实现，不需要模型密钥。</p><p class="reading-start"><a href="chapters/00-preface.html">从前言开始阅读 →</a></p><figure class="lesson-illustration home-illustration"><img src="assets/illustrations/memory-desk.svg" alt="外部存储像柜子，模型只看到应用放到桌上的当前上下文" width="440" height="440"><figcaption>存下来只是第一步。放进本轮输入，模型才读得到。</figcaption></figure><p class="meta">先读正文、图解和动手检查；需要接入项目时，再展开例子与源码。</p><section class="resume" data-resume hidden><div class="meta">上次读到</div><a href="#">继续阅读</a></section><nav class="chapters" aria-label="全书目录">${groups.map(([title,start,end])=>`<section class="book-part"><h2>${title}</h2>${entries.slice(start,end).map(chapterRow).join('')}</section>`).join('')}</nav><p class="source-note">教学例子不等于项目实测。版本与资料来源见<a href="chapters/appendix-sources.html">附录</a>。</p></main>`;
 writeFileSync(join(out,'index.html'),layout('目录',indexBody));
 const searchDocs=[];
 for(const entry of entries){
