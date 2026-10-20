@@ -2,243 +2,205 @@
 
 ## 从一个问题开始读源码
 
-读源码不必从第一个文件开始逐行浏览。你已经理解第 5 章的候选池区别，可以带一个问题进去：“Mem0 的关键词命中，会不会把语义池外记录补回来？”
+借展清单遗漏了“内托尺寸含两侧缓冲层”，但搜索结果里明明出现过这条要求。阅读代码时先带上这次失败的输入、记录 ID 与最终消息：它是在初选外、被排序压下，还是取回后没有装入输入？三个位置需要追不同函数。
 
-在项目根目录运行：
+可以先定位 Mem0 的候选构造与评分入口：
 
 ```bash
-rg -n '_search_vector_store|_compute_entity_boosts' \
+rg -n 'def (_search_vector_store|_compute_entity_boosts)' \
   sources/repos/mem0/mem0/memory/main.py
 ```
 
-搜索会告诉你定义和调用的位置。打开函数后，先看输入的 query 和 filters，再追向量候选、关键词或实体信号、最终排序和返回。遇到辅助函数，只追会改变候选集合或分数的部分，不必立即理解每个异常和配置类。
-
-Mem0：带着“默认中文”读写入代码，只记录它先变成哪条文字、最终写到哪里。再读搜索，看返回正文是否相同，不必先记所有类名。
-
-Graphiti：带着“Atlas 由平台组维护”读代码，记录原文、两个对象和维护关系分别在哪里生成。沿来源编号回查，确认关系仍有原文支持。
+找到定义后，记录参数来自谁、返回值交给谁，再沿真正改变集合的调用往下读。异常包装和配置继承可以暂缓，除非它们改变了本次分支。对于 Graphiti，则从问题对应的边开始，核对端点、来源和日期条件，而非先遍历全部节点。
 
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>代码入口与结论边界（选读）</summary>
 
-![本例流程](../../wiki/assets/source-flows/appendix-01.svg)
-
-源码对照：
-
-初读只追一个问题：“这句原话最后存成什么？”Mem0 从 add 的输入走到卡片正文，Graphiti 从原材料走到对象与关系。遇到函数名，先看它收什么、返回什么，再回到 Atlas 示例给变量填值；不必一开始读完模型客户端、数据库连接和全部异常处理。
+![从一次清单漏项定位代码责任](../../wiki/assets/rewrite-memory-b/appendix-01.svg)
 
 ### Mem0：从实际函数与提示双向核对
 
-[主流程](../../sources/repos/mem0/mem0/memory/main.py) 从 `add()` 进入 `_add_to_vector_store()`，读取普通追加和过程摘要两个分支；[历史存储](../../sources/repos/mem0/mem0/memory/storage.py) 核对消息与变更表。不要停在 docstring 的自动 CRUD 描述，正文解释以函数实际写操作为准。
+在 [主流程](../../sources/repos/mem0/mem0/memory/main.py) 中，先确认实际使用的是推断写入、直接保存还是过程摘要分支。提示词描述提取意图，函数的写操作决定哪些记录真的新增或变化。不要仅依据 docstring 中的 CRUD 名称判断整个路径会自动执行更新与删除。
+
+之后到 [历史存储](../../sources/repos/mem0/mem0/memory/storage.py) 查消息、变更和正文分别留下什么。业务记录消失与所有历史副本清除不是同一事件，应独立检查。
 
 ### Graphiti：从 orchestration 追 maintenance
 
-[主流程](../../sources/repos/graphiti/graphiti_core/graphiti.py) 的 `add_episode()` 编排抽取、解析和保存；[边维护](../../sources/repos/graphiti/graphiti_core/utils/maintenance/edge_operations.py) 展开重复候选与时间关闭逻辑。先记返回的 resolved、invalidated、new 三集合，再核对它们如何写回。
+[写入编排](../../sources/repos/graphiti/graphiti_core/graphiti.py) 将 episode 交给抽取、解析和保存流程。以一份“东馆外借需经文保部复核”的通知为输入，标出材料 ID、规范部门 ID 和许可边 ID；三者不可混用。
+
+需要解释旧关系何时关闭时，进入 [边维护](../../sources/repos/graphiti/graphiti_core/utils/maintenance/edge_operations.py)，核对 resolved、invalidated、new 集合的成员和写回时机。函数返回某个集合，并不自动证明所有后端操作都已完成。
 
 </details>
 
 ## 用纸笔记录三个集合
 
-把“向量命中的 ID”“关键词命中的 ID”“最终返回的 ID”分别写下来。如果代码只遍历向量候选做加分，池外关键词记录没有入口；如果代码把两组 ID 合并，再补取正文，行为就不同。
+设向量路初选为 `{R2,R8}`，全文路为 `{R5,R2}`，正确的尺寸要求是 R5。若后续只遍历向量初选加分，R5 根本没有参加排序；若合并两路身份，才会出现 `{R2,R5,R8}`。先写身份，再看分数，可避免把漏召回误诊为重排失败。
 
-随后看 MCP 的 `storage/mixins/hybrid.py`，观察全文、向量、hash 合并和正文补取。不要只凭它们都叫 hybrid 认定同一个算法。读完后，你应该能用一条漏召回案例预测两种路径的差别，而不仅是记住函数名。
-
-这种追踪方法也适用于 A-MEM 的 links 追加与最终 k 截断、Letta 的文件提交与后续编译、Memobase 的写入与 flush。追最后真正被读取的状态，才能验证前面处理有没有影响结果。
-
-Mem0：纸上写“初选 A、B，最后返回 B”。追查正确记录 C 时，立即知道它在初选前就漏了，不必先分析最后排名。
-
-Graphiti：纸上写“文字找到 A、C，向量找到 B、C，合并 A、B、C”。再看最后保留哪些关系，就能区分遗漏发生在搜索还是合并之后。
+用同样方法追 MCP 的混合存储、A-MEM 的邻居返回与 Letta 的文件版本：发生过处理的对象，不一定成为最终读取对象。中间集合和最终消费集合都要保留，才能解释一段优化是否产生实际影响。
 
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>集合变化与返回对象（选读）</summary>
 
-![本例流程](../../wiki/assets/source-flows/appendix-02.svg)
-
-源码对照：
-
-Semantic 是按意思找到的集合，candidate 是进入下一轮选择的集合。Mem0 需要核对两者是否相同；Graphiti 需要核对文字榜、向量榜和最终编号并集。用 A、B、C 手记每一步即可：哪一步第一次出现 C，哪一步去掉 C，比只阅读一个复杂评分函数更容易定位漏项。
+![候选池外与池内失败的区分](../../wiki/assets/rewrite-memory-b/appendix-02.svg)
 
 ### Mem0：semantic 集合决定 candidate 身份
 
-分别记录后端 search、keyword_search 和 entity boost 的 ID，随后看 candidates 是否只遍历 semantic results。源码显示后两者给分，而非无条件补入新身份。explain 提供已评分记录的分项，没有覆盖池外遗漏，复查时要保存原始集合。
+对当前快照，分别记录语义搜索、关键词命中和实体关联分数，再核对 candidates 的构造来源。若身份由 semantic results 提供，其他信号只能改变已有成员的得分。explain 说明参加评分的对象，不包含从未入池的漏项。
+
+换一个 vector store 或升级版本后，应重新跑同一池外样例，不能把本次控制流观察当成所有部署的永久保证。
 
 ### Graphiti：UUID 并集与各路名次同时保留
 
-[搜索实现](../../sources/repos/graphiti/graphiti_core/search/search.py) 的 `edge_search()` 汇集多路列表，再构造 edge_uuid_map。RRF 用名次，cross-encoder 先截断再读 fact。对照[配方](../../sources/repos/graphiti/graphiti_core/search/search_config_recipes.py)，确认本次到底启用了哪些路。
+在 [搜索实现](../../sources/repos/graphiti/graphiti_core/search/search.py) 中追 `edge_search()` 的多路结果与 UUID 映射，再查看本次排序方法。RRF 消费名次，cross-encoder 消费截断后的问题与事实文本，它们对候选范围有不同前提。
+
+[搜索配方](../../sources/repos/graphiti/graphiti_core/search/search_config_recipes.py) 说明启用哪些路。基础边搜索、邻域扩展和更复杂的查询组织要区分，不能因为存了图就声称任意问题都会自动走完多跳。
 
 </details>
 
 ## 用论文学习机制，再核对当前代码
 
-读 HippoRAG 论文，可以先找问题设定、索引图、查询种子和传播流程。把“Atlas → 平台组 → 批准人”的教学例子放进去，看看每一处需要什么节点或证据。再读实验，确认作者固定了哪个 reader、比较什么基线。
+把论文读成可复算的实验：作者怎样定义问题、以什么单位索引、选哪些种子、怎样检索、把结果交给哪个 reader。随后用馆藏对象、外借部门与复核人构造小例，检查该机制需要哪些证据。
 
-之后打开当前 `HippoRAG.py`，看事实与段落种子怎样组合。论文第一版和后续实现可能不同，不能把图示的每个细节都套到当前目录。Graphiti 的时间论文、MemoryOS 的提升论文和 MemOS 的模型资源论文也应这样读。
-
-不懂术语时，先找它在数据路径里的作用：输入什么、改什么、返回什么。知道作用之后，再研究公式和配置，比先记一页缩写更容易。
-
-Mem0：论文介绍记忆更新，你用“默认测试→默认预发布”检查当前代码。若普通写入仍留下两条，就把这个观察记下来，别用论文图替代实际调用行为。
-
-Graphiti：论文讲时间关系，你用“18 日换批准人”检查日期字段和查询条件。保存日期与正确筛出 15 日的关系，都要分别核对。
+再回当前源码寻找实际路径。HippoRAG 的不同版本可能改变事实与段落种子组织；时间图的字段和过滤也可能超出早期论文图。论文用于理解设计依据，不能替代当前分支和后端的行为核对。
 
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>研究设定与实现版本（选读）</summary>
 
-![本例流程](../../wiki/assets/source-flows/appendix-03.svg)
-
-源码对照：
-
-论文帮助理解为什么将聊天压成短事实或为关系保留时间，代码决定当前调用是否真正这么做。Mem0 论文中的某种写入决策，不保证与这个快照的批量追加相同；Graphiti 的时间字段，也不表示每个查询默认使用它。把机制意图、当前分支和实测范围分别记录，读者就不会把介绍当成保证。
+![机制、代码和运行结果的证据分层](../../wiki/assets/rewrite-memory-b/appendix-03.svg)
 
 ### Mem0：论文路线与当前 batch 实现分开记
 
-论文可能描述较早的提取与更新算法，当前源码已有 additive prompt、批量 embedding 和实体链接。读实验时记数据、reader、候选粒度及 OSS 或 managed 交付物。算法思想相近不证明当前本地后端复现了同一分数。
+论文实验可能使用特定抽取、更新和评测流程，当前普通批量路径则需检查 additive prompt、embedding 和实体链接等实际操作。记下实验数据、reader、记忆粒度与交付物是 OSS 还是托管服务，再判断哪些结论可迁移。
+
+如果新通知只生成追加事实，不能用论文中的更新箭头解释旧事实已经结束。运行结果应另存输入、配置与输出，不与阅读笔记混在一起。
 
 ### Graphiti：时间思想要核对字段和过滤
 
-时间论文解释为什么保留历史，[边定义](../../sources/repos/graphiti/graphiti_core/edges.py) 明确具体字段，[过滤实现](../../sources/repos/graphiti/graphiti_core/search/search_filters.py) 决定查询怎样使用它们。字段存在只支持模型表达，仍要实际测试当前与历史视图，不能把论文目标当作每个接口保证。
+[边字段](../../sources/repos/graphiti/graphiti_core/edges.py) 允许表达关系的有效时间和系统记录时间，[过滤实现](../../sources/repos/graphiti/graphiti_core/search/search_filters.py) 决定查询如何使用这些信息。
+
+用“11 月 1 日交接、11 月 4 日才收到通知”分别问现实历史与当时已知状态。即使字段齐全，若查询没有施加对应条件，答案仍可能错误。保存日期和正确使用日期是两项验收。
 
 </details>
 
 ## 给自己的结论留一个可复查的小注释
 
-可以写成：“在这个 commit 和后端下，候选来自某集合；依据是这个函数；尚未运行所有后端。”实验结论再另写数据、参数与运行输出。
+一条技术结论至少附代码提交、入口、实际配置和证据类型。比如“当前同步推断路径中，只观察到某集合参与评分；尚未运行其他后端”。这种范围声明便于后来判断升级使哪条结论失效。
 
-本书下列索引保留源码、论文和 2026-09-21 快照，便于复查机制，不把代码阅读当作全项目性能复现。托管服务宣称、开源代码行为和你的运行结果要分别标注，以后版本变化时才知道哪条结论需要重查。
-
-Mem0：笔记写“本版本关键词只给初选记录加分”，附版本和评分函数位置。升级后用那条漏掉的 E42 记录再试，检查结论是否仍成立。
-
-Graphiti：笔记写“本次基础搜索未自动补第二段批准链”，附版本、入口和测试材料。以后更换查询方式时，能复查变化，而不是只留一句“图会多跳”。
+若真的做了实验，再附材料版本、请求、结果与失败例。不要把“官方宣称”“读到代码”“离线模拟”和“实际服务返回”都写成一个没有条件的“支持”。
 
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>可重查的观察记录（选读）</summary>
 
-![本例流程](../../wiki/assets/source-flows/appendix-04.svg)
-
-源码对照：
-
-Provider 是提供模型或存储服务的具体实现，driver 是访问存储的程序。笔记可以写“Mem0 普通提取分支，某向量后端，仅核对源码”；Graphiti 则写“边搜索，启用哪些找法，使用哪个 driver”。这些条件解释结论适用范围，换服务或配置后需重新验证，而不是把同一项目名当作固定行为。
+![一条结论需要保存的定位信息](../../wiki/assets/rewrite-memory-b/appendix-04.svg)
 
 ### Mem0：记录分支、provider 与已验证范围
 
-可以写“在普通 infer=True 同步路径，候选由语义池构造；未测试所有 vector stores”。同时注明 commit、模型和 backend，真实实验另保存源数据与输出。delete history 残留等观察也限定到实际函数，不宣称所有托管版本行为相同。
+说明本次采用 `infer=True` 还是直接写入、同步还是异步入口，以及模型和存储 provider。对于关键词池外漏项、history 中保留旧正文等观察，标出对应函数及测试范围，不扩展成所有托管部署都一样。
+
+复查时优先重跑最小反例。若配置或候选构造变化，再更新结论，而非只检查同名 API 仍能导入。
 
 ### Graphiti：记录配置、driver 与对象粒度
 
-结论如“基础 search 采用 edge RRF，未自动启用 BFS”应指向 recipe 和入口分支；晚到日期实验注明 search_filter。针对 remove_episode 记录共享来源和摘要检查结果。源码观察、教学推演和运行结论各自标明证据类型。
+注明搜索对象是边、节点还是材料，采用哪种 recipe、driver 与时间过滤。移除 episode 的实验还应检查共享来源、事实边和摘要，不能仅确认材料 ID 不再返回。
+
+把查询结果和模型最终输入分开保存。图中能找到一条关系，不证明它已被本次回答使用，也不证明支持它的原文仍可授权回查。
 
 </details>
 
 ## 动手检查
 
-任选一个“会学习”“支持图”或“可删除”的描述，把它改写成一条能追代码、能运行检查的具体问题。
+将“这套系统能持续学习”改成一个可失败的问题，并列出至少一个中间对象和一个最终验收结果。
 
-答案提示：“A-MEM 建了链接后，池外邻居最终是否返回？”比“它的图记忆好不好”更可操作；“删掉 source 后哪些摘要还含原文？”比“有 delete API 吗”更接近删除责任。
+答案提示：可以问“借展规程经修订并提交后，下一次调用是否读取新版本；旧来源删除时，摘要和缓存是否仍含原内容？”先固定版本和输入，再观察真实读取。仅有 improve 或 delete 方法名无法回答这两个问题。
 
 <details class="implementation-notes">
-<summary>完整源码路径、论文清单与证据索引（选读）</summary>
+<summary>定位资料与引用范围（选读）</summary>
 
 ## 本地源码
 
-| 项目 | 本地目录 | 重点入口 | License |
-|---|---|---|---|
-| Mem0 | `sources/repos/mem0` | `mem0/memory/main.py` | Apache-2.0 |
-| Letta Code | `sources/repos/letta-code` | `src/agent/prompts/letta_root_memfs.md` | Apache-2.0 |
-| Graphiti | `sources/repos/graphiti` | `graphiti_core/graphiti.py` | Apache-2.0 |
-| Cognee | `sources/repos/cognee` | `cognee/api/v1/{remember,recall,improve}` | Apache-2.0（核对模块） |
-| MemOS | `sources/repos/memos` | `src/memos/memories/`, `mem_os/` | Apache-2.0 |
-| MemoryOS | `sources/repos/memoryos` | `memoryos-pypi/{memoryos,updater,retriever,mid_term}.py` | Apache-2.0 |
-| A-MEM | `sources/repos/a-mem` | `agentic_memory/memory_system.py` | MIT |
-| HippoRAG | `sources/repos/hipporag` | `src/hipporag/HippoRAG.py` | 见仓库 |
-| Memobase | `sources/repos/memobase` | `src/server/` | Apache-2.0 |
-| Hippo Memory | `sources/repos/hippo-memory` | `src/`, `benchmarks/`, `docs/evals/` | MIT |
-| Basic Memory | `sources/repos/basic-memory` | `src/basic_memory/` | AGPL-3.0 |
-| MCP Memory Service | `sources/repos/mcp-memory-service` | `src/mcp_memory_service/` | Apache-2.0 |
-| Agent Beacon | `sources/repos/agent-beacon` | `endpoint/`, `docs/` | MIT |
-| TencentDB Agent Memory | `sources/repos/tencent-agent-memory` | `MemoryCore/`, `MemoryKnowledge/` | MIT |
-| Hermes Jev Skills | `sources/repos/hermes-jev-skills` | `jevkit/`, `skills/jev-memory/` | MIT |
+以下路径相对于 `sources/repos/`，仅提供阅读起点。许可需连同目标模块和当前交付版本核对。
 
-`letta-ai/letta` 也保留在本地，但只用于证明主仓迁移，不应作为当前源码入口。因此共有 16 个仓库，当前详解覆盖 15 个实现/工具和 Letta 的历史来源。
+| 项目 | 优先查看的对象 | 定位位置 | 归档许可说明 |
+|---|---|---|---|
+| Mem0 | 事实写读与历史 | `mem0/memory/main.py` | Apache-2.0 |
+| Letta Code | 文件规则与编译入口 | `letta-code/src/agent/prompts/letta_root_memfs.md` | Apache-2.0 |
+| Graphiti | episode 与关系 | `graphiti/graphiti_core/graphiti.py` | Apache-2.0 |
+| Cognee | remember / recall / improve | `cognee/cognee/api/v1/` | Apache-2.0，按模块复查 |
+| MemOS | 记忆容器与资源模块 | `memos/src/memos/` | Apache-2.0 |
+| MemoryOS | 页面、主题与长期结果 | `memoryos/memoryos-pypi/` | Apache-2.0 |
+| A-MEM | 描述与邻接演化 | `a-mem/agentic_memory/memory_system.py` | MIT |
+| HippoRAG | 图种子与段落读取 | `hipporag/src/hipporag/HippoRAG.py` | 以归档仓库为准 |
+| Memobase | 输入缓冲与画像 | `memobase/src/server/` | Apache-2.0 |
+| Hippo Memory | 寿命、反馈与巩固 | `hippo-memory/src/` | MIT |
+| Basic Memory | 文件解析与上下文 | `basic-memory/src/basic_memory/` | AGPL-3.0 |
+| MCP Memory Service | 多客户端存储接口 | `mcp-memory-service/src/mcp_memory_service/` | Apache-2.0 |
+| Agent Beacon | 动作采集与转发 | `agent-beacon/endpoint/`、`docs/` | MIT |
+| TencentDB Agent Memory | 资产与层级注入 | `tencent-agent-memory/MemoryCore/`、`MemoryProxy/` | MIT |
+| Hermes Jev Skills | 候选判别与继续搜索 | `hermes-jev-skills/jevkit/` | MIT |
+
+另有历史 `letta-ai/letta` 副本用于核对仓库迁移。资料合计 16 仓，并不意味着旧仓仍是当前产品的推荐入口。
 
 ## 本次扩写的机制证据
 
-以下路径均相对于 `sources/repos/`。详细章节保留可点击的源码链接；README/MDX 路径作为源码定位使用，不转换成 wiki 页面。
+机制核对沿三类变化组织。写入侧查看 Mem0 的批量提取、Memobase 的 buffer/flush、Graphiti 的 resolution 与 Cognee 的管线路由；它们保存和改变的对象并不相同。
 
-| 项目 | 已核对的关键函数或文件 | 对应讲解 |
-|---|---|---|
-| Mem0 | `mem0/memory/main.py`：`_add_to_vector_store`、`_search_vector_store`、`_compute_entity_boosts` | ADD-only batch、局部 hash 去重、语义候选池与多信号评分 |
-| Memobase | `src/server/api/memobase_server/controllers/buffer.py`、`controllers/modal/chat/` | flush 状态、并发限制、profile/event 处理、原 blob 保留开关 |
-| Graphiti | `graphiti_core/graphiti.py`、`edges.py` | entity/edge resolution、episode 引用、有效与系统时间 |
-| Cognee | `cognee/api/v1/remember/remember.py`、`recall/recall.py` | 管线路由、配置、后台任务与数据集边界 |
-| HippoRAG | `src/hipporag/HippoRAG.py`：`graph_search_with_fact_entities`、`run_ppr` | fact 与 passage seeds、无向加权 PPR、manifest |
-| MemoryOS | `memoryos-pypi/updater.py`、`retriever.py`、`mid_term.py`、`memoryos.py` | page/session 提升、heat、LFU、长期分析与并行读取 |
-| MemOS | `src/memos/mem_cube/general.py`、`mem_scheduler/` | 可选 memory modules、load/dump/schema、调度结构 |
-| Hippo | `src/memory.ts`、`physics.ts`、`consolidate.ts`、`rerankers/jev.ts` | strength/outcome、粒子评分、sleep、40 候选重排与本地回退 |
-| A-MEM | `agentic_memory/memory_system.py`：`process_memory`、`search_agentic` | 演化动作、邻居修改、links 与 k 截断 |
-| Letta / Letta Code | 旧仓 `README.md`；新仓 `src/agent/prompts/letta_root_memfs.md` | 迁移、索引格式、commit 与 recompile 生效边界 |
-| Basic Memory | `src/basic_memory/markdown/entity_parser.py`、`services/context_service.py` | 文件解析、URI 与关系上下文 |
-| MCP Memory Service | `src/mcp_memory_service/storage/mixins/hybrid.py`、`consolidation/consolidator.py` | weighted/RRF、候选补取、horizon 与巩固阶段 |
-| Agent Beacon | `docs/architecture/architecture.mdx`、`system-architecture.mdx` | 采集方式、事件 fidelity、JSONL 边界、OSS/managed 范围 |
-| TencentDB | `MemoryCore/README_CN.md`、`MemoryProxy/README_CN.md` | Core/Knowledge 分工、生成溯源、Proxy 高层注入与工具读取 |
-| Hermes Jev Skills | `jevkit/rerank.py`、`search.py`、`memo.py` | 截断/隐私/注入判别、unjudged 回退、sufficiency、exact-match memo |
+读取侧比较 HippoRAG 的 fact/passage seeds 与 PPR、MCP 混合存储的身份合并、Hermes 的判别和不充分时继续搜索。先确定候选从哪来，再看评分，最后看宿主实际装入的内容。
 
-这里只表示源码与官方说明核对，不表示所有后端已经运行或 benchmark 已独立复现。扩写保持原有 2026-09-21 快照，不把本次文稿更新当成重新获取上游维护数据。
+长期演化则追 MemoryOS 的 page/session 提升、Hippo 的 outcome 与 sleep、A-MEM 的邻居属性及索引刷新、Letta Code 的文件提交与后续编译。MemOS 的资源与 scheduler、TencentDB 的资产版本、Basic 的文件同步和 Beacon 的采集保真各有独立责任。
+
+这些说明依赖既有 2026-09-21 资料快照，未重新采集上游维护数据。每章保留更具体的入口和适用条件，不宣称已运行全部模型、后端或长期 benchmark。
 
 ## 论文原文
 
-PDF 位于 `sources/papers/pdf/`，可搜索文本位于 `sources/papers/text/`。
+原始 PDF 及其搜索文本分别归档于 `sources/papers/pdf/` 和 `sources/papers/text/`。检索标识保持原值，以便回到完整实验设定。
 
-1. Packer et al. **MemGPT: Towards LLMs as Operating Systems**. arXiv:2310.08560.
-2. Maharana et al. **LoCoMo: Evaluating Very Long-Term Conversational Memory of LLM Agents**. arXiv:2402.17753.
-3. Gutiérrez et al. **HippoRAG: Neurobiologically Inspired Long-Term Memory for LLMs**. arXiv:2405.14831.
-4. Wu et al. **LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory**. arXiv:2410.10813.
-5. Rasmussen et al. **Zep: A Temporal Knowledge Graph Architecture**. arXiv:2501.13956.
-6. Xu et al. **A-MEM: Agentic Memory for LLM Agents**. arXiv:2502.12110.
-7. Gutiérrez et al. **From RAG to Memory: Non-Parametric Continual Learning for LLMs**. arXiv:2502.14802.
-8. Chhikara et al. **Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory**. arXiv:2504.19413.
-9. Markovic et al. **Optimizing the Interface Between Knowledge Graphs and LLMs for Complex Reasoning**. arXiv:2505.24478.
-10. Kang et al. **Memory OS of AI Agent**. arXiv:2506.06326.
-11. Li et al. **MemOS: A Memory OS for AI System**. arXiv:2507.03724.
+| 标识 | 文献与核对重点 |
+|---|---|
+| arXiv:2310.08560 | Packer 等，MemGPT，有限窗口中的主动上下文管理 |
+| arXiv:2402.17753 | Maharana 等，LoCoMo，长对话材料与评测协议 |
+| arXiv:2405.14831 | Gutiérrez 等，HippoRAG，关联图与段落检索 |
+| arXiv:2410.10813 | Wu 等，LongMemEval，长期交互中的能力切分 |
+| arXiv:2501.13956 | Rasmussen 等，Zep，时间知识图的组织 |
+| arXiv:2502.12110 | Xu 等，A-MEM，笔记演化与连接 |
+| arXiv:2502.14802 | Gutiérrez 等，From RAG to Memory，非参数持续学习 |
+| arXiv:2504.19413 | Chhikara 等，Mem0，事实记忆及相应实验 |
+| arXiv:2505.24478 | Markovic 等，知识图与 LLM 接口优化 |
+| arXiv:2506.06326 | Kang 等，Memory OS of AI Agent，层级管理 |
+| arXiv:2507.03724 | Li 等，MemOS，记忆资源的统一组织 |
 
 ## 证据使用约定
 
-- 论文结果引用论文；项目新增功能和最新数字引用对应 README/评测目录。
-- README 自报结果不视为独立复现。
-- 本书没有把不同指标、数据切分和 reader 的分数混成排行榜。
-- Git 活跃度是 2026-09-21 的快照，不代表未来维护状态。
-- 任何项目上线前都应重新检查主仓、release、security advisory 与许可证。
+论文数值只属于相应数据、模型和评分协议；README 自报结果需明确标作项目报告。未经独立重跑，不将它们写成此次复现。不同 reader、候选池和数据切分的分数不能拼成统一排名。
+
+维护数据同样有日期。上线前另查当前主仓、发布、安全公告和许可，不能用旧快照替代现在的风险评估。
 
 ## 进一步阅读顺序
 
-1. **心智模型**：MemGPT → Mem0。
-2. **时间图谱**：Zep/Graphiti → HippoRAG 1/2。
-3. **生命周期**：MemOS → MemoryOS → Hippo 源码与负面评测。
-4. **评测**：LoCoMo → LongMemEval，再对照项目 benchmark harness。
-5. **工程**：Mem0 `Memory`、Graphiti `add_episode/search`、Cognee `remember/recall/improve/forget`、Letta MemFS prompts。
+先用 MemGPT 建立窗口与存储的区别，再看短事实写读；跨资料关联需求出现后进入时间图和 HippoRAG。生命周期部分将层级组织、反馈价值与演化笔记分开比较，避免把一切状态变化统称学习。
+
+随后用 LoCoMo 与 LongMemEval 理解实验单位，最后回到 SDK、服务或运行时的接入合同。研究路线不要求安装所有项目，阅读的目标是解释同一失败在不同机制中会怎样处理。
 
 ## 按技术问题复核，而不是只读 README
 
-检索比较应从 public API 追到最终 candidate set、过滤和截断：Mem0 的 keyword boost 与 MCP 的候选并集不同，Hippo graph stream 与 graph-recall 不同，Graphiti 的 configuration 决定 RRF/MMR/cross-encoder。只看到函数名或接口介绍不足以作结论。
+候选问题追到过滤、身份合并和最终截断；演化问题追到真实写操作及之后的读取；接入问题画出原文、索引、摘要、转发和缓存副本。宣传中的功能名不能代替这些对象关系。
 
-演化比较应追到具体写操作：MemoryOS 的 heap/heat 与 profile update，A-MEM 的邻居属性变化与 index refresh，Hippo strength/outcome 与 sleep，MCP decay/forgetting 的 action，Cognee improve 的 gate/watermark，TencentDB L1 dedup/Skill version，MemOS scheduler，Letta commit/recompile。副作用之后是否读取新状态也要核对。
-
-接入比较应画出原文与派生副本：Basic 文件与索引，Beacon JSONL 与 forwarding，Memobase blob/profile/event，Graphiti episode/fact，HippoRAG passage/fact，TencentDB Core/Knowledge/Proxy。许可证、auth、删除或性能属于不同证据问题，不能用论文或宣传分数替当前部署证明。
+例如一次共享资料撤回，应分别核对授权集合、旧 ID 回查、派生摘要和客户端缓存。算法论文不能证明删除完整，许可证也不能证明权限实现正确。按证据类别拆开问题，才知道还缺哪种验证。
 
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/appendix-sources.svg" alt="源码、实验和部署三种结论分别追踪到 commit/config、协议和实际运行记录" loading="lazy"><figcaption>图：证据类型不同，支持的结论范围也不同；本次仍是本地快照审阅。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/rewrite-memory-b/appendix-overview.svg" alt="阅读观察、离线算例与部署结论分别对应不同证据" loading="lazy"><figcaption>图：从技术主张回到能支持它的证据；尚未验证的条件单独保留。</figcaption></figure>
 
 <details class="comparison-reference">
-<summary>项目对照速查（选读）</summary>
+<summary>跨项目复核入口（选读）</summary>
 
 ## 本章对照结论
 
-| 技术问题 | 需要比较的项目 | 优先证据 | 本次能支持/不能支持 |
+| 待回答的问题 | 要看到的状态 | 可选核对对象 | 不能据此扩大宣称 |
 |---|---|---|---|
-| 事实/画像写入 | Mem0、Memobase、MemoryOS、TencentDB、Letta、MemOS | 提取/提升/编译代码及 prompt | 解释数据流；未独立测所有模型 |
-| 候选与排序 | Mem0、MCP、Hippo、Graphiti、Cognee、HippoRAG、Hermes | 初选、合并、重排代码及配置 | 区分候选范围；未复现统一质量排名 |
-| 图/来源 | Graphiti、Cognee、HippoRAG、Basic、A-MEM、Hippo、MCP、TencentDB、MemOS | graph/node/edge/source 及读取 | 区分连接语义；未保证全部删除链 |
-| 演化/遗忘 | Hippo、MCP、MemoryOS、A-MEM、Cognee、Memobase、Graphiti、TencentDB、MemOS、Letta | 状态写操作、反馈、gate、版本 | 描述机制；未证明长期任务提升 |
-| 接入与副本 | Beacon、Basic、MCP、TencentDB、Letta、MemOS、Hippo 与开发库 | 事件格式、传输、同步、身份授权代码 | 说明检查位置；不是生产安全认证 |
-| 历史与实验 | MemGPT/旧 Letta、各论文和评测 | 归档提交、数据、回答模型、评分方法 | 结论限于原实验；不保证当前产品质量 |
+| 原话变成什么 | 候选、正文与来源 | Mem0、Memobase、Graphiti | 未测后端的质量 |
+| 为什么没被找到 | 各路身份与最终池 | MCP、HippoRAG、Hermes 等 | 统一性能胜负 |
+| 旧结论何时退出 | 有效区间、替代与版本 | Graphiti、MemoryOS、Letta 等 | 长期收益必然成立 |
+| 删除是否彻底 | 原文及所有派生副本 | Basic、MemOS、TencentDB 等 | 仅凭 API 的隐私保证 |
+| 新任务是否真的改善 | 最终输入、动作与结果 | 运行时和业务工具共同检查 | 教学算例等于生产认证 |
 
 </details>
-

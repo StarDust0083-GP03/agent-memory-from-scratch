@@ -1,285 +1,259 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>怎样读懂一个记忆项目 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="09-landscape"><div class="eyebrow">第 9 章</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#找到了项目-先确认它要替你做哪件事">找到了项目，先确认它要替你做哪件事</a></li><li><a href="#用-letta-的迁移练习找对仓库">用 Letta 的迁移练习找对仓库</a></li><li><a href="#把维护数字还原成日常问题">把维护数字还原成日常问题</a></li><li><a href="#再检查-开源支持-具体指什么">再检查“开源支持”具体指什么</a></li><li><a href="#读源码时-怎样把一个宣传词拆成实际动作">读源码时，怎样把一个宣传词拆成实际动作</a></li><li><a href="#维护风险要与自己的接管能力一起看">维护风险要与自己的接管能力一起看</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="怎样读懂一个记忆项目">怎样读懂一个记忆项目</h1><h2 id="找到了项目-先确认它要替你做哪件事">找到了项目，先确认它要替你做哪件事</h2><p>你在搜索结果里看到三个项目：Mem0、Agent Beacon 和 Hermes Jev Skills，都提到记忆。若直接对比星数，很容易选错层。</p>
-<p>带着 Atlas 助手的流程去看：你需要把对话提取为短事实，Mem0 是候选；你缺原始命令和失败证据，先看 Beacon 的采集能力；你已经搜出很多候选但装不下，Hermes 的判别工具才可能有用。后两个项目不能直接替代事实库。</p>
-<p>读 README 时，可以先写一条自己的数据路径：“输入是什么 → 项目改了什么 → 输出交给谁”。若这条路径写不清，先不比较宣传分数。第 10 至 13 章会带你走这些数据路径。</p>
-<p>Mem0：你的程序调用它保存“默认中文”，再查回这句话。若自建服务，还要配置模型和数据库；代码库可下载，不等于这些服务已替你运行。</p>
-<p>Graphiti：你的程序用它把批准文档整理成关系，另需可用的图数据库和模型。先做一份文档的存取试验，再判断维护这些服务是否值得。</p>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>怎样读懂一个记忆项目 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="09-landscape"><div class="eyebrow">第 9 章</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#找到了项目-先确认它要替你做哪件事">找到了项目，先确认它要替你做哪件事</a></li><li><a href="#用-letta-的迁移练习找对仓库">用 Letta 的迁移练习找对仓库</a></li><li><a href="#把维护数字还原成日常问题">把维护数字还原成日常问题</a></li><li><a href="#再检查-开源支持-具体指什么">再检查“开源支持”具体指什么</a></li><li><a href="#读源码时-怎样把一个宣传词拆成实际动作">读源码时，怎样把一个宣传词拆成实际动作</a></li><li><a href="#维护风险要与自己的接管能力一起看">维护风险要与自己的接管能力一起看</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="怎样读懂一个记忆项目">怎样读懂一个记忆项目</h1><h2 id="找到了项目-先确认它要替你做哪件事">找到了项目，先确认它要替你做哪件事</h2><p>博物馆借展助手收到一封邮件，要记住登记员周岚的沟通习惯，也要查清青釉执壶由谁管理、借出前须取得哪份许可。这三件事分别涉及用户资料、藏品关系和审批证据。先把需要交付的结果写清，再打开项目主页，搜索范围会小很多。</p>
+<p>可以为候选项目填写一条数据契约：从哪里接收材料，持久化哪些对象，查询返回什么，应用还要做哪些工作。Mem0 返回短事实候选，Beacon 提供行动记录，Hermes 可以判断一批已有候选。后两者不会因为出现在记忆项目清单里，就成为前者的替代数据库。</p>
+<p>教学中假定馆内已经保留邮件原文。若目标只是让助手下次记得周岚希望用表格列借展清单，可以先试事实存取；若目标是解释为什么某次装箱被暂停，则需要工具记录和审核意见。选项目之前，把这两道题分开验收。</p>
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>源码路径与适用范围（选读）</summary>
 
-<figure class="source-flow"><img src="../assets/source-flows/09-01.svg" alt="找到了项目，先确认它要替你做哪件事：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：下载代码或引入 SDK 不表示模型与数据库已可用；先验证自己的运行路径。</figcaption></figure>
-
-<p>源码对照：</p>
-<p>SDK 是接进自己程序的工具包，托管平台是别人替你运行的服务，assembler 是应用里把证据组织成消息的代码。使用 Mem0 或 Graphiti 库，通常仍要配置模型、存储和组装；不能因看到一张完整产品页面，就认为安装开源包已经提供同样的部署、权限与评估功能。</p>
-<h3 id="mem0-先区分-sdk-平台与业务-assembler">Mem0：先区分 SDK、平台与业务 assembler</h3><p>本地 <code>Memory</code> 入口负责事实处理和存取，应用管理登录身份与模型输入。即使 README 同时讨论 managed memory，也应追本地 factory 和实际 provider。一个能力若只在平台接口出现，不能通过配置本地 <code>Memory</code> 自动获得。</p>
-<h3 id="graphiti-框架负责建图与搜索-不等于完整托管服务">Graphiti：框架负责建图与搜索，不等于完整托管服务</h3><p>本地 <code>Graphiti</code> 提供 episode ingestion、关系维护和配置化查询。用户线程、团队授权、请求代理和生产 SLA 需看实际部署。判断能否替代现有组件，应先明确你缺的是时间边还是一整套上下文服务。</p>
+<p><img src="../assets/rewrite-memory-b/09-landscape-01.svg" alt="交付物先分层，再比较项目"></p>
+<h3 id="mem0-先区分-sdk-平台与业务-assembler">Mem0：先区分 SDK、平台与业务 assembler</h3><p>安装 Python 包得到的是调用入口。模型客户端、embedding 和向量后端仍须配置，登录身份和最终消息由业务程序负责。借展系统通过本地 <code>Memory</code> 保存“清单按藏品编号排序”时，应记录实际启用的 provider，不能把官网托管产品中的权限面板、延迟承诺一并算作已安装功能。</p>
+<p>检查交付物可以追三个位置：构造对象时读了哪些配置，写入时发往哪些服务，搜索结束时谁把候选放进模型输入。任何一处仍是空白，都属于接入方的工作，而非一句 managed memory 能够填上的能力。</p>
+<h3 id="graphiti-框架负责建图与搜索-不等于完整托管服务">Graphiti：框架负责建图与搜索，不等于完整托管服务</h3><p><code>Graphiti</code> 可以把入馆记录、管理部门和借展约束组织为 episode、实体和关系。图数据库、模型以及索引并不随业务需求自动就绪。借展助手还要决定哪些馆员可读某个分组，何时等待建图完成，查询后如何回到原始许可文件。</p>
+<p>评估时画出服务边界：框架负责的抽取和搜索放一侧，组织认证、网络代理和服务可用性放另一侧。若采购的是托管方案，再单列合同与服务接口，避免用开源库测试结果替整个产品验收。</p>
 </details>
 
-<h2 id="用-letta-的迁移练习找对仓库">用 Letta 的迁移练习找对仓库</h2><p>假设你打开旧 Letta 仓，看到近期提交不多。先看 README 是否声明迁移、归档或新主仓，再判断维护状况。这里旧 <code>letta-ai/letta</code> 指向当前 Letta Code，历史 API 教程与当前 MemFS 规则不能混用。</p>
-<p>这一步的目的不是寻找提交最多的仓库，而是确认你准备接入的代码在哪里。记下实际使用的 commit、版本和后端配置，以后才能知道文档变了还是代码变了。</p>
-<p>同样，一个论文仓可能已有稳定的复现版本，暂时没提交；一个平台仓可能天天更新文档。提交时间能提示风险，不能直接证明算法质量。</p>
-<p>Mem0：教程说“新默认会替换旧默认”，你实际写入后却看到两条记录。先核对教程与所用版本，再决定由应用更新或筛选，别继续按旧行为写代码。</p>
-<p>Graphiti：教程展示一条可多跳查询的接口，你使用的基础搜索却只返回关系。核对版本和入口后，再显式追加团队查询，不能只照搬截图。</p>
+<h2 id="用-letta-的迁移练习找对仓库">用 Letta 的迁移练习找对仓库</h2><p>仓库名称会沿用，代码入口可能早已移动。准备研究 Agent 自改长期规则时，应检查旧 <code>letta-ai/letta</code> 的迁移说明，再转到 Letta Code。旧版客户端教程可以帮助复现历史设计，却不能直接解释当前 MemFS 的提交与提示编译过程。</p>
+<p>为借展原型保留一份依赖清单，写明仓库地址、commit、安装包版本和文档来源。发生行为差异时，可以据此区分是安装版本落后、文档针对另一分支，还是应用配置改变。只写“使用最新版”无法完成这种定位。</p>
+<p>论文复现仓可能很久没有提交，但实验入口仍可学习；平台仓频繁更新也可能主要修改文档。找到承载当前调用的仓库，才有必要继续讨论活跃程度。</p>
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>源码路径与适用范围（选读）</summary>
 
-<figure class="source-flow"><img src="../assets/source-flows/09-02.svg" alt="用 Letta 的迁移练习找对仓库：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：教程、宣传与本地快照可能不同；以真实入口和状态变化核对能力。</figcaption></figure>
-
-<p>源码对照：</p>
-<p>一本旧教程说写入会更新旧默认，新版代码却主要追加卡片，接入就会得到不同状态。核对 Mem0 要看当前 add 真正执行什么；核对 Graphiti 要看使用的是基本 search 还是高级 search_。接口名称像书的目录，实际代码才决定步骤；后文行为只对应本书锁定提交。</p>
-<h3 id="mem0-版本核对要追真实函数体">Mem0：版本核对要追真实函数体</h3><p><code>add()</code> 的旧式说明仍提 ADD、UPDATE、DELETE，而本地普通推断函数已经是分阶段追加。用 commit 固定证据，比较函数体与提示，而非凭 docstring 判断策略。异步 <code>AsyncMemory</code> 是另一实现，采用它时还应核对相应函数的差异。</p>
-<h3 id="graphiti-接口迁移也会影响阅读路线">Graphiti：接口迁移也会影响阅读路线</h3><p>当前 <code>_search()</code> 标记为 deprecated，转向 <code>search_()</code>。基础 <code>search()</code> 与高级接口的默认配方不同，因此旧教程的函数名和默认值不能直接沿用。记录所用 API、搜索配置和 driver，才能解释一次升级造成的结果变化。</p>
+<p><img src="../assets/rewrite-memory-b/09-landscape-02.svg" alt="迁移核对的三份版本证据"></p>
+<h3 id="mem0-版本核对要追真实函数体">Mem0：版本核对要追真实函数体</h3><p>追同步 <code>add()</code> 时，要进入实际写入函数，而不要把旧 docstring 的 ADD、UPDATE、DELETE 描述当作执行日志。本书快照中的普通推断采用分阶段追加流程。若借展温湿度要求改变后仍出现两条卡片，应先检查调用分支，再决定由业务维护现行版本。</p>
+<p>异步 <code>AsyncMemory</code> 有独立实现，不能只核对同步函数便宣称两者完全一致。升级检查应锁定所用入口，并保存一组变更前后的输入与输出。</p>
+<h3 id="graphiti-接口迁移也会影响阅读路线">Graphiti：接口迁移也会影响阅读路线</h3><p>基础 <code>search()</code> 和高级 <code>search_()</code> 的返回对象与配方存在区别；旧 <code>_search()</code> 的弃用标记还会影响调用路线。阅读教程时，把函数名、配置和结果粒度同时记下，不能仅凭“搜索成功”判断兼容。</p>
+<p>借展查询若需要从执壶找到保管部，再找到借出许可，旧教程展示的遍历行为可能来自特定高级配置。迁移时先核对当前基础接口启用了哪些搜索方法，缺少的扩展由应用明确补上。</p>
 </details>
 
-<h2 id="把维护数字还原成日常问题">把维护数字还原成日常问题</h2><p>“30 天有 300 次提交”没有告诉我们谁能修严重 bug。若主要由机器人或一位作者贡献，维护风险与多位实际开发者不同。活跃天数表示工作是否持续，作者数帮助看交接能力，但数字都要结合提交内容。</p>
-<p>你可以问一个具体问题：“如果 embedding 升级把索引弄坏，我是否找到测试、迁移说明和近期相关修复？”这比只问活跃度高不高更接近采用后的责任。</p>
-<p>Cognee、MCP 和 TencentDB 的配置面较广，维护需要覆盖多后端、权限和服务链；Graphiti 要关注结构化抽取和图后端；Hippo、MemoryOS、A-MEM 则要评估自己能否承担维护或补安全包装。做研究时愿意承担这些工作，做生产服务时则要把它计入成本。</p>
-<p>Mem0：换数据库后，存“默认中文”→查回答是中文→删除→确认查不到。哪一步没通过，就查该后端支持，不用项目热度替代测试结果。</p>
-<p>Graphiti：换图数据库后，写入 Atlas 的两份批准文档→查齐关系并答 Lin→打开两份来源。三步都通过，才说明这条常用路径能工作。</p>
+<h2 id="把维护数字还原成日常问题">把维护数字还原成日常问题</h2><p>维护数据适合用来估算接管工作。比如更换 embedding 后索引无法读取，能否找到迁移说明、对应测试和近期修复？比起总提交数，这些材料更接近部署后真正遇到的责任。</p>
+<p>近三十天有很多提交，可能由少量维护者和自动化账号完成。作者数量也需结合内容判断：一次修正文档的贡献与长期负责存储后端的贡献不能简单等同。对跨服务平台，还应检查安全、迁移和不同后端是否都有维护入口。</p>
+<p>馆内小团队可以接受一个研究原型的有限功能，但必须有人能补失败恢复。没有能力接管多个服务时，一个提交活跃但配置繁多的平台，也可能比简单存储更难承担。</p>
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>源码路径与适用范围（选读）</summary>
 
-<figure class="source-flow"><img src="../assets/source-flows/09-03.svg" alt="把维护数字还原成日常问题：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：后端在支持名单里，不表示所有接口和配置都已验证；逐步验实际动作。</figcaption></figure>
-
-<p>源码对照：</p>
-<p>“后端”指真正保存事实或图的数据库服务，driver 是访问它的连接代码。Mem0 换后端后要检查筛选和词搜索是否一致；Graphiti 换 driver 后要检查同一关系能否写入与查回。提交频率高不能代替这些试验，具体依赖决定故障时你要维护哪一层。</p>
-<h3 id="mem0-维护应覆盖多后端的一致行为">Mem0：维护应覆盖多后端的一致行为</h3><p>工厂可以切换向量库，但关键词能力、分值和 list 上限可能不同。查维护时关注批量写入、实体清理和删除分页的测试与修复，不能只数总提交。失败恢复涉及事实库与 SQLite 历史，两者一致性也是采用成本。</p>
-<h3 id="graphiti-模型输出与-driver-都是维护面">Graphiti：模型输出与 driver 都是维护面</h3><p>实体抽取、日期解析和关系失效依赖结构化输出，图后端还有索引与查询差异。维护风险应包括 schema 变更、模型 provider 兼容和 group 隔离。一次图搜索测试通过，不足以证明 ingestion 与删除在其他 driver 下也安全。</p>
+<p><img src="../assets/rewrite-memory-b/09-landscape-03.svg" alt="维护试验对应可接管状态"></p>
+<h3 id="mem0-维护应覆盖多后端的一致行为">Mem0：维护应覆盖多后端的一致行为</h3><p>向量库工厂允许替换后端，语义分数、全文支持和列表分页却可能变化。试用借展卡片时，应覆盖批量保存、按身份筛选、实体关联以及多页删除，不把单次搜索成功当作全部后端一致的证明。</p>
+<p>事实写入与 SQLite 历史是不同状态。维护审查还要找部分失败后的处理方式，确认故障发生时能够识别哪张卡已保存、哪条历史未完成。</p>
+<h3 id="graphiti-模型输出与-driver-都是维护面">Graphiti：模型输出与 driver 都是维护面</h3><p>图后端的索引和查询语法只是维护面的一部分。实体结构化输出、日期解析、模型 provider 兼容和 group 分区也会改变建图结果。更换 driver 后应重新输入两份许可资料，核对节点身份、关系时间以及来源回查。</p>
+<p>维护记录若只覆盖搜索性能，仍不能证明 ingestion 或删除路径成熟。采用前应找到对应测试，缺失部分列入团队自己的接管范围。</p>
 </details>
 
-<h2 id="再检查-开源支持-具体指什么">再检查“开源支持”具体指什么</h2><p>README 可能同时介绍 SDK、托管服务和研究结果。以 Mem0 为例，OSS 中存在事实提取和多信号搜索，并不表示托管评测里的所有专有优化也在本地代码中。Graphiti 框架与 Zep 托管服务也应分开。</p>
-<p>判断一种能力时，找它的配置和代码入口；判断质量时，找评测数据与运行协议；判断部署可用性时，找恢复、迁移和权限测试。这三类证据不能互相代替。没有时间查全时，先选一个最小场景试用，别用营销段落填补缺失证据。</p>
-<p>Mem0：你想直接问“15 日默认环境”，但当前开源搜索没有替你解释事实有效区间。先做日期筛选试验，不把产品宣传里的“历史”当成这项能力。</p>
-<p>Graphiti：关系保存了日期，应用仍要按“15 日有效”过滤。若查询没带这个条件，保存了历史也可能答成今天的批准人。</p>
+<h2 id="再检查-开源支持-具体指什么">再检查“开源支持”具体指什么</h2><p>把“支持开源”拆成可调用的功能。例如馆员要问“本月五日的借出条件”，需要保存历史、表达生效时间、按目标日期筛选三个环节。项目主页提到 history，只能作为继续查证的线索。</p>
+<p>源码支持参数，证明这一入口能够表达某类请求；论文分数证明某个实验协议下的表现；恢复与权限测试证明实际部署的边界。三种材料各自回答问题，不能互相代替。Mem0 OSS 与托管平台、Graphiti 与 Zep 的服务能力都应分列。</p>
+<p>若资料有限，可以先写“未找到本地入口”而不作能力推断。随意把未知填成支持，后续通常会变成应用不得不补的代码。</p>
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>源码路径与适用范围（选读）</summary>
 
-<figure class="source-flow"><img src="../assets/source-flows/09-04.svg" alt="再检查“开源支持”具体指什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：开源能力与托管宣传要分开；有历史数据与按日期正确查询也要分开。</figcaption></figure>
-
-<p>源码对照：</p>
-<p>OSS 指开源版本。宣传支持历史，不意味着开源 Mem0 的每个搜索参数都能直接问某日状态。Graphiti 有关系时间字段，也需要正确的查询筛选。拿“15 日是谁批准”这一题，检查存了什么、参数被哪里使用、返回哪些记录，比只核对是否有“历史记忆”功能名更可靠。</p>
-<h3 id="mem0-oss-的时间参数有明确边界">Mem0：OSS 的时间参数有明确边界</h3><p>本地支持 <code>expiration_date</code>，但 <code>add(timestamp=...)</code> 会抛错，提示该时间能力不在 OSS 参数契约内。托管算法分数也不能归到本地实现。能力调查应逐项写“可调用参数、对应分支、所用后端”，不要笼统写全部时间记忆已支持。</p>
-<h3 id="graphiti-时间图与业务历史-api-分开验证">Graphiti：时间图与业务历史 API 分开验证</h3><p>本地边保存有效与系统时间，<code>SearchFilters</code> 提供日期比较，框架确有时间维护逻辑。但完整历史视图、权限服务与托管延迟不能从这些字段推得。给晚到事件实际查看字段和过滤输出，才是采用本地框架的证据。</p>
+<p><img src="../assets/rewrite-memory-b/09-landscape-04.svg" alt="历史能力需要三段契约"></p>
+<h3 id="mem0-oss-的时间参数有明确边界">Mem0：OSS 的时间参数有明确边界</h3><p>快照允许配置 <code>expiration_date</code>，而向 <code>add()</code> 传 <code>timestamp</code> 会遇到 OSS 参数限制。到期控制与任意历史生效时间并非同一能力。试验“九月五日的包装要求”时，应先确认应用能够保存并读取业务日期，而非将系统创建时间充当答案依据。</p>
+<p>托管算法报告中的优化和分数也要独立标注。本地存在某些相似处理，不代表安装相同接口就获得同样的时间推理结果。</p>
+<h3 id="graphiti-时间图与业务历史-api-分开验证">Graphiti：时间图与业务历史 API 分开验证</h3><p>边上的有效时间和系统时间为历史问题提供表达方式，<code>SearchFilters</code> 则决定某次检索如何使用日期条件。两者要连起来验证。收到补录材料时，先核对 <code>reference_time</code> 与实际发生日期，再查变更前后的关系。</p>
+<p>完整审计视图、权限网关和线上延迟不能从字段存在推导出来。馆内若要求可追责历史，仍需保存原文版本以及查询时使用的过滤配置。</p>
 </details>
 
-<h2 id="读源码时-怎样把一个宣传词拆成实际动作">读源码时，怎样把一个宣传词拆成实际动作</h2><p>看到“自动记忆”，可以从公开入口往下追。输入是用户消息还是已有笔记？函数是否调用提取模型？提取失败会抛错、重试还是返回空列表？最后保存的是原文、短事实还是画像字段？这些问题让“自动”变成可观察的代码路径。对于 Atlas，你可以暂时只追一条偏好，不必先理解整个仓库。</p>
-<p>再从读取入口反向追。返回值若只是候选正文，应用还要组装；若返回生成答案，就要找 reader 和提示；若返回文件地址，宿主还要调用读取工具。三个项目都可以宣称“提供上下文”，交付结果却不同。试用之前明确输出，可以避免同时加载一份项目生成的答案和一份宿主重新生成的答案，最后不知道错在哪里。</p>
-<p>README 常把功能放在最顺利的配置上讲。源码里的条件分支会告诉你哪些依赖是可选的，缺 embedding 时怎样降级，某个后端是否支持全文，队列是否真的持久化。先核对你准备使用的分支，其他分支即使能力很强，也不会自动出现在你的部署里。</p>
-<p>Mem0：让准确含 E42 的记录 C 不进入语义初选，再搜 E42。检查关键词步骤是否能新增 C；当前评分加分不能替代补候选。</p>
-<p>Graphiti：让 C 只被文字搜索找到，A 只被向量搜索找到。检查合并结果是否有 A、C，就能具体核对“两路一起搜”到底做了什么。</p>
+<h2 id="读源码时-怎样把一个宣传词拆成实际动作">读源码时，怎样把一个宣传词拆成实际动作</h2><p>宣传中的“自动”可以被改写为一串可观察动作。登记邮件进入公开函数后，是否调用模型，模型输出什么结构，哪些内容会被丢弃，失败是否抛错，持久化究竟写了几处？这条路线能预测“请仍按上次方式包装”如何变成事实，而不只是知道库里用了 LLM。</p>
+<p>读取也要追到底。返回候选正文，意味着宿主还有组装工作；返回文件地址，意味着后续要读文件；返回生成答案，则应检查内部 reader 和引用。这些结果都可能被介绍成上下文服务，实际接入责任差别很大。</p>
+<p>验证“混合检索”时，可以造一张含精确藏品号 <code>QY-731</code> 的卡片，让它不进入语义初选，再观察全文命中能否把它加入最终集合。先记候选身份，再看评分公式，漏召回的位置会更清楚。</p>
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>源码路径与适用范围（选读）</summary>
 
-<figure class="source-flow"><img src="../assets/source-flows/09-05.svg" alt="读源码时，怎样把一个宣传词拆成实际动作：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：用一条可预测的漏召回例子检查宣传词，不只看“混合检索”的名字。</figcaption></figure>
-
-<p>源码对照：</p>
-<p>看到“混合检索”，可以把问题缩成：词搜索独自找到 C 后，C 能否出现在结果里？Mem0 要追最终候选来自哪个列表；Graphiti 要追当前配方启动了哪几种搜索以及如何合并。配方是搜索配置组合，不是效果保证；最终编号集合能直接验证这个宣传词对应的动作。</p>
-<h3 id="mem0-从输入条件追到最后候选循环">Mem0：从输入条件追到最后候选循环</h3><p>检查 <code>infer</code>、<code>agent_id</code> 和 <code>memory_type</code> 分支，再追普通批处理；读 search 时追 candidates 循环，而非停在 keyword_search 调用。这样可以预测某个错误码只被关键词找到时会怎样，而不仅知道项目出现了 BM25 字样。</p>
-<h3 id="graphiti-从配方追到实际任务列表">Graphiti：从配方追到实际任务列表</h3><p><code>SearchConfig</code> 写着 BFS，不代表所有调用都选这个 config。<code>edge_search()</code> 按枚举创建任务，再汇集 UUID 和重排。核对基础接口的 recipe、实际 enabled methods 与返回对象，能把“支持图遍历”变成具体可验证行为。</p>
+<p><img src="../assets/rewrite-memory-b/09-landscape-05.svg" alt="QY-731 的候选身份检查"></p>
+<h3 id="mem0-从输入条件追到最后候选循环">Mem0：从输入条件追到最后候选循环</h3><p>先检查 <code>infer</code>、<code>memory_type</code> 和身份相关分支，确定这次借展邮件进入哪条路径。搜索部分则继续追最终 <code>candidates</code> 的构造，而非看到 <code>keyword_search()</code> 就停止。</p>
+<p>若全文单独找到 <code>QY-731</code>，但返回循环仍只遍历语义结果，提高词匹配权重不会创造新候选。这个源码判断对应特定快照和路径，不能扩大成所有版本都具有相同行为。</p>
+<h3 id="graphiti-从配方追到实际任务列表">Graphiti：从配方追到实际任务列表</h3><p>搜索配置列出了 BFS，只说明框架存在该选项。需要看本次 recipe 如何构造 <code>edge_search()</code> 的任务列表，再检查各路 UUID 怎样汇总、重排和截断。</p>
+<p>给文字路和向量路各安排一个独占命中，能够检验合并是否真的保留两者；再增加邻域资料，核对是否启用了遍历。配置名和实际执行任务一起保存，才能解释结果差异。</p>
 </details>
 
-<h2 id="维护风险要与自己的接管能力一起看">维护风险要与自己的接管能力一起看</h2><p>一个原型的主体算法可能只有几百行，你愿意自己补测试和安全包装，那么低活跃度未必妨碍学习和研究。一个跨多个服务的平台，即使主仓活跃，你仍需要理解数据库迁移、版本兼容与故障恢复，否则接口变化就可能超出维护能力。判断采用风险时，项目规模和你的接管能力应放在一起。</p>
-<p>试用还可以刻意加入一次小故障：让 embedding 请求失败，或让后台处理暂时停止。观察错误是否明确、原文是否仍在、任务能否安全重试。顺利跑通的示例展示功能入口，失败时的表现展示你之后要承担的工作。这些观察应记录所用版本，不延伸成对项目所有版本的永久评价。</p>
-<p>Mem0：测试时故意断开提取模型，再写“默认预发布”。看应用能否报告失败、保留原话并重试；若没人能处理，就先别接入关键流程。</p>
-<p>Graphiti：中断文档处理，再检查原文和关系留下了什么。团队应能查清并补齐缺失步骤，而不是失败后只能重新建整个图。</p>
+<h2 id="维护风险要与自己的接管能力一起看">维护风险要与自己的接管能力一起看</h2><p>接管能力可以用一次受控故障来测。暂停提取模型后提交一封新登记邮件，观察原文是否仍在、调用是否明确失败、待处理任务能否重试。随后恢复依赖，检查重放是否产生重复卡片或重复来源。</p>
+<p>复杂平台可能把状态分散在任务表、正文库、索引和缓存中。维护者需要能解释这些位置的关系。研究原型虽然组件少，也可能要求自己补认证和数据导出。两种成本不同，不宜只按功能数量判断。</p>
+<p>故障注入只在隔离环境进行，并记录版本和变更范围。本章提出的是建议验收步骤，没有声称已经替所有项目完成实验。</p>
 <details class="source-example">
-<summary>源码与边界（选读）</summary>
+<summary>源码路径与适用范围（选读）</summary>
 
-<figure class="source-flow"><img src="../assets/source-flows/09-06.svg" alt="维护风险要与自己的接管能力一起看：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：这是建议执行的故障实验，不是本书已测过所有后端；接管能力需要自己验证。</figcaption></figure>
-
-<p>源码对照：</p>
-<p>在测试环境让提取模型失败、让存储中断、让旧默认被补录，再检查原文与派生结果。Mem0 需要核对卡片、历史和对象关联；Graphiti 需要核对材料、节点、关系和时间变化。故障之后你能解释并修复哪些状态，才决定项目复杂度是否适合自己的团队。</p>
-<h3 id="mem0-小故障实验揭示你要补的状态管理">Mem0：小故障实验揭示你要补的状态管理</h3><p>令提取 provider 超时，核对异常与原文是否已由入口保存；令批量插入失败，核对逐条回退后事实、历史和实体链接。应用能否区分无新事实与依赖错误，直接决定重试和用户状态提示是否可信。</p>
-<h3 id="graphiti-测试失败之后图有没有部分变化">Graphiti：测试失败之后图有没有部分变化</h3><p>在抽取、解析和保存阶段分别制造故障，检查 episode、节点、旧边有效时间与索引。框架抛出异常说明调用失败，不等于所有外部状态已恢复。决定接管时，应理解 driver 保存范围与事件重放方式，而非只会重新执行整次请求。</p>
+<p><img src="../assets/rewrite-memory-b/09-landscape-06.svg" alt="故障后的恢复对象"></p>
+<h3 id="mem0-小故障实验揭示你要补的状态管理">Mem0：小故障实验揭示你要补的状态管理</h3><p>让提取 provider 超时，可检查应用是否区分依赖错误与合法空事实。再模拟批量插入失败，核对逐条回退后事实 ID、历史和实体链接的覆盖范围。</p>
+<p>源邮件最好先由应用保存并分配稳定编号。这样即使提取未完成，也能重试同一事件，不必依赖用户再次转发材料。SDK 的错误返回本身不能替代这份入口记录。</p>
+<h3 id="graphiti-测试失败之后图有没有部分变化">Graphiti：测试失败之后图有没有部分变化</h3><p>分别中断抽取、关系解析和存储阶段，再检查 episode、规范节点、旧边区间和索引。抛出异常只能说明调用没有完成，不能据此断言所有外部变化已经撤销。</p>
+<p>采用前应理解 driver 的保存范围以及事件重放的幂等策略。如果唯一恢复方案是清空整个图，馆内仍需要评估这会不会破坏已审核的历史和其他团队资料。</p>
 </details>
 
-<h2 id="动手检查">动手检查</h2><p>选下面资料表里的任一项目，写一张四行卡片：解决哪层问题、当前主仓和版本、最小输入输出、你还需自己负责什么。</p>
-<p>答案提示：给 Beacon 的卡片不应写“替我维护稳定用户画像”；给 Hermes 的卡片不应写“保存全部长期记忆”。下面的维护表只是 2026-09-21 的阅读材料，不是实时榜单，也不是精确量化评分。</p>
+<h2 id="动手检查">动手检查</h2><p>为博物馆挑两个位于不同层的候选，各写一张试用卡：输入材料、交付对象、版本证据、应用责任。可以选择 Beacon 与 Mem0，明确前者交付工具时间线，后者交付可搜索短事实。</p>
+<p>再补一条失败用例，例如登记邮件已接收但模型不可用。说明谁保留原文、谁报告未完成、谁负责重试。</p>
+<p>答案提示：Beacon 的动作事件可以证明捕获发生，Mem0 的事实写入需要另查结果。若提取模型不可用，保存原邮件与待处理状态，由宿主安排受限重试，不能把捕获成功写成记忆已可搜索。</p>
 <details class="implementation-notes">
-<summary>维护快照、项目全景与比较依据（选读）</summary>
+<summary>实现细节与复查入口（选读）</summary>
 
-<h2 id="评分原则">评分原则</h2><p>本书把维护信号放在首位。数据来自截至 <strong>2026-09-21 UTC</strong> 的本地 Git 历史：最近提交、近 30/90 天提交、30 天活跃天数、作者数；源码快照见 <code>sources/maintenance.json</code>。</p>
-<p>本章的 A/B/C 是定性投入优先级，维护因素占判断的大部分；“约 60% 维护、40% 其他”仅表达取舍倾向，没有逐项归一化公式和可复现加权分数，不能称为精确量化评分。其他因素包括开源完整度、架构独特性、测试/评测、生产能力和许可证。commit 数只作参考：Cognee、Beacon 等高频仓可能包含自动化；单人项目即使活跃，也可能在唯一维护者离开后无人接手；论文仓低频并不代表论文价值低。</p>
+<h2 id="评分原则">评分原则</h2><p>维护快照固定在 <strong>2026-09-21 UTC</strong>，数据入口为 <code>sources/maintenance.json</code>。它反映当时本地 Git 历史，包括近期提交、活跃日期与作者分布，不代表本次改稿重新获取了上游状态。</p>
+<p>A、B、C 用来安排阅读与试用投入。约六成考虑维护、四成考虑其他因素只是定性倾向，没有归一化评分表。开源交付范围、许可证、独特机制、测试和恢复能力共同影响取舍，不能把等级解释成算法质量的精确分差。</p>
+<p>浅克隆和自动化提交会影响样本。若要据此制定采购或上线决策，应重新拉取当前主仓并检查实际修复内容。</p>
 <h2 id="维护优先的推荐顺序">维护优先的推荐顺序</h2><table>
 <thead>
 <tr>
-<th>层级</th>
+<th>试读层级</th>
 <th>项目</th>
-<th align="right">最近提交</th>
-<th align="right">30 天：提交/活跃日/作者</th>
-<th>判断</th>
+<th>最近提交日期</th>
+<th>30 天提交 / 活跃日 / 作者</th>
+<th>接下来要问的问题</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>A</td>
 <td>Cognee</td>
-<td align="right">09-19</td>
-<td align="right">793 / 30 / 40</td>
-<td>活跃度最高，平台面广；复杂度也最高</td>
+<td>09-19</td>
+<td>793 / 30 / 40</td>
+<td>多种管线的恢复是否可控</td>
 </tr>
 <tr>
 <td>A</td>
 <td>Letta Code</td>
-<td align="right">09-21</td>
-<td align="right">≥301 / 28 / 19</td>
-<td>当前主仓，Agent 自管理记忆路线</td>
+<td>09-21</td>
+<td>≥301 / 28 / 19</td>
+<td>当前运行时的记忆修改如何生效</td>
 </tr>
 <tr>
 <td>A</td>
 <td>MCP Memory Service</td>
-<td align="right">09-20</td>
-<td align="right">291 / 23 / 30</td>
-<td>自托管、MCP/REST、安全与运维完整</td>
+<td>09-20</td>
+<td>291 / 23 / 30</td>
+<td>每条远程读取路径是否受限</td>
 </tr>
 <tr>
 <td>A</td>
 <td>Mem0</td>
-<td align="right">09-18</td>
-<td align="right">36 / 15 / 15</td>
-<td>生态成熟；OSS 与托管能力需区分</td>
+<td>09-18</td>
+<td>36 / 15 / 15</td>
+<td>所选后端与 OSS 契约是否匹配</td>
 </tr>
 <tr>
 <td>A</td>
 <td>Graphiti</td>
-<td align="right">09-21</td>
-<td align="right">34 / 15 / 10</td>
-<td>时间知识图谱路线清晰、维护稳定</td>
+<td>09-21</td>
+<td>34 / 15 / 10</td>
+<td>对象与有效区间能否可靠解析</td>
 </tr>
 <tr>
 <td>A</td>
 <td>MemOS</td>
-<td align="right">09-21</td>
-<td align="right">87 / 14 / 11</td>
-<td>Memory OS、多形态记忆、插件活跃</td>
+<td>09-21</td>
+<td>87 / 14 / 11</td>
+<td>实际启用模块成熟到哪一步</td>
 </tr>
 <tr>
 <td>A</td>
 <td>TencentDB Agent Memory</td>
-<td align="right">09-21</td>
-<td align="right">29 / 14 / 19</td>
-<td>团队资产、ACL、代码/文档记忆突出</td>
+<td>09-21</td>
+<td>29 / 14 / 19</td>
+<td>资产权限是否延续到内容服务</td>
 </tr>
 <tr>
 <td>B</td>
 <td>Basic Memory</td>
-<td align="right">09-15</td>
-<td align="right">≥301 / 16 / 11</td>
-<td>本地 Markdown/MCP 强，AGPL 需评估</td>
+<td>09-15</td>
+<td>≥301 / 16 / 11</td>
+<td>文件同步与 AGPL 义务如何承担</td>
 </tr>
 <tr>
 <td>B</td>
 <td>Agent Beacon</td>
-<td align="right">09-21</td>
-<td align="right">644 / 27 / 8</td>
-<td>trace 捕获极活跃，记忆提炼仍偏平台层</td>
+<td>09-21</td>
+<td>644 / 27 / 8</td>
+<td>目标宿主能直接采到哪些动作</td>
 </tr>
 <tr>
 <td>B</td>
 <td>Hippo Memory</td>
-<td align="right">09-21</td>
-<td align="right">63 / 11 / 1</td>
-<td>生命周期机制独特；单维护者风险</td>
+<td>09-21</td>
+<td>63 / 11 / 1</td>
+<td>单维护者之外谁能处理故障</td>
 </tr>
 <tr>
 <td>B</td>
 <td>HippoRAG</td>
-<td align="right">09-03</td>
-<td align="right">6 / 4 / 4</td>
-<td>研究价值高，产品能力有限</td>
+<td>09-03</td>
+<td>6 / 4 / 4</td>
+<td>研究检索如何包成业务接口</td>
 </tr>
 <tr>
 <td>C</td>
 <td>MemoryOS</td>
-<td align="right">07-07</td>
-<td align="right">0 / 0 / 0</td>
-<td>分层记忆清晰，近期维护弱</td>
+<td>07-07</td>
+<td>0 / 0 / 0</td>
+<td>分层机制是否值得自行维护</td>
 </tr>
 <tr>
 <td>C</td>
 <td>Memobase</td>
-<td align="right">01-11</td>
-<td align="right">0 / 0 / 0</td>
-<td>画像路线值得学，当前仓停滞</td>
+<td>01-11</td>
+<td>0 / 0 / 0</td>
+<td>画像合并与并发缺口由谁修复</td>
 </tr>
 <tr>
 <td>C</td>
 <td>A-MEM</td>
-<td align="right">2025-12-12</td>
-<td align="right">0 / 0 / 0</td>
-<td>论文/原型参考，不建议直接作为生产底座</td>
+<td>2025-12-12</td>
+<td>0 / 0 / 0</td>
+<td>是否只作为演化实验参考</td>
 </tr>
 </tbody></table>
-<p><code>≥301</code> 表示本地历史为浅克隆样本，上限截断，真实提交可能更多。<code>letta-ai/letta</code> 不列入推荐，因为它已迁移；应使用 Letta Code。Hermes Jev Skills 是候选决策工具，不是长期 memory backend，因此也不混入该存储选型表，它的机制详解在 <a href="16-jev.html">第 16 章</a>。</p>
-<p>该表只给维护与投入顺序，不能代替架构介绍。逐项目的数据流分别见 <a href="08-agent-native.html">Letta/MemGPT</a>、<a href="10-fact-profile.html">Mem0/Memobase</a>、<a href="11-graph.html">Graphiti/Cognee/HippoRAG</a>、<a href="12-memory-os.html">MemOS/MemoryOS/Hippo/A-MEM</a>、<a href="13-integration.html">服务/文件/Trace/Team</a>。每个详解都解释输入如何变成记忆、query 如何找回证据、演化如何生效，以及哪些能力仍由应用负责。</p>
-<h2 id="不能把该表当成统一-sota">不能把该表当成统一 SOTA</h2><ul>
-<li>Mem0 README 的 2026 新算法分数来自含专有优化的托管平台。</li>
-<li>Hippo 报告的是 retrieval R@k；Mem0/MemoryOS 常报告 reader 或 LLM-judge 后的 QA 分数。</li>
-<li>LongMemEval 的 per-haystack 与全局池结果不可比较。</li>
-<li>Cognee 的 10M BEAM 为探索性设置，问题路由与评分可能用同一问题集。</li>
-<li>Hippo 明确撤回过无法复现的 sequential-learning 幅度。</li>
-</ul>
-<p>因此排名回答“在这个快照中更值得投入时间读和试哪个”，不回答“谁在所有任务上最好”。</p>
-<h2 id="维护信号应怎样影响不同技术路线">维护信号应怎样影响不同技术路线</h2><p>平台型 Cognee、MCP 与 TencentDB 有 schema、身份、多后端和运维面，活跃作者多有助于覆盖更多配置，却也可能带来频繁接口变化。Graphiti、Mem0 的主要风险集中在抽取、后端和候选边界，试用要锁定 commit/backend。Letta 必须先追 canonical repo；旧仓迁移后没有提交不代表当前 runtime 无维护。</p>
-<p>研究型 HippoRAG、A-MEM、MemoryOS 的目标偏论文机制，低提交频率未必降低算法价值，却意味着你可能要承担部署与安全功能。Hippo 在机制与评测上有可读源码，但单作者是交接和长期漏洞响应风险。Beacon 的高频提交主要改善遥测面，不表示事实检索质量提升；Hermes 工具维护活跃也不能弥补云 API 数据政策与不可用风险。</p>
-<p>下面的图仅展示活跃天数，合并行只因为数值相同，不合并项目能力，也不将 commit 数折成模型正确率。</p>
+<p><code>≥301</code> 表示浅历史截断，不能当成准确上限。旧 Letta 留作迁移证据，不纳入当前主仓排序；Hermes 处理候选判断，也不放进长期后端的维护表。</p>
+<p>继续阅读可按问题跳转：<a href="10-fact-profile.html">事实与画像</a>、<a href="11-graph.html">图检索</a>、<a href="12-memory-os.html">生命周期</a>、<a href="13-integration.html">工程接入</a>。这些章节比较状态与调用契约，维护表只决定先投入哪里。</p>
+<h2 id="不能把该表当成统一-sota">不能把该表当成统一 SOTA</h2><p>不同报告可能分别统计检索命中、回答得分或任务完成。Hippo 的 retrieval R@k 与 MemoryOS 的生成指标没有共同分母；Mem0 托管报告还含本地未交付的优化。LoCoMo、LongMemEval 和 BEAM 也有不同规模、reader 与数据切分。</p>
+<p>即便名称相同，预先按题限定 haystack 和检索全局长期库的难度也不同。Cognee 的探索性 BEAM 路由设置、Hippo 撤回的 sequential-learning 幅度都应连同限制阅读，不能挑最大的数字放在同一列。</p>
+<p>这份排序只能帮助安排源码阅读和验证资源。决定借展助手采用哪条路线，还需同一份材料、同一回答模型与预算下的本地对照。</p>
+<h2 id="维护信号应怎样影响不同技术路线">维护信号应怎样影响不同技术路线</h2><p>平台路线需要覆盖身份、数据迁移、多个后端和服务通信。维护者多有利于分工，但接口更新频繁也增加升级验证。研究路线可能更便于看清算法，部署、安全和持续修复则更多由应用承担。</p>
+<p>Mem0 与 Graphiti 的试用应锁定模型和后端，重点看提取与候选边界；Letta 要先确认当前主仓；Hippo 要考虑人员接替；Beacon 的高提交主要说明采集工具在演进，不能直接推出长期事实质量更好。Hermes 的维护状态也无法替代云请求的数据政策。</p>
+<p>对馆内团队，合适的项目应让故障后的责任可分配：谁能重建索引，谁能解释错误合并，谁能在上游暂不响应时修复部署。这比一条“近期活跃”结论更有操作性。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/09-landscape.svg" alt="近三十天活跃天数：Cognee 30、Letta 28、Beacon 27、MCP 23，其他项目逐项展示" loading="lazy"><figcaption>图：2026-09-21 快照的维护信号。浅克隆、机器人与作者集中度仍需另查。</figcaption></figure>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-b/09-landscape-07.svg" alt="维护投入与部署责任对照" loading="lazy"><figcaption>图：维护投入与部署责任对照。各行分别验收，不能用某一行的成功替代其他结果。</figcaption></figure>
 
 <details class="comparison-reference">
-<summary>项目对照速查（选读）</summary>
+<summary>横向查阅表（选读）</summary>
 
 <h2 id="本章对照结论">本章对照结论</h2><table>
 <thead>
 <tr>
-<th>路线与项目</th>
-<th>维护要解决的技术风险</th>
-<th>即使活跃仍要验证</th>
-<th>表中数字不能证明</th>
+<th>候选类别</th>
+<th>重点读取的维护材料</th>
+<th>馆内必须自己验收的结果</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>Mem0、Memobase</td>
-<td>提取/画像、依赖模型与 SDK</td>
-<td>最新后端、flush/合并、OSS 边界</td>
-<td>用户事实长期正确</td>
+<td>提取分支、画像处理、后端兼容测试</td>
+<td>偏好更新与原文保留符合政策</td>
 </tr>
 <tr>
 <td>Graphiti、Cognee</td>
-<td>建图、schema 与多存储</td>
-<td>结构化输出、迁移与恢复</td>
-<td>所有任务图优于平面检索</td>
+<td>结构抽取、schema 迁移、任务恢复</td>
+<td>许可链与历史状态可回查</td>
 </tr>
 <tr>
 <td>HippoRAG、A-MEM、MemoryOS</td>
-<td>论文版本与实现一致</td>
-<td>能否复现、谁补生产缺口</td>
-<td>原型可直接公网部署</td>
+<td>论文入口与实现差异</td>
+<td>机制收益可复现，外围权限齐全</td>
 </tr>
 <tr>
 <td>MemOS、Hippo</td>
-<td>调度/多形态或生命周期</td>
-<td>每模块成熟度、单作者与消融</td>
-<td>“OS/sleep”有通用学习保证</td>
+<td>模块配置、反馈与恢复说明</td>
+<td>调度或价值更新不误用旧规则</td>
 </tr>
 <tr>
-<td>Letta Code / 旧 Letta</td>
-<td>主仓迁移与运行环境的记忆协议</td>
-<td>提交后是否生效，接口是否仍可用</td>
-<td>旧仓统计等于当前维护</td>
+<td>Letta Code</td>
+<td>迁移公告、当前提示协议</td>
+<td>提交后的长期规则确实用于后续请求</td>
 </tr>
 <tr>
 <td>Basic、MCP、TencentDB</td>
-<td>文件同步、共享服务、资产安全</td>
-<td>许可证、可读范围、撤销与删除</td>
-<td>活跃度等于配置安全</td>
+<td>同步、授权、共享资产与删除</td>
+<td>撤权后所有读取出口一致拒绝</td>
 </tr>
 <tr>
 <td>Beacon、Hermes</td>
-<td>动作有没有漏采，判别接口是否可靠</td>
-<td>直接观察还是推断、数据外发和超时处理</td>
-<td>日志覆盖或排序分数等于答题正确率</td>
+<td>采集覆盖、外发契约、降级路径</td>
+<td>原始动作可信，未判别状态可见</td>
 </tr>
 </tbody></table>
+<p>同一项目可跨多个类别，表格按本章最关心的采用风险分组。保留最小失败案例与依赖版本，日后升级时重跑它们，不用新的热度数字覆盖旧的验收记录。</p>
 </details>
 
 </article><nav class="pager" aria-label="章节导航"><a href="08-agent-native.html"><small>上一章</small>Agent 原生记忆与技能</a><a href="10-fact-profile.html"><small>下一章</small>事实与画像路线：Mem0 / Memobase</a></nav></main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div></div><script src="../assets/wiki.js"></script></body></html>

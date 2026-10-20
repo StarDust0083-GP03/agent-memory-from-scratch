@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="392" viewBox="0 0 1080 392" role="img" aria-labelledby="title"><title id="title">电子封签纠正的适用范围</title>
+<style>text{font-family:system-ui,"Noto Sans CJK SC",sans-serif;fill:#203342}.head{font-size:24px;font-weight:650}.label{font-size:18px;font-weight:600}.value{font-size:18px}.small{font-size:15px;fill:#526571}</style>
+<rect width="1080" height="392" fill="#faf8f1"/>
+<text x="30" y="40" class="head">电子封签纠正的适用范围</text>
+<text x="32" y="80" class="small">观察对象</text><text x="320" y="80" class="small">输入或当前状态</text><text x="700" y="80" class="small">应核对的结果</text>
+<rect x="24" y="100" width="1032" height="76" rx="5" fill="#e8eee9"/>
+<text x="38" y="132" class="label">普通箱体</text>
+<text x="320" y="132" class="value">原人工核对</text>
+<text x="700" y="132" class="value">仍然保留</text>
+<rect x="24" y="188" width="1032" height="76" rx="5" fill="#e9edf1"/>
+<text x="38" y="220" class="label">封签箱体</text>
+<text x="320" y="220" class="value">传感器检查</text>
+<text x="700" y="220" class="value">确认新规则已可读</text>
+<rect x="24" y="276" width="1032" height="76" rx="5" fill="#e8eee9"/>
+<text x="38" y="308" class="label">报警情况</text>
+<text x="320" y="308" class="value">人工复核</text>
+<text x="700" y="308" class="value">不得在压缩中遗漏</text>
+</svg>
