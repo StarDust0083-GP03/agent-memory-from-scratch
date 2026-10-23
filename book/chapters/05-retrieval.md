@@ -124,6 +124,16 @@ BFS 要由配置明确启用，基础边 RRF 配方不因此自动遍历图。�
 
 </details>
 
+<figure class="concept-diagram" tabindex="0" data-review-figure="memory-candidate-set">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 396" role="img" aria-labelledby="memory-candidate-set-title memory-candidate-set-desc" style="display:block;width:100%;min-width:620px;height:auto">
+<title id="memory-candidate-set-title">候选集合不同，调权重不能补回池外记录</title>
+<desc id="memory-candidate-set-desc">固定两路输入：语义候选 {A,C}；全文候选 {B,A}；先取并集再排序：得到 {A,B,C}，B 可以参与评分；只给语义池内加分：仍为 {A,C}，B 没有进入候选集合。这是两种策略的对照，不是先后执行的三个检索步骤。</desc>
+<rect width="960" height="396" fill="var(--paper,#faf8f1)"/>
+<g font-family="'IBM Plex Sans','Noto Sans CJK SC',system-ui,sans-serif"><text x="40" y="48" font-size="28" fill="var(--ink,#243b48)" text-anchor="start">候选集合不同，调权重不能补回池外记录</text><rect x="40" y="88" width="272" height="56" rx="6" fill="var(--paper-2,var(--paper-deep,#ffffff))" stroke="var(--line,var(--rule,#bfc8c3))"/><text x="56" y="123" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">固定两路输入</text><text x="344" y="123" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">语义候选 {A,C}；全文候选 {B,A}</text><rect x="40" y="168" width="272" height="56" rx="6" fill="var(--paper-2,var(--paper-deep,#ffffff))" stroke="var(--line,var(--rule,#bfc8c3))"/><text x="56" y="203" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">先取并集再排序</text><text x="344" y="203" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">得到 {A,B,C}，B 可以参与评分</text><rect x="40" y="248" width="272" height="56" rx="6" fill="var(--paper-2,var(--paper-deep,#e5ede9))" stroke="var(--forest,var(--accent,#29564c))"/><text x="56" y="283" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">只给语义池内加分</text><text x="344" y="283" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">仍为 {A,C}，B 没有进入候选集合</text><path d="M40 332H920" stroke="var(--line,var(--rule,#bfc8c3))"/><text x="40" y="368" font-size="18" fill="var(--muted,#536772)" text-anchor="start">这是两种策略的对照，不是先后执行的三个检索步骤。</text></g>
+</svg>
+<figcaption>图：这是两种策略的对照，不是先后执行的三个检索步骤。</figcaption>
+</figure>
+
 ## RRF：用名次合并，避免直接相加不同分数
 
 全文分数和余弦值通常不在同一尺度。RRF 用各路名次累计投票，教学公式为 `score(x)=Σ 1/(k+rank_i(x))`，只累计出现过的榜单。常量 k 越大，榜单头部相邻位置的差异越平缓。

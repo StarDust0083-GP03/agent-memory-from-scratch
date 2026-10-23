@@ -91,6 +91,16 @@ Episode 的 `created_at` 来自处理时刻，`valid_at` 来自传入 `reference
 
 </details>
 
+<figure class="concept-diagram" tabindex="0" data-review-figure="memory-bitemporal">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 488" role="img" aria-labelledby="memory-bitemporal-title memory-bitemporal-desc" style="display:block;width:100%;min-width:620px;height:auto">
+<title id="memory-bitemporal-title">晚到通知：生效日与获知日不是同一天</title>
+<desc id="memory-bitemporal-desc">夜间预约职责于11月1日交接给顾宁，系统11月4日才收到通知；11月2日的现实职责和当时系统已知需要不同证据。</desc>
+<rect width="960" height="488" fill="var(--paper,#faf8f1)"/>
+<g font-family="'IBM Plex Sans','Noto Sans CJK SC',system-ui,sans-serif"><text x="40" y="48" font-size="28" fill="var(--ink,#243b48)" text-anchor="start">晚到通知：生效日与获知日不是同一天</text><text x="40" y="96" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">现实有效时间</text><text x="40" y="284" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">系统获知时间</text><path d="M240 180H840M240 360H840" stroke="var(--muted,#536772)"/><path d="M240 172V188M240 352V368" stroke="var(--muted,#536772)"/><text x="240" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/1</text><text x="240" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/1</text><path d="M440 172V188M440 352V368" stroke="var(--muted,#536772)"/><text x="440" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/2</text><text x="440" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/2</text><path d="M640 172V188M640 352V368" stroke="var(--muted,#536772)"/><text x="640" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/3</text><text x="640" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/3</text><path d="M840 172V188M840 352V368" stroke="var(--muted,#536772)"/><text x="840" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/4</text><text x="840" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/4</text><circle cx="240" cy="180" r="6" fill="var(--forest,var(--accent,#29564c))"/><circle cx="840" cy="360" r="6" fill="var(--forest,var(--accent,#29564c))"/><text x="240" y="140" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">11/1 起：顾宁复核夜间预约</text><text x="480" y="320" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">11/4 才收到交接通知</text><text x="40" y="452" font-size="18" fill="var(--ink,#243b48)" text-anchor="start">问 11/2 的现实职责：顾宁；问当时系统已知：需查旧版本或实际输入。</text></g>
+</svg>
+<figcaption>图：刻度按日等距；11 月 2 日的现实状态不等于助手当时掌握的资料。</figcaption>
+</figure>
+
 ## 三种“冲突”要采取三种动作
 
 真实状态变化可以结束旧关系并开始新关系，比如正常职责交接。来源分歧则要保留各自证据：通知说已交接，值班记录说尚未完成，不能只凭后录入就认定一方错误。提取错误需要纠正派生内容，例如原话只说代班，生成结果却写成永久接任。

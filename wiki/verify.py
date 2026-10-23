@@ -16,12 +16,15 @@ class Page(HTMLParser):
     def __init__(self, text):
         super().__init__()
         self.ids, self.resources, self.missing_alt = [], [], []
+        self.labels = []
         self.feed(text)
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
         if 'id' in a:
             self.ids.append(a['id'])
+        if 'aria-labelledby' in a:
+            self.labels.extend(a['aria-labelledby'].split())
         for key in ('href', 'src'):
             if key in a:
                 self.resources.append(a[key])
@@ -63,6 +66,13 @@ def verify():
         assert 'main' in page.ids, path
         assert len(page.ids) == len(set(page.ids)), f'duplicate IDs: {path}'
         assert not page.missing_alt, path
+        assert set(page.labels) <= set(page.ids), f'unresolved SVG labels: {path}'
+        for figure in re.findall(r'<figure[^>]*data-review-figure="[^"]+"[^>]*>(.*?)</figure>', path.read_text(), re.S):
+            svg = ET.fromstring(re.search(r'<svg\b.*?</svg>', figure, re.S)[0])
+            assert svg.get('role') == 'img' and svg.get('viewBox'), path
+            for tag in ('title', 'desc'):
+                element = svg.find('{http://www.w3.org/2000/svg}' + tag)
+                assert element is not None and element.text, (path, tag)
         for resource in page.resources:
             assert not resource.startswith('../../wiki/assets/'), (path, resource)
             url = urlsplit(resource)
@@ -72,6 +82,9 @@ def verify():
             assert target.exists(), (path, resource)
             if url.fragment and target in pages:
                 assert unquote(url.fragment) in pages[target].ids, (path, resource)
+    inline_count = sum(p.read_text().count('data-review-figure=') for p in (ROOT / 'chapters').glob('*.html'))
+    assert inline_count == 2, f'missing new illustrations: {inline_count}'
+    print(f'Inline illustrations: {inline_count}, accessible labels and SVG markup checked')
     print(f'OK: {len(SLUGS)} chapters, exercises/answers, {len(figures)} new SVGs, local links, IDs and search')
 
 
