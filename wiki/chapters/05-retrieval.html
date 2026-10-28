@@ -146,7 +146,7 @@ C：S7 的参观讲解板放在走廊东侧。</code></pre><p>问题是“下周
 <p>Mem0 本地路径的 over-fetch 扩大语义池，关键词和实体为池内评分；MCP SQLite hybrid 则分别取全文和向量候选，按 content hash 合并，并补取仅全文命中项的正文。两种路径对 <code>CERT-17</code> 这类查询可能有不同漏失位置。</p>
 <p>Graphiti 按配置组合 edge、node、episode 等对象；HippoRAG 从相关三元组与 dense passage 种子出发，PPR 传播到支持段落。Basic 搜索定位笔记后按 URI 和深度展开，A-MEM 在近邻之后尝试补 links 邻居，最终截断仍可能挤掉这些新增内容。</p>
 <p>MemoryOS 先选主题再选 page，并读取长期知识；Memobase 直接读 profile、单独搜事件；Letta 让 core 常驻，详情由模型发现。MemOS 依后端模块走文本或模型资源路径，TencentDB 在授权资产和 Loadout 里读，Cognee 选择不同 retriever。Hippo 的本地池融合相关和价值，Hermes 只判别传入候选，Beacon 供原事件。细节分别见 <a href="10-fact-profile.html">事实路线</a>、<a href="11-graph.html">图路线</a>、<a href="12-memory-os.html">分层系统</a>、<a href="13-integration.html">工程接入</a> 与 <a href="16-jev.html">判别接法</a>。</p>
-<h2 id="fusion-与-rerank">Fusion 与 rerank</h2><p>融合让多路候选形成一个可比较的次序，重排再读查询和候选提供细分判断。RRF 依名次避免原分数量尺冲突，规范化加权可以纳入时间和价值，cross-encoder 与 LLM 判别则增加推理成本及故障面。安全判别又是独立动作，不能把相关性高解释成无注入风险。</p>
+<h2 id="融合与重排-fusion-rerank">融合与重排（Fusion / rerank）</h2><p>融合让多路候选形成一个可比较的次序，重排再读查询和候选提供细分判断。RRF 依名次避免原分数量尺冲突，规范化加权可以纳入时间和价值，cross-encoder 与 LLM 判别则增加推理成本及故障面。安全判别又是独立动作，不能把相关性高解释成无注入风险。</p>
 <p>对 k 的选择应使用固定候选榜单测量，不能一边换融合常量、一边换 embedding 或资料池。MCP 还可能加入共识 boost，Hippo 融合后可乘生命周期系数。Mem0 的组合分不是 RRF，应按自己的语义门槛和分母解释。</p>
 <p>验收可以分别看初选的必要证据覆盖、重排的 MRR 或 NDCG、最终输入证据完整率和业务完成率。若初选有用而最终动作无效，继续提高检索指标未必有收益。降级状态也应单列，避免把云重排失败的回退结果算成模型重排效果。</p>
 <h2 id="上下文拼装-context-packing">上下文拼装（Context packing）</h2><p>打包可以按“必要条件、证据链、可选背景”分区。先保留当前任务的明确限制，再为所需证明留成组空间，最后用相关背景补充。重复正文只保留一次，但来源可以列表化；不同适用条件不能只因语义接近就合并。</p>

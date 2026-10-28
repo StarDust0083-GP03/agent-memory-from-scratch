@@ -301,7 +301,7 @@ Graphiti 按配置组合 edge、node、episode 等对象；HippoRAG 从相关三
 
 MemoryOS 先选主题再选 page，并读取长期知识；Memobase 直接读 profile、单独搜事件；Letta 让 core 常驻，详情由模型发现。MemOS 依后端模块走文本或模型资源路径，TencentDB 在授权资产和 Loadout 里读，Cognee 选择不同 retriever。Hippo 的本地池融合相关和价值，Hermes 只判别传入候选，Beacon 供原事件。细节分别见 [事实路线](10-fact-profile.md)、[图路线](11-graph.md)、[分层系统](12-memory-os.md)、[工程接入](13-integration.md) 与 [判别接法](16-jev.md)。
 
-## Fusion 与 rerank
+## 融合与重排（Fusion / rerank）
 
 融合让多路候选形成一个可比较的次序，重排再读查询和候选提供细分判断。RRF 依名次避免原分数量尺冲突，规范化加权可以纳入时间和价值，cross-encoder 与 LLM 判别则增加推理成本及故障面。安全判别又是独立动作，不能把相关性高解释成无注入风险。
 
