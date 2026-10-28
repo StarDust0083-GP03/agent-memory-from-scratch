@@ -123,11 +123,11 @@
 <h3 id="一份笔记如何成为图">一份笔记如何成为图</h3><p>下面是<strong>笔记格式示意</strong>，字段类别与语法需以当前 parser 为准，示例不声称已经导入 Basic Memory。</p>
 <pre tabindex="0"><code class="hljs"><span class="hljs-section"># 青釉执壶装箱</span>
 
-<span class="hljs-section">## Observations</span>
+<span class="hljs-section">## 观察（Observations）</span>
 <span class="hljs-bullet">-</span> [constraint] 内托净宽包含两侧缓冲垫，每侧 12 毫米
 <span class="hljs-bullet">-</span> [source] 依据经审核的装箱计算单 CR-208
 
-<span class="hljs-section">## Relations</span>
+<span class="hljs-section">## 关系（Relations）</span>
 <span class="hljs-bullet">-</span> relates<span class="hljs-emphasis">_to [[缓冲材料规格]]</span></code></pre><p><a href="https://github.com/basicmachines-co/basic-memory/blob/3bf2d52/src/basic_memory/markdown/entity_parser.py"><code>entity_parser.py</code></a> 解析实体、observations 和关系，链接解析器将目标名称或路径映射到笔记身份。同步完成后，文件编辑才反映到搜索。</p>
 <p>若缓冲材料笔记改名，应核对旧链接是否解析到正确对象。文件存在、索引有条目与链接已解析是三个不同状态，不能用其中一个替代其余检查。</p>
 <h3 id="搜索与-build-context-做了不同工作">搜索与 build_context 做了不同工作</h3><p>搜索用于定位笔记；<a href="https://github.com/basicmachines-co/basic-memory/blob/3bf2d52/src/basic_memory/services/context_service.py"><code>context_service.py</code></a> 的 <code>build_context()</code> 从 URI、路径模式或查询取得 primary results，再收集观察与关系邻域。depth、limit、max_related 和时间条件约束不同维度。</p>

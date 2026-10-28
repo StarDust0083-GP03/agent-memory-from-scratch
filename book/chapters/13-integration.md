@@ -270,11 +270,11 @@ Basic Memory 将 Markdown 作为可编辑的权威材料，数据库主要承担
 ```markdown
 # 青釉执壶装箱
 
-## Observations
+## 观察（Observations）
 - [constraint] 内托净宽包含两侧缓冲垫，每侧 12 毫米
 - [source] 依据经审核的装箱计算单 CR-208
 
-## Relations
+## 关系（Relations）
 - relates_to [[缓冲材料规格]]
 ```
 
