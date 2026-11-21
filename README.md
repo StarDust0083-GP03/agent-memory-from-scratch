@@ -1,58 +1,50 @@
 # Agent Memory from Scratch
 
-从写邮件、修 Todo 待办 App 的提醒 bug、选择 npm / pnpm 和找代码评审人这些小事开始，学会保存、检索、纠正和遗忘。每章都有例子、动手检查和答案提示；第 4 章用 SQLite 实现持久记忆，不需要模型密钥。
+一部用工程师大白话拆透 Agent 长期记忆机制的中文电子书。
 
-正文先讲任务和机制，用流程图、关系图、时间轴与曲线解释关键步骤。Mem0 / Graphiti 的逐节例子、源码细节和 16 个项目的对照表保留在选读区，不打断连续阅读。教学示例、源码观察与项目自报实测分别标注。
+全书围绕开发者每天真实面对的**工程研发助手**（负责代码审查、发布检查、故障排查与 on-call 交接）展开，从“为什么聊天记录不等于记忆”讲起，先用 300 行纯 Python + SQLite 亲手跑通持久化、隔离、版本替代与 Token 预算，再顺着写入、混合检索、双时间图谱、遗忘巩固、Agent 自管理、安全隔离、Jev 判别门控与架构选型，把 **16 个主流开源项目与 11 篇核心论文**的源码边界逐一扒清。
 
-图示无需在线图表库：
-
-- `book/illustrations/`：9 张概念 SVG，使用窄版布局，适合手机阅读。
-- `book/diagrams.json`：章节总览图。
-- `book/source-flows.tsv`：逐节项目案例的输入、处理、结果与边界。
-
-构建会复制概念图、生成流程图并更新搜索索引。校验覆盖章节、选读例子、练习、图示、链接和搜索；离线测试另外检查 SVG 元数据、引用与衰减曲线的计算。
+本次重编已将 11 个活跃上游仓库（Mem0、Graphiti、Letta Code、Cognee、MemOS、Hippo Memory、MCP Memory Service、Basic Memory、Agent Beacon、Hermes Jev Skills、TencentDB Agent Memory）的提交锚点与机制分析同步至 **2026-11-21** 快照，同时保留其余 5 个静态/归档仓库作为设计思想与迁移对照。
 
 ## 在线阅读与部署
 
-- 阅读：<https://StarDust0083-GP03.github.io/agent-memory-from-scratch/>
-- 仓库：<https://github.com/StarDust0083-GP03/agent-memory-from-scratch>
+- 页面：<https://StarDust0083-GP03.github.io/agent-memory-from-scratch/>
+- 代码：<https://github.com/StarDust0083-GP03/agent-memory-from-scratch>
 
-推送到 `main` 后，GitHub Actions 安装锁定依赖、构建网页、运行校验和离线测试，再将 `wiki/` 部署到 GitHub Pages。首次部署需在仓库 Pages 设置中选择 GitHub Actions。
+仓库配置的 GitHub Actions 会在推送至 `main` 后自动渲染图解、构建静态阅读页、跑完校验，再发布 `wiki/`。上游源码链接在构建阶段会自动重写为 `sources/maintenance.json` 中对应提交的 GitHub 永久链接，因此离线或线上阅读都不依赖本地克隆的第三方源码。
 
-公开仓库不包含第三方源码克隆、下载的全文资料、虚拟环境与本地缓存；保留来源清单和版本记录。网页源码链接指向上游对应提交，不依赖本地 `sources/repos/`。
+## 本地阅读与构建
 
-## 本地阅读
-
-安装 Node.js 22 和 Python 3 后，先运行 `npm ci --prefix wiki`。
-
-构建后打开 [`wiki/index.html`](wiki/index.html)。书稿源文件在 [`book/chapters`](book/chapters)，配套最小实现位于 [`examples/mini_memory.py`](examples/mini_memory.py)。
+准备 Node.js 22 与 Python 3，然后安装锁定的构建依赖并生成站点：
 
 ```bash
+npm ci --prefix wiki
 node wiki/build.mjs
 python3 wiki/verify.py
 python3 -m unittest discover -s wiki -p 'test_*.py' -v
+python3 -m unittest discover -s examples -v
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-浏览器访问 `http://localhost:8000/wiki/`。
+在浏览器打开 `http://localhost:8000/wiki/`。章节源稿位于 `book/chapters/`，图解配置位于 `book/rewrite-diagrams.txt`，零依赖最小实现位于 `examples/mini_memory.py`。
 
-## 本地资料
+生成静态站后，运行 `python3 wiki/export_book.py` 可重建 `exports/agent-memory-from-scratch.epub` 和 `exports/agent-memory-from-scratch.pdf`（A5）。导出需要 Chromium 和中文字体（推荐 Noto Serif CJK SC）。
 
-- `sources/repos/`：16 个浅克隆开源项目，随后为维护分析补取了最多约 300 条历史；部分小仓库是完整历史。
-- `sources/papers/pdf/`：11 篇论文 PDF。
-- `sources/papers/text/`：PDF 的可搜索文本。
-- `sources/maintenance.json`：截至 2026-09-21 的本地 Git 活跃度快照。
-- `sources/repos.txt`、`sources/papers/papers.tsv`：来源清单。
+## 动手跑通最小实现
 
-## 验证最小实现
+无需配置大模型 API Key，也不需要 GPU，直接用 Python 标准库 + SQLite 即可验证跨进程持久记忆、用户隔离、显式替代与上下文预算：
 
 ```bash
-cd examples
-python3 -m unittest -v
-python3 mini_memory.py --db demo.db remember "用户偏好深色模式" --user alice
-python3 mini_memory.py --db demo.db recall "深色模式偏好" --user alice
+python3 -m unittest discover -s examples -v
+python3 examples/mini_memory.py --db dev-assistant.sqlite remember \
+  "支付网关发布前必须核对幂等键 idempotency_key 配置" --user linyuan --kind procedural --source release-14
+python3 examples/mini_memory.py --db dev-assistant.sqlite recall \
+  "支付网关 幂等键" --user linyuan
 ```
 
-## 说明
+建议把练习库建在临时目录中，避免误碰业务数据库。
 
-这是研究与工程学习材料，不是统一 benchmark 排名。不同项目使用的 LoCoMo、LongMemEval 版本、候选范围、检索粒度、reader、LLM judge 和指标经常不同，书中只在协议相同或明确注明限制时比较数字。
+## 资料与事实边界
+
+- `sources/maintenance.json` 记录了 16 个项目的最新锁定提交与维护统计（其中 11 个活跃项目已同步至 2026-11-09 ~ 2026-11-21，5 个静态/研究项目保持原归档快照）。
+- 不同开源项目公布的 Benchmark 分数在数据切分、检索粒度、回答模型和裁判模型上往往不统一，本书不拼凑虚假的“大一统榜单”，只比**数据流、控制边界、失败模式和工程代价**。

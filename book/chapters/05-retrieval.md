@@ -1,626 +1,158 @@
 # 检索、重排与上下文预算
 
-## 先用三条记录观察搜索会漏什么
+## 先拿三条真实记录，看看搜索到底会漏什么
 
-Todo 的记忆库有三条内容：
-
-```text
-A：Todo 提交代码前运行 test_reminders。
-B：修改时间计算后，先跑提醒用例，再提交代码。
-C：Todo 文档站使用深色主题。
-```
-
-用户问“Todo 改完代码后要测什么”。A 含项目名和提交检查，容易命中；B 没有 Todo，也没有“提交”二字，但可能描述同一流程；C 有 Todo，却和当前任务无关。搜索需要既找准字面对象，也识别不同说法，还要排除只碰巧同名的内容。
-
-在比较相关性前，我们从登录身份确定用户和项目的可读范围。不属于这个范围的记录，不应进入可读候选。给一条记录打再高的相关分，也不能赋予访问权限。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：存了“默认中文”“提交代码前跑提醒测试”“周五开会”。问提交要求，期望找回第二条；若只找到语言偏好，先查记录和搜索过程，不急着怪回答模型。
-
-Graphiti：评审人问题需要“Todo 由前端组维护”和“前端组改代码由 Lin 评审”。只找到第一条，说明证据还缺一半，不是已经找到答案。
-
-![本例流程](../../wiki/assets/source-flows/05-01.svg)
-
-候选单位是一次搜索所挑选的最小对象。Mem0 可能挑一张卡“Todo 曾报 E42”，Graphiti 基本接口挑的则是从材料整理出的事实边，未必含完整错误日志。若错误码只在原文、不在短事实里，只搜索短事实可能漏掉它。调搜索参数之前，先检查这个词是否存在于实际被搜索的文字中。
-
-### Mem0：A 能否入池由语义召回先决定
-
-当前内部候选上限是 `max(limit * 4, 60)`。扩大语义池让弱语义但有字面信号的记录有机会被重新评分，但没有保证 A 一定进入。过滤先交给后端；到期记录还在构造 candidates 时排除。候选配额与有效结果配额不同，过期项也可能占据早期召回名额。
-
-### Graphiti：事实边和原文不是同一个候选单位
-
-基础查询可以找 A、B 对应的事实边；若需要完整段落，后续沿来源读 episode。分组通过 `group_ids` 传入，时间通过 `SearchFilters` 指定。搜索到 Todo 配色边 C 只说明对象相符，必须继续评估关系用途，不能把项目匹配当成答案相关性。
-
-</details>
-
-## 关键词检索：认出具体词语
-
-最直接的做法是找共同词。但“的”“项目”到处出现，不能和 `test_reminders` 一样有辨识力。BM25 是一种全文排序方法，它大致奖励查询词命中，尤其重视不常见的词，同时避免长文仅因词多就占优势。
-
-如果你问“test_reminders 报错”，A 的精确名字通常很有帮助。错误码、函数名和配置键也适合这条路线。如果记录只写“提醒测试”，查询只写英文函数名，关键词路径是否命中就取决于分词和表达，不能假设它知道所有别名。
-
-MCP Memory Service 使用全文索引形成独立候选，TencentDB 在没有远程 embedding 的配置下也能用词搜索。它们让字面强证据有机会出现，不要求先被语义搜索找到。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：问“E42 怎么处理”，一条候选记录正好写了 E42，可以得到文字匹配加分。若这条记录根本没进初选，当前实现不会靠这个加分把它救回来。
-
-Graphiti：关系正文写“Todo 改代码遇到 E42”。文字搜索可用 E42 找到它，再按来源打开故障报告，避免把相似错误的处理办法混用。
-
-![本例流程](../../wiki/assets/source-flows/05-02.svg)
-
-问题带错误码 E42，文字匹配可以找同样的字串；“提交代码前注意什么”则没有指定字串。Mem0 在已有语义候选上利用关键词加分，原始词分数会转换到可组合的数值范围。Graphiti 全文路可以独立找到包含 E42 的关系。全文索引就是为文字建立查找结构，不能找到从未保存进被索引字段的错误码。
-
-### Mem0：关键词分数经规范化参与池内排序
-
-正文在写入时生成 `text_lemmatized`，查询也经 `lemmatize_for_bm25()` 处理；支持的后端执行 `keyword_search()`。`get_bm25_params()` 和 `normalize_bm25()` 将原始分数映射后交给评分器。后端返回空或不支持关键词时，这条信号弱化，但语义路径仍可运行；中文与代码标识符需单独测试。
-
-### Graphiti：全文可以独立带回事实候选
-
-`edge_search()` 按配置调用 `edge_fulltext_search(..., 2 * limit)`。全文候选保留在自己的列表里，随后与向量、可选 BFS 候选按 UUID 汇集。因而只在全文命中的 A 也能参加融合。索引分词和查询处理依 driver，称为 BM25 不代表所有后端对中文表达一致。
-
-</details>
-
-## 向量检索：把表达转换成可比较的数字
-
-向量检索也常叫 dense retrieval。Embedding 模型把一段文字转换为数字向量。可以先想成文字在一个空间里的位置：“跑用例”和“运行测试”可能靠得较近，具体结果取决于模型和语境。
-
-余弦相似度比较两个向量的方向。拿一个二维玩具例子，查询向量为 `(1, 0)`，候选为 `(0.8, 0.6)`，两者长度都为 1，相似度就是 0.8；候选若是 `(0, 1)`，相似度是 0。真实向量的每个坐标通常没有可直接命名的含义，这个算例只解释方向比较。
-
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 300" role="img" aria-labelledby="v5-cos-title v5-cos-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="v5-cos-title">二维玩具例子的余弦相似度</title>
-<desc id="v5-cos-desc">查询向量 q(1,0) 与候选 a(0.8,0.6) 夹角约 37 度，余弦约 0.8；查询与候选 b(0,1) 垂直，余弦为 0。两向量长度都为 1，余弦只比较方向，不表示内容为真。</desc>
-<g fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.5">
-<path d="M200 250H398"/><path d="M390 245l9 5-9 5"/>
-<path d="M200 250V72"/><path d="M195 80l5-9 5 9"/>
-<circle cx="200" cy="250" r="150" stroke-dasharray="4 6" stroke-opacity=".28"/>
-<path d="M200 235h15v15"/>
-</g>
-<g fill="none" stroke="currentColor" stroke-width="2.5">
-<path d="M200 250L350 250"/><path d="M342 245l9 5-9 5"/>
-<path d="M200 250L320 160"/><path d="M311 164l11-1-4 10"/>
-<path d="M200 250L200 100"/><path d="M195 108l5-9 5 9"/>
-</g>
-<path d="M230 250A30 30 0 0 0 224 232" fill="none" stroke="currentColor" stroke-opacity=".7"/>
-<g fill="currentColor" font-size="15">
-<text x="188" y="268" font-size="13">O</text>
-<text x="356" y="256">q (1,0)</text>
-<text x="326" y="152">a (0.8,0.6)</text>
-<text x="206" y="94">b (0,1)</text>
-<text x="238" y="235" font-size="13">θ</text>
-</g>
-<g fill="currentColor">
-<text x="450" y="86" font-size="16" font-weight="600">余弦相似度 cos θ</text>
-<text x="450" y="132" font-size="15">a (0.8,0.6)</text>
-<rect x="450" y="140" width="230" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="450" y="140" width="184" height="18" rx="3" fill="currentColor" fill-opacity=".3"/>
-<text x="672" y="154" font-size="15" text-anchor="end" style="font-variant-numeric:tabular-nums">0.80</text>
-<text x="450" y="196" font-size="15">b (0,1)</text>
-<rect x="450" y="204" width="230" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="450" y="204" width="2" height="18" fill="currentColor"/>
-<text x="672" y="218" font-size="15" text-anchor="end" style="font-variant-numeric:tabular-nums">0.00</text>
-<text x="450" y="258" font-size="13" fill-opacity=".75">两向量长度都为 1；cos 只比较方向。</text>
-<text x="450" y="280" font-size="13" fill-opacity=".75">相似度 0.8 不等于“八成可信”。</text>
-</g>
-</svg>
-<figcaption>图：q 与 a 夹角小，余弦 0.8；q 与 b 垂直，余弦 0。相似的只是方向，不是事实。</figcaption>
-</figure>
-
-向量搜索可能把 B 找出来，也可能混入语义上接近却属于另一任务的内容。相似度高表达“看起来有关”，不是“这条事实已经验证”。项目名、时间和权限仍需单独处理。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：记录写“改完日期格式后核对提醒时间”，问题问“提交代码前要跑提醒测试吗”。把两段文字变成可比较的数字后，有机会认出意思相近，取回这条记录。
-
-Graphiti：关系写“前端组维护 Todo”，问题问“Todo 的负责人是谁”。按意思查找能补充字面搜索，但应用仍要核对“维护者”是否就是题目要的负责人。
-
-![本例流程](../../wiki/assets/source-flows/05-03.svg)
-
-卡片“先核验数据库结构”和问题“提交代码前要跑提醒测试吗”措辞不同，向量可能靠近，因为模型学到了表达联系。Mem0 用问题向量寻找卡片向量；Graphiti 在相应配置下比较问题与关系等对象的向量。Cosine 是一种比较向量方向的相似度计算，不表示两句话内容真实，也不保证所有同义句都能找到。
-
-### Mem0：query 与正文向量必须来自兼容空间
-
-调用 `embedding_model.embed(query, "search")` 后，后端 `search()` 返回候选与分数。正文写入用 add 模式，检索用 search 模式，某些模型会区别处理；换 provider 时需保留这一约定。相似度只刻画表达关系，不能据 0.8 推断bug 原因有八成概率真实。
-
-### Graphiti：按配置才需要查询向量
-
-搜索总流程检查边、节点或社区配置是否启用 cosine，以及是否启用需要向量的 MMR，再决定生成 query embedding。纯全文配置可避免这项调用。事实 embedding 与节点 embedding 的用途不同，升级模型时应重建对应索引，不能只重新计算查询向量。
-
-</details>
-
-## 先合候选，还是只给已有候选加分
-
-继续用开头的三条记录：假设向量搜索找到 A、C，关键词搜索找到 A、B。如果合并两路结果，A、B、C 都有机会参加后续排序；如果只给向量池里的记录加分，B 没入池就无法被补回来。A 同时被两路找到，合并时只保留一份。
-
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 220" role="img" aria-labelledby="v5-merge-title v5-merge-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="v5-merge-title">候选并集与池内加分对 B 的不同结果</title>
-<desc id="v5-merge-desc">并集召回把关键词命中 {A,B} 与向量命中 {A,C} 合并成 {A,B,C}，B 可以参加排序；池内加分只有语义池 {A,C}，关键词只能提高 A 的分数，B 不在池中，无法进入最终集合。</desc>
-<g fill="currentColor" font-size="16" font-weight="600">
-<text x="16" y="28">并集召回：B 有机会</text>
-<text x="388" y="28">池内加分：B 仍进不来</text>
-</g>
-<g fill="none" stroke="currentColor">
-<rect x="16" y="48" width="150" height="36" rx="6"/>
-<rect x="16" y="108" width="150" height="36" rx="6"/>
-<rect x="212" y="70" width="152" height="64" rx="8" stroke-width="1.5"/>
-</g>
-<text x="91" y="71" fill="currentColor" font-size="15" text-anchor="middle">关键词 {A, B}</text>
-<text x="91" y="131" fill="currentColor" font-size="15" text-anchor="middle">向量 {A, C}</text>
-<text x="288" y="98" fill="currentColor" font-size="15" text-anchor="middle">候选 {A, B, C}</text>
-<text x="288" y="120" fill="currentColor" font-size="13" text-anchor="middle" fill-opacity=".75">B 可被排序</text>
-<g fill="none" stroke="currentColor" stroke-width="1.5">
-<path d="M166 66L206 86"/><path d="M208 78L212 90L200 94"/>
-<path d="M166 126L206 114"/><path d="M206 123L212 112L201 106"/>
-</g>
-<g fill="currentColor" font-size="13" fill-opacity=".75">
-<text x="16" y="170">两路候选按 UUID/集合合并，</text>
-<text x="16" y="190">重复的 A 只保留一份。</text>
-</g>
-<g fill="none" stroke="currentColor">
-<rect x="388" y="48" width="150" height="36" rx="6" stroke-width="1.5"/>
-<rect x="388" y="112" width="150" height="36" rx="6" stroke-dasharray="5 4"/>
-<rect x="560" y="112" width="170" height="36" rx="6" stroke-dasharray="5 4" stroke-opacity=".5"/>
-</g>
-<text x="463" y="71" fill="currentColor" font-size="15" text-anchor="middle">语义池 {A, C}</text>
-<text x="463" y="135" fill="currentColor" font-size="15" text-anchor="middle">关键词命中 A</text>
-<text x="645" y="135" fill="currentColor" font-size="15" text-anchor="middle" fill-opacity=".6">B 命中关键词</text>
-<path d="M463 110V90" fill="none" stroke="currentColor" stroke-dasharray="5 4"/>
-<path d="M458 98l5-8 5 8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-<text x="546" y="98" fill="currentColor" font-size="13" fill-opacity=".75">只给池内加分</text>
-<text x="645" y="170" fill="currentColor" font-size="13" text-anchor="middle" fill-opacity=".75">不在池 → 不进排序</text>
-<g fill="currentColor" font-size="13" fill-opacity=".75">
-<text x="388" y="190">池外的 B 无法靠加分补进来，</text>
-<text x="388" y="210">必须先扩大或补足候选。</text>
-</g>
-</svg>
-<figcaption>图：同样的两路命中，合并候选能评到 B，池内加分只抬高 A；差别的根源是 B 有没有进池。</figcaption>
-</figure>
-
-这正是 MCP 和当前本地 Mem0 路径的一处区别。MCP 的 hybrid，也就是混合检索，会合并全文和向量的候选。Mem0 先多取一些语义候选，再用关键词和实体信号调整这个池里的分数。两者都利用多种信号，但能看见的内容不同。
-
-因此，找不到 B 时先检查它有没有进候选集合。对池外记录，无论重排多聪明都无从评分。Hippo 的池内图排名与池外图邻居补充也应这样区分，图的具体例子见第 11 章。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：初选只有提交要求 A 和配色说明 C，流程记录 B 不在其中。给 A、C 加关键词分仍不会出现 B；先扩大或补足候选，才可能找回它。
-
-Graphiti：按意思找到 A、C，按文字找到 A、B。合并后可比较 A、B、C，A 不必出现两次；接着再决定哪些结果排在前面。
-
-![本例流程](../../wiki/assets/source-flows/05-04.svg)
-
-假设向量路找到 A、C，文字路找到 A、B。候选并集是 A、B、C 都有被选中的机会；池内加分则可能仍只有 A、C，文字路只能提高 A 的位置。当前 Mem0 主要是后者，Graphiti 的基本边搜索可以采用前者。两者都叫混合搜索，但 B 能不能进入最后排序，是决定漏召回的具体差别。
-
-### Mem0：逐行查看 candidates 的来源
-
-构造集合的循环只遍历 `semantic_results`。关键词命中被整理成按 ID 查的 `bm25_scores`，实体信息成为 `entity_boosts`；两者给集合内记录加信号。B 即使在这两个字典里，没有进入语义候选集合也不会得到最终输出。调融合权重无法突破这个控制流边界。
-
-### Graphiti：先保留各路列表，再构造 UUID 并集
-
-`edge_uuid_map = {edge.uuid: edge ...}` 汇集各路候选。RRF 使用各列表中的 UUID 名次投票，再从 map 取正文。重复边只占一个身份，但来自多路的排名都可贡献。BFS 是否执行由配置决定，基础 edge RRF 配方并未默认加入图遍历。
-
-</details>
-
-## RRF：用名次合并，避免直接相加不同分数
-
-BM25 的 12 分与余弦的 0.8 不在同一量尺上。RRF（倒数排名融合）用每路的名次投票，不直接相加原始分数：
+假设林远有权限读取团队里的三条记录：
 
 ```text
-每路贡献 = 1 / (k + 本路名次)
-总分 = 各路贡献相加
+A：payment-gateway 发版前必须运行 check_idempotency，核对幂等键 TTL 覆盖重试窗口。
+B：报错 PAY-409 通常由上游超时重试窗口大于防重放缓存过期时间引起，先核对缓存配置。
+C：payment-gateway 的 Grafana 监控大盘链接在团队首页第二行。
 ```
 
-取教学常量 `k=60`，一条记录在关键词第 1、向量第 4，总分约为 `1/61 + 1/64 = 0.0320`。另一条只在向量第 1，总分约为 `1/61 = 0.0164`。第一条得到两路支持，因此这次会排得更高。
+今天林远问：“发 `payment-gateway` 遇到 `PAY-409` 要先查什么？”
+- **A** 带服务名和检查函数名，直接贴题；
+- **B** 压根没写 `payment-gateway` 这几个字，但精准命中了错误码 `PAY-409`，而且换了说法解释了同一个坑；
+- **C** 虽然命中了 `payment-gateway`，但对发版排查毫无帮助。
 
-MCP 支持这种融合及其他加权方法，Graphiti 也可以通过配置选择 RRF。Hippo 融合后还会结合寿命和价值等因素。常量与额外因子要按实际配置看，刚才的算例不是三个项目共同的默认输出。
+检索干的绝不只是算一个余弦相似度，而是四道串联的关口：**权限硬过滤 → 候选召回 → 融合重排 → 预算打包**。而且永远记住第一原则——**权限过滤一定在相关性打分之前**。就算同事陈明的私人草稿里恰好一字不差写着 `PAY-409` 的解法，也不能进入林远的候选池。
 
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 320" role="img" aria-labelledby="v5-rrf-title v5-rrf-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="v5-rrf-title">奖励两路支持：两种常量的 RRF 得分</title>
-<desc id="v5-rrf-desc">教学公式 k=60 时，关键词第 1、向量第 4 得 1/61+1/64 约 0.0320，只在向量第 1 得 1/61 约 0.0164；Graphiti 默认 rank_const=1 时，全文第 1、向量第 4 得 1+1/4=1.25，只在向量第 1 得 1.00。两者得到两路支持的记录都排得更高，但常量不同，不能逐条对比绝对值。</desc>
-<g fill="currentColor">
-<text x="16" y="30" font-size="16" font-weight="600">教学公式 k=60：贡献 = 1/(60 + 名次)</text>
-<text x="16" y="66" font-size="15">关键词 #1 + 向量 #4</text>
-<text x="16" y="104" font-size="15">只在向量 #1</text>
-<rect x="210" y="52" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="210" y="52" width="329" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
-<text x="582" y="66" font-size="15" style="font-variant-numeric:tabular-nums">0.0320</text>
-<rect x="210" y="90" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="210" y="90" width="169" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
-<text x="582" y="104" font-size="15" style="font-variant-numeric:tabular-nums">0.0164</text>
-<text x="16" y="134" font-size="13" fill-opacity=".75">两路支持约为单路的 2 倍；k 越大，头部名次差影响越小。</text>
+## 关键词检索 vs 向量检索：谁补谁的短板
 
-<text x="16" y="188" font-size="16" font-weight="600">Graphiti 默认 rank_const=1：贡献 = 1/(i+1)</text>
-<text x="16" y="224" font-size="15">全文 #1 + 向量 #4</text>
-<text x="16" y="262" font-size="15">只在向量 #1</text>
-<rect x="210" y="210" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="210" y="210" width="360" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
-<text x="582" y="224" font-size="15" style="font-variant-numeric:tabular-nums">1.25</text>
-<rect x="210" y="248" width="360" height="18" rx="3" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="210" y="248" width="288" height="18" rx="3" fill="currentColor" fill-opacity=".32"/>
-<text x="582" y="262" font-size="15" style="font-variant-numeric:tabular-nums">1.00</text>
-<text x="16" y="292" font-size="13" fill-opacity=".75">默认常量不同：不能用 0.0320 与本地 1.25 逐条对比。</text>
-</g>
+- **全文 / BM25 检索**：专治精确标识符——错误码 `PAY-409`、函数名 `check_idempotency`、接口路径 `/v2/charge`、版本号 `v2.14`。BM25 会综合词频、逆文档频率和文档长度打分，但碰上“幂等键”和“防重放缓存”这种不同措辞就束手无策；中文分词和连字符切分（`PAY-409` 被切成两个词还是保留整体）也会直接左右命中率。
+- **向量（Embedding）检索**：把文字投射成向量比方向，擅长把“幂等键覆盖重试窗口”和“防重放缓存覆盖超时重试”拉到一起。但它天生有两个短板：一是对无语义特征的精确报错码和工单编号不敏感；二是**只看主题接近，不管真假和否定**——“幂等键已配置”和“幂等键未配置”在向量空间里几乎贴在一起！
+
+另外，向量检索有个经常被踩的生产坑：**查询向量和入库向量必须来自兼容的同一模型空间**。某些 embedding provider 还会区分 `"search"` 和 `"add"` 两种编码前缀；哪怕换了同维度的新模型，直接拿新向量查旧索引也会静默失效。
+
+## 最隐蔽的架构分水岭：先取并集，还是只在向量池内加分？
+
+同样在 README 里大字写着“支持 Hybrid Search（混合检索）”，底层控制流却藏着一个足以酿成线上事故的巨大差异：**全文检索单独捞出来的记录，到底有没有资格进最终名单？**
+
+继续看刚才的例子：你查 `PAY-409`，向量检索没太理解这个编号，只捞回 `{A, C}`；全文检索精准捞回了 `{B, A}`。
+
+- **路线一：先取并集，再统一融合排序（Graphiti、MCP Memory Service）**
+  两路结果先合并成 `{A, B, C}`，再去算综合名次。**B 稳稳拿到入场券**，完全有机会冲到第一名。
+- **路线二：只在向量初选池内加分（Mem0 开源当前同步快照）**
+  先扩大拉出一个向量初选池 `{A, C}`，然后遍历这个池子，把 BM25 分数和实体关联分数当成“加分项”叠上去。**B 从头到尾没进向量池，哪怕你把关键词权重调到天上去，B 也永远进不了最终结果！**
+
+<figure class="concept-diagram" tabindex="0" data-review-figure="memory-candidate-set">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 396" role="img" aria-labelledby="memory-candidate-set-title memory-candidate-set-desc" style="display:block;width:100%;min-width:620px;height:auto">
+<title id="memory-candidate-set-title">候选池边界决定谁有资格评分，调权重救不回池外记录</title>
+<desc id="memory-candidate-set-desc">固定两路输入：向量初选 {A,C}，全文精准命中带 PAY-409 的 {B,A}。先取并集再排序得到 {A,B,C}，B 可参与评分；只在向量池内加分仍只有 {A,C}，B 永远被挡在门外。</desc>
+<rect width="960" height="396" fill="var(--paper,#faf8f1)"/>
+<g font-family="'IBM Plex Sans','Noto Sans CJK SC',system-ui,sans-serif"><text x="40" y="48" font-size="28" fill="var(--ink,#243b48)" text-anchor="start">候选池边界决定谁有资格评分，调权重救不回池外记录</text><rect x="40" y="88" width="272" height="56" rx="6" fill="var(--paper-2,var(--paper-deep,#ffffff))" stroke="var(--line,var(--rule,#bfc8c3))"/><text x="56" y="123" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">固定两路输入</text><text x="344" y="123" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">向量初选 {A, C}；全文命中 {B(PAY-409), A}</text><rect x="40" y="168" width="272" height="56" rx="6" fill="var(--paper-2,var(--paper-deep,#ffffff))" stroke="var(--line,var(--rule,#bfc8c3))"/><text x="56" y="203" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">先取并集再排序</text><text x="344" y="203" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">合并为 {A, B, C}，B 拿到入场券参与评分</text><rect x="40" y="248" width="272" height="56" rx="6" fill="var(--paper-2,var(--paper-deep,#e5ede9))" stroke="var(--forest,var(--accent,#29564c))"/><text x="56" y="283" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">只在语义池内加分</text><text x="344" y="283" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">仍只有 {A, C}，B 连门都没进，调权重也没用</text><path d="M40 332H920" stroke="var(--line,var(--rule,#bfc8c3))"/><text x="40" y="368" font-size="18" fill="var(--muted,#536772)" text-anchor="start">这是两种完全不同的控制流：控制流先决定候选集合，融合公式只决定集合内名次。</text></g>
 </svg>
-<figcaption>图：两条快照都按名次给分、都奖励多路支持，但 <code>k=60</code> 与 <code>rank_const=1</code> 的绝对分不能混用。</figcaption>
+<figcaption>图：同样叫混合检索，先并集再融合（Graphiti / MCP）与语义池内加分（Mem0 OSS）对精确报错码的召回边界截然不同。</figcaption>
 </figure>
 
 <details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+<summary>源码核验：Mem0、Graphiti 与 MCP 怎么算混合分数（选读）</summary>
 
-Mem0：A 的语义分为 0.8，文字和对象各贡献 0.5、0.2。这次查询三种信号都有结果，除以 2.5 后合分为 0.6。除数按实现中的 `1 + 1 + 0.5` 计算，不是三项的平均值；0.6 也不代表六成可信。
+![精确报错码在两类混合检索里的命运](../../wiki/assets/rewrite-memory-a/05-01.svg)
 
-Graphiti：A 在两榜排第 1、第 2，B 都排第 3。此快照的 RRF 算例：A 得 `1 + 1/2 = 1.5`，B 得 `1/3 + 1/3 ≈ 0.67`，所以 A 靠前。这里用的是名次，不是原始相似度分。
+### Mem0（2026-11 快照实测）：先过语义硬门槛，再按活跃信号除分母
 
-![本例流程](../../wiki/assets/source-flows/05-05.svg)
+我们直接核对了 2026-11-18 最新快照里的 [scoring.py](../../sources/repos/mem0/mem0/utils/scoring.py)，`score_and_rank()` 的真实控制流依然非常明确：
+1. **循环对象是 `semantic_results`**：`bm25_scores` 和 `entity_boosts` 只是按 `mem_id` 查表的字典，不会往候选池里插新 ID；
+2. **先过语义硬门槛**：`if semantic_score < threshold: continue`——如果阈值设 `0.2`，某条记录语义分只有 `0.19`，哪怕 BM25 和实体分拉满，照样直接被跳过；
+3. **BM25 Sigmoid 归一化**：`get_bm25_params()` 按词数选参数（`<= 3` 个词时 `midpoint=5.0, steepness=0.7`，原始分 5 映射为 0.5）；
+4. **动态分母合成**：`max_possible` 按本次查询**整体**有没有非空信号决定——仅语义是 `1.0`，加 BM25 是 `2.0`，再加实体（权重 `0.5`）是 `2.5`。所以如果本次查询整体有 BM25 和实体信号，记录 A（`0.72 + 0.60 + 0.18`）得 `1.50 / 2.5 = 0.60`；而语义同为 `0.72` 但没命中关键词和实体的记录，得 `0.72 / 2.5 = 0.288`。注意这**不是 RRF**！
 
-RRF 可以想成汇总多张排行榜：一条关系在文字榜第 1、向量榜第 3，分别按名次得到贡献，再相加。它不需要假定两条榜的原始分数单位相同。Graphiti 可以这样融合边候选；Mem0 当前把语义分、转换后的词分和对象加分组合，所以不能直接套 RRF 的名次公式。下面两套算例各自对应不同运算。
+### Graphiti（2026-11 快照实测）：先并集再 RRF，且默认 `rank_const=1`
 
-### Mem0：当前 score_and_rank 不是 RRF
+翻开 2026-11-20 最新快照的 [search_utils.py](../../sources/repos/graphiti/graphiti_core/search/search_utils.py)，`edge_search()` 会把全文、向量和可选 BFS 的结果按边 UUID 汇总取并集，再交给 `rrf()`：
 
-这条路径输入的是语义评分、规范化关键词分数与实体 boost，按实现的多信号规则计算结果。不能给它套 `1/(60 + rank)` 并声称重现了本地算法。若应用想验证 RRF，需要独立取得各路候选并实现融合，与现有路径使用同一数据和预算比较。
+```python
+def rrf(results: list[list[str]], rank_const=1, min_score: float = 0):
+    for result in results:
+        for i, uuid in enumerate(result):
+            scores[uuid] += 1 / (i + rank_const)
+```
 
-### Mem0 的评分算例：先过语义门，再合信号
+看清楚那个默认参数：**`rank_const=1`**！教科书里的 RRF 常用 `k=60`（名次靠前差别平缓），但 Graphiti 默认用的是 `1/r`（第 1 名 `1.0`，第 2 名 `0.5`，第 3 名 `0.333`）！
+- 举个算例：A 在全文排第 2、向量排第 3；B 只在全文排第 1。
+- 按教科书 `k=20`：A 得 `1/22 + 1/23 ≈ 0.0889`，B 得 `1/21 ≈ 0.0476` → **A 排前面**；
+- 按 Graphiti 默认 `rank_const=1`：A 得 `1/2 + 1/3 ≈ 0.8333`，B 得 `1/1 = 1.0` → **B 排前面**！
+头部名次陡峭度天差地别，且最终得分完全可能超过 `1.0`，绝不能当成概率去理解。
 
-[评分实现](../../sources/repos/mem0/mem0/utils/scoring.py) 还有一处容易遗漏的控制条件：`threshold` 先作用于原始 semantic score，未过门槛的候选直接跳过。即使一条记录已经在语义池中，关键词分数和实体 boost 也不能救回低于门槛的项。这与对最后 combined score 应用阈值是不同策略。
+### MCP Memory Service（v13.0.0 实测）：独立并集 + `as_of` 历史过滤
 
-BM25 通过 sigmoid 规范化。若 query 归一后不超过三个词，当前参数为 midpoint=5、steepness=0.7；原始 BM25=5 时得到 0.5，原始分数更大时趋近 1。词数变多会改变参数，因此不同 query 的原始 5 分不能直接解释为相同强度。
-
-假设候选 A 的 semantic=0.8、规范化 BM25=0.5、entity boost=0.2，三种信号都活跃时，最终为 `(0.8 + 0.5 + 0.2) / 2.5 = 0.6`。除数从语义项的 1 开始：这次查询有关键词结果就加 1，有实体加分就再加 0.5，因此这里是 `1 + 1 + 0.5 = 2.5`。这些数是代码设置的缩放份额，不是从 A 的三个分数推导出来的。除数由整次查询是否有非空关键词和实体信号决定，不是每条候选分别决定。若候选 B 没有关键词与实体命中，semantic 仍为 0.8，它在同一次查询中为 `0.8 / 2.5 = 0.32`。这让多信号支持改变排序，但不是校准后的事实可信度。
-
-若 threshold=0.1，而 A 的 semantic 只有 0.09，它在相加之前就被丢弃。调大实体权重没有效果。可以通过 `explain=True` 看通过门槛的记录的原始、组合及归一分值，但被丢弃项需要另外记录原始候选。查分数异常时，还要确认后端的 semantic 分数尺度适合当前实现假设。
-
-### Graphiti：RRF 是可选择的明确 reranker
-
-`EdgeReranker.rrf` 把各路结果转换为 UUID 排名列表，调用 `rrf()`，再应用分数和结果限制。名次融合解决分数尺度问题，不验证事实和来源。一条在全文与向量都排名高的旧默认，仍需要时间条件才能退出当前结果。
-
-### Graphiti 的实际常量为什么不能照搬教学公式
-
-[本地 rrf 函数](../../sources/repos/graphiti/graphiti_core/search/search_utils.py) 默认 `rank_const=1`，循环使用从 0 开始的 i，贡献是 `1 / (i + rank_const)`。换成从 1 开始的名次 r，默认贡献就是 `1/r`。前面用 k=60 的算例介绍常见融合思想，并非这个快照的默认常量。
-
-如果边 A 在全文第 1、向量第 4，当前默认得分为 `1 + 1/4 = 1.25`；边 B 只在向量第 1，得 1。头部名次影响明显，不能用 0.0320 与本地结果逐条对比。RRF 输出也可能超过 1，所以不能按概率解读。搜索层接着应用结果限制和可选最小分数，之后才交回调用方。
-
-两种方法控制候选的方式不同。Mem0 在语义池内先检查语义门槛，再合分；Graphiti 的边 RRF 把各路 UUID 合起来，全文单路强命中仍能参加。选哪个应看你的错误码、同义表达与实体问题，尤其比较遗漏是在入池之前、门槛阶段还是最后截断。
+查看 2026-11-20 最新 [hybrid.py](../../sources/repos/mcp-memory-service/src/mcp_memory_service/storage/mixins/hybrid.py)，`retrieve_hybrid()` 并行跑 FTS5 BM25 和向量查询，按 `content_hash` 取并集，对只在全文路命中的记录专门回库补取正文；v13.0 还补上了 `as_of` 历史时间点支持（历史查询时不过早排除后来才被替代的记录）以及 FTS5 trigram 对短词查询的回退处理。
 
 </details>
 
-## 重排和打包各做什么
+## 重排（Rerank）和上下文打包：搜到第一名，也可能进不了 Prompt
 
-重排器再次读查询与候选正文，判断更细的相关性。Cross-encoder 把问题和一条候选一起送进评分模型；Jev 这类服务也可给候选提供判别信号。它们能把配色说明 C 降下去，不能自动找回未进入池的流程记录 B，也不能绕过权限。
+拿到融合后的 Top-N 列表，后面还有两道关：
 
-按排序取前 k 条通常叫 top-k，它限制条数，不限制总长度。排序后还要打包。假设留给记忆的预算是 300 token，A 需要 80，B 需要 260，它们一起就超额。程序可以只放 A，或取 B 中有来源的必要片段，但不能仅因为 `top_k=2` 就把两条全文强塞进去。这里的数字是假设目标 tokenizer 已经算出的值。
+1. **重排（Cross-Encoder / Jev 判别器）**：把“用户问题 + 单条候选文本”拼一起做精排，能很轻松地把 C（Grafana 大盘链接）踢下去。但记住：**重排器只能给传进来的候选排座次，救不回没进池的 B**；而且像 Graphiti 的边 Cross-Encoder 会先用 RRF 截断到 `2 * limit` 再重排，Mem0 的重排异常时会静默降级回原顺序，日志里一定要把“是否触发重排降级”记下来。
+2. **上下文打包与真实 Token 预算**：别看着模型窗口写着 128K 就随便塞！算一笔真实的账：
 
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 290" role="img" aria-labelledby="v5-budget-title v5-budget-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="v5-budget-title">条数排序之后是按 token 长度打包</title>
-<desc id="v5-budget-desc">记忆预算 300 token 时，A 占 80 可以装入，还剩 220；top-2 想把 A(80) 与 B(260) 一起装入共 340，超过上限 40，超出部分必须裁掉，或者只取 B 中带来源的必要片段。</desc>
-<g fill="currentColor">
-<text x="16" y="30" font-size="16" font-weight="600">记忆预算 300 token：只装 A</text>
-<rect x="16" y="48" width="600" height="32" rx="4" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="16" y="48" width="160" height="32" rx="4" fill="currentColor" fill-opacity=".3"/>
-<text x="96" y="69" font-size="14" text-anchor="middle">A 80</text>
-<text x="216" y="69" font-size="13" fill-opacity=".75">剩余 220</text>
-<path d="M616 40V88" fill="none" stroke="currentColor" stroke-dasharray="4 4"/>
-<text x="624" y="69" font-size="13">300 上限</text>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/rewrite-memory-a/05-window.svg" alt="12000 Token 窗口里留给记忆的真实预算" loading="lazy"><figcaption>图：留给记忆的预算要从总窗口里扣掉系统提示、当前对话、工具往返和回答预留后才能算数。</figcaption></figure>
 
-<text x="16" y="140" font-size="16" font-weight="600">想同时装 A + B：340 &gt; 300</text>
-<rect x="16" y="158" width="600" height="32" rx="4" fill="none" stroke="currentColor" stroke-opacity=".4"/>
-<rect x="16" y="158" width="160" height="32" rx="4" fill="currentColor" fill-opacity=".3"/>
-<text x="96" y="179" font-size="14" text-anchor="middle">A 80</text>
-<rect x="176" y="158" width="440" height="32" fill="currentColor" fill-opacity=".18"/>
-<text x="396" y="179" font-size="14" text-anchor="middle">B 260（裁到 220）</text>
-<rect x="616" y="158" width="80" height="32" fill="none" stroke="currentColor" stroke-dasharray="4 4"/>
-<text x="656" y="179" font-size="13" text-anchor="middle">超出 40</text>
-<path d="M616 150V198" fill="none" stroke="currentColor" stroke-dasharray="4 4"/>
+假如这次调用分配的总窗口是 12,000 Token：系统指令和工具 Schema 占 3,000，当前对话和已有日志占 2,500，给模型输出留 2,000，给后续工具调用往返留 2,500——**真正留给记忆的只剩 2,000 Token**！
 
-<text x="16" y="240" font-size="13" fill-opacity=".75">top_k 限制条数，token 预算限制总长度；超出的部分必须裁掉，</text>
-<text x="16" y="260" font-size="13" fill-opacity=".75">或者只取 B 中带来源的必要片段。</text>
-</g>
-</svg>
-<figcaption>图：<code>top_k=2</code> 选出 A 与 B，但 80 + 260 超过 300 token 的预算，打包必须裁剪或改取片段。</figcaption>
-</figure>
+打包时坚持三条工程经验：
+- **稳定偏好别进相似度竞赛**：林远的“中文回复、先给 diff”单独走直读通道，免得搜 `PAY-409` 时因为字面不相关被挤出 Top-K；
+- **成组证据要整体保留**：查“发布终审人”至少要同时保留“服务归属基础交易组”和“基础交易组终审人是老李”两条证据，只装一半等于白装；
+- **连出处、日期和包装标签一起算 Tokenizer**：两条短事实只有 80 Token，但展开原始事故单后可能暴涨到 1,800 Token，预算检查一定要放在最终拼装完之后。
 
-固定偏好也不必每次搜索。Memobase 可以直接读画像，Letta 的核心记忆已经随输入出现，Basic Memory 在已知笔记 URI 时直接打开。检索方式应服务于“本次需要哪些信息”，而不是让所有信息都经过同一个向量 top-k。
+## 搜不到东西？用“六格排查表”三分钟定责
 
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+线上遇到“明明记过了却没用上”，别靠猜，给预期记录拉一行六格布尔表，**第一个变成“否”的列就是根因**：
 
-Mem0：搜索先取回十条，应用让重排器把“先跑提醒测试”排到前面。当前只装得下两条，再选两条组装输入；排得靠前与最终装进去是两步。
+1. **存在吗？** 直接按 ID 查库——不在就查写入管线；
+2. **可见吗？** 检查用户权限、项目范围、有效期——无权看到其实是安全防线起效了；
+3. **进初选池了吗？** 查全文、向量各路原始 ID——没进池就查分词、Embedding 版本或池内加分边界；
+4. **过门槛了吗？** 查 `threshold` / `min_score`——语义门槛太高会把精确编号挡掉；
+5. **留进 Top-K 了吗？** 查融合常量与重排结果——排第 7 而你只取前 5；
+6. **装进最终 Prompt 了吗？** 查打包日志——排第 1 但文本太长被预算跳过了！
 
-Graphiti：重排先把合并代码的评审关系放前面，应用再选取对应来源片段。若误装了出差审批原文，关系排名再高也会把答案带偏。
+<details class="implementation-notes">
+<summary>实现笔记：主流项目检索控制流横向拆解（选读）</summary>
 
-![本例流程](../../wiki/assets/source-flows/05-06.svg)
-
-第一轮先快速取一批候选；重排模型再同时阅读问题与每条候选，判断谁更贴题，这类逐对阅读模型常称 cross-encoder。Mem0 是否用它受配置和开关影响；Graphiti 对事实边重排前也先缩小集合。打包则发生在之后：哪条留正文、哪条只留来源、总长度多少，仍由应用决定。
-
-### Mem0：配置与调用开关共同决定重排
-
-初始化时 `RerankerFactory` 创建配置的重排器，但搜索还需传 `rerank=True`。当前外层在已生成的 `original_memories` 上调用重排，所以底层 limit 已排掉的记录不会被补回。重排异常时保留原结果并记录错误；应用应另记录降级状态，而非以为这次一定使用了模型重排。
-
-### Graphiti：cross-encoder 前先做 RRF 截断
-
-边 cross-encoder 路径先对各路候选 RRF 排序，取最多 `2 * limit` 条事实再评分。它重新读 query 与 fact，但截断之前被丢掉的边也不会回来。`fact_to_uuid_map` 按事实文本映射 UUID，重复文本边的返回行为值得检查。之后的 token 打包仍由调用方负责。
-
-</details>
-
-## 怎样从“搜不到”一步步定位原因
-
-假设 A 已经保存，最后却没有进入输入。先直接按 ID 读取，确认记录存在且属于当前可读范围。如果用户或时间条件把它排除了，修改相似度权重没有意义；应检查作用域是否设置正确，或它是否确实已经失效。搜索漏掉一条无权读取的记录，本来就是正确行为。
-
-若 A 在可读范围内，再分别查看关键词和向量的候选。关键词可能因为中文分词、函数名写法或别名不同而漏掉；向量可能因为正文太短、项目名缺失或模型不适合该语料而漏掉。两路都漏时，融合没有可用材料。只有至少一路找到 A，并且融合确实允许该路补候选，它才可能进入重排。
-
-进入候选仍不代表进入最终输入。假设 A 排第六，应用只取五条，问题发生在排序截断；假设 A 排第一但全文太长，被预算打包跳过，问题发生在打包。前者可以比较重排，后者需要决定是否取带来源的必要片段，或者调整记忆与其他输入的配额。扩大 top-k 只会改变其中一个边界。
-
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 246" role="img" aria-labelledby="v5-funnel-title v5-funnel-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="v5-funnel-title">四站核对一条记录为什么没有进入输入</title>
-<desc id="v5-funnel-desc">按顺序核对：记录是否保存在库里、是否进入候选池、排序后是否被 top-k 保留、是否被 token 预算装进输入。在哪一站消失就查哪一站；权限或时间过滤造成的漏召回常是正确行为。</desc>
-<g fill="none" stroke="currentColor">
-<rect x="11" y="58" width="168" height="66" rx="8"/>
-<rect x="201" y="58" width="168" height="66" rx="8"/>
-<rect x="391" y="58" width="168" height="66" rx="8"/>
-<rect x="581" y="58" width="168" height="66" rx="8"/>
-<rect x="197" y="54" width="176" height="74" rx="10" stroke-dasharray="5 4" stroke-width="1.5"/>
-</g>
-<g fill="currentColor" font-size="14" font-weight="600" text-anchor="middle">
-<text x="95" y="86">① 库里存了吗</text>
-<text x="285" y="86">② 进候选了吗</text>
-<text x="475" y="86">③ 排序后留下了吗</text>
-<text x="665" y="86">④ 装进输入了吗</text>
-</g>
-<g fill="currentColor" font-size="12.5" text-anchor="middle" fill-opacity=".72">
-<text x="95" y="108">get(id) + scope</text>
-<text x="285" y="108">关键词 / 向量路</text>
-<text x="475" y="108">rerank / top-k</text>
-<text x="665" y="108">token 打包</text>
-</g>
-<g fill="none" stroke="currentColor" stroke-width="1.5">
-<path d="M179 91h18"/><path d="M190 86l9 5-9 5"/>
-<path d="M369 91h18"/><path d="M380 86l9 5-9 5"/>
-<path d="M559 91h18"/><path d="M570 86l9 5-9 5"/>
-</g>
-<path d="M285 128V148" fill="none" stroke="currentColor" stroke-dasharray="5 4"/>
-<text x="285" y="164" fill="currentColor" font-size="13" text-anchor="middle" fill-opacity=".75">A 在这一站消失，先查这一站</text>
-<g fill="currentColor" font-size="13" fill-opacity=".75">
-<text x="11" y="204">权限或时间过滤造成的漏召回，常常是正确行为；先查作用域，再调相似度。</text>
-<text x="11" y="226">扩大 top_k 只改变 ③ 的边界，不会影响 ① ②。</text>
-</g>
-</svg>
-<figcaption>图：保存、入池、排序、打包四站各查一件事；在哪一站消失，就先查那一站的边界。</figcaption>
-</figure>
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：改代码教训没有出现在回答里。依次检查：库里有没有→初选有没有→排序后有没有→发给模型的消息里有没有。在哪一站消失，就先查哪一站。
-
-Graphiti：评审关系搜不到。先确认关系已保存，再查是否限定错项目或日期，最后看它是否被结果数量限制截掉；别先扩大到所有人的资料。
-
-![本例流程](../../wiki/assets/source-flows/05-07.svg)
-
-把“搜不到”分成四问：正文存下了吗，第一批里有它吗，排序后留下了吗，最后发给模型了吗。Mem0 的 explain 能展开已进入评分流程的信号，但不能展示所有没进入池的记录。Graphiti 则还要看找到的是对象、关系还是材料；找到 Todo 对象，不等于找到它的代码评审人。
-
-### Mem0：explain 解释评分，不能解释全部遗漏
-
-`search(explain=True)` 可返回 `score_details`，适合核对关键词与实体是否改变某条入池记录的分数。池外 A 没有评分分项，因此还要记录后端语义和关键词原始 ID。用 `get(A)` 核对存在性后，再逐层比较 filters、池、阈值和最终 limit，避免把不存在与低排名混为一谈。
-
-### Graphiti：分对象观察 SearchResults
-
-`search_()` 返回 edges、nodes、episodes、communities 及对应 reranker 分数。节点 Todo 被找到，不等于评审事实边也被找到。检查 config、每路原始 ID、UUID 并集、重排输出和来源展开；若只有节点结果，先修读取对象，不急着调余弦阈值。
-
-</details>
-
-## 留给记忆的预算要从完整调用里算
-
-模型窗口同时容纳系统规则、当前消息、工具结果、记忆和输出。假设一个教学调用允许总计 8,000 token，已有输入占 4,000，计划预留 2,000 给回答，再留 1,000 给后续工具结果，剩下的记忆空间只有 1,000。这些数字不是推荐配置，而是说明不能把整个窗口都当成搜索结果的容量。
-
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 170" role="img" aria-labelledby="v5-window-title v5-window-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="v5-window-title">记忆只占完整调用窗口的一小块</title>
-<desc id="v5-window-desc">一个总计 8,000 token 的教学调用里，系统与当前输入占 4,000，回答预留 2,000，后续工具结果 1,000，留给记忆的只有 1,000；不能把整个窗口都当成搜索结果容量。</desc>
-<text x="16" y="30" fill="currentColor" font-size="16" font-weight="600">完整调用窗口 8,000 token</text>
-<g fill="currentColor">
-<rect x="16" y="48" width="310" height="34" fill-opacity=".28"/>
-<rect x="326" y="48" width="155" height="34" fill-opacity=".18"/>
-<rect x="481" y="48" width="77.5" height="34" fill-opacity=".12"/>
-<rect x="558.5" y="48" width="77.5" height="34" fill-opacity=".22"/>
-</g>
-<g fill="none" stroke="currentColor" stroke-opacity=".55">
-<rect x="16" y="48" width="620" height="34"/>
-<path d="M326 48v34M481 48v34M558.5 48v34"/>
-</g>
-<g fill="currentColor" font-size="13" text-anchor="middle">
-<text x="171" y="70">系统 / 当前输入 4,000</text>
-<text x="403" y="70">回答预留 2,000</text>
-<text x="520" y="70">工具</text>
-<text x="597" y="70">记忆</text>
-</g>
-<g fill="currentColor">
-<rect x="16" y="96" width="12" height="12" fill-opacity=".28"/><text x="34" y="107" font-size="13">系统/当前输入 4,000</text>
-<rect x="250" y="96" width="12" height="12" fill-opacity=".18"/><text x="268" y="107" font-size="13">回答预留 2,000</text>
-<rect x="452" y="96" width="12" height="12" fill-opacity=".12"/><text x="470" y="107" font-size="13">工具结果 1,000</text>
-<rect x="632" y="96" width="12" height="12" fill-opacity=".22"/><text x="650" y="107" font-size="13">记忆 1,000</text>
-<text x="16" y="146" font-size="13" fill-opacity=".75">记忆只占窗口的一小块，不能把整个窗口当成搜索结果的容量。</text>
-</g>
-</svg>
-<figcaption>图：模型窗口的输入、回答预留和工具结果都要先扣掉，剩下的才是记忆能用的 token。</figcaption>
-</figure>
-
-在这 1,000 token 内，十条同义改代码教训通常不如一条明确规则加一份具体失败证据。去重因此也属于上下文打包：它让有限空间覆盖不同的必要信息。对于评审人这样的多跳问题，A 和 B 构成一组证据；仅放排名更高的 A，虽然句句相关，却无法回答。打包可以考虑证据组合，而不只是逐条选最高分。
-
-如果怎么压缩都装不下必要证据，可以让 Agent 分步读取，或者告诉用户证据不足。没有必要为了填满预算，把不相关的记录补到末尾。预算控制的目标是留下足够支持当前判断的内容，同时给工具和回答保留空间。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：模型预算 8,000 token，任务、工具与回答预留已用 6,000，只剩 2,000 放历史。应用按实际长度选教训，不能因为只返回三条就假定装得下。
-
-Graphiti：两条短关系只占很少空间，原文却有一万字。应用摘出支持评审人的两段，再计算总长度，不把整份文档当免费的上下文。
-
-![本例流程](../../wiki/assets/source-flows/05-08.svg)
-
-模型输入还要容纳当前任务、工具说明和预留回答，剩下的才给历史。Mem0 卡片的正文虽短，来源说明也会占长度；Graphiti 一条 fact 很短，按来源取回整份 episode 却可能很长。应用可以先给短陈述与来源编号，证据不足再读详情，而不是把所有搜索命中一次发进去。
-
-### Mem0：source metadata 也占输入长度
-
-应用取 `memory` 后若补项目、来源、置信度和安全 framing，应把完整字符串一起送目标 tokenizer。多条相同规则可以合并展示来源，但不能在合并时丢掉任务例外。对必要证据组保留固定预算，对可选背景再按评分填充；这些都是 SDK 之外的 assembler 工作。
-
-### Graphiti：短 fact 与长 episode 可以分级读取
-
-正常任务先给带时间的事实；遇到归因争议再读相应 episode。这样节省输入，但需要显式记录事实是否已经核验。若 query 要求评审链，应一起保留两条事实及支持来源，不能因为单条关系排名高就挤掉链上另一条必要边。
+不同框架的“检索”底层干的事差别极大，调优前先对号入座：
+- **Mem0**：语义 over-fetch 池 `max(limit * 4, 60)` → 语义门槛过滤 → 叠加 BM25 Sigmoid 与实体 boost → 可选 `RerankerFactory` 重排。`explain=True` 只能解释过门槛项的分项，看不出池外漏了谁。
+- **Graphiti**：[search_config.py](../../sources/repos/graphiti/graphiti_core/search/search_config.py) 支持对 Edge / Node / Episode / Community 分别配 cosine、BM25、BFS，以及 RRF、Cross-Encoder、MMR、中心距离、`episode_mentions` 五类重排。注意基础 `search()` 默认只搜边且不自动多跳 BFS。
+- **Hippo Memory（v3.12.0）**：[hybrid.ts](../../sources/repos/hippo-memory/src/domain/search/hybrid.ts) 支持 `blend` 和 `rrf` 两种融合，融合后还会叠加 strength、recency、outcome 等生命周期系数；而多跳图扩展 [recall.ts](../../sources/repos/hippo-memory/src/domain/graph/recall.ts) 可以从词法种子沿关系图拉回池外记录，并支持 `asOf` 双时间过滤。
+- **HippoRAG / Basic / A-MEM**：HippoRAG 用三元组和段落种子跑 PPR 传播；Basic Memory 已知 `memory://` URI 时直接精准读取再限深展开关系；A-MEM 先取近邻再补 `links` 邻居，但最后 `[:k]` 截断容易把邻居挤掉。
+- **什么时候才值得上“图检索”？** 如果你的问题 90% 都是“发 `payment-gateway` 前查什么”，受限的“全文 + 向量并集”早就够用且好维护；只有当你攒出一批纯检索确实搞不定的两跳关联题（比如文档 A 和文档 B 毫无重合词，必须通过中间团队节点串联），再算清楚建图和消歧成本去上图。
 
 </details>
 
 ## 动手检查
 
-给 A、B、C 分别写下：有没有进入候选池、排序在第几、有没有被装入输入。假设系统最后回答只谈深色主题，你会先查哪一栏？
+假设你排查“查询 `PAY-409` 时助手漏掉规程”的现场日志，发现：
+- 记录 B（含 `PAY-409`）在全文路排第 1，但不在向量初选池；
+- 记录 A 进了两路且排第 1，但附带的原始复盘太长被预算打包跳过；
+- 最终 Prompt 里只装进了无关的记录 C（Grafana 链接）。
 
-答案提示：先确认 A 和 B 是否在池里，再看 C 为什么排高，最后看实际打包的内容。每栏解决一个不同问题；仅把 `top_k` 从 5 改为 20，可能只让更多无关内容进入模型。
+如果有人提议“把 `top_k` 从 5 调大到 20 就好了”，为什么这治标不治本？你应该分别改哪两个控制点？
 
-<details class="implementation-notes">
-<summary>实现笔记与源码对照（选读）</summary>
+答案提示：单纯把 `top_k` 拉大到 20，只会把更多像 C 一样的无关监控链接塞进窗口，**B 依然因为池外边界进不来，A 依然可能因为单条超预算被跳过**。正确改法是两处分别动手：一是对精确报错码引入独立的全文候选并集（或扩大语义池 + 独立关键词补查）救回 B；二是把 A 拆成短规程 + 按需展开来源，或优化打包策略保住必要检查条件，同时检查排序为什么没把 C 压下去。
 
-## 检索不是一个 cosine 调用
-
-成熟检索通常分四步：
-
-```text
-scope/filter → 多路候选 → fusion/rerank → context packing
-```
-
-第一步必须先做权限、主体、时间和类型过滤。若先全库近邻搜索再过滤，既浪费候选配额，也可能产生侧信道。
-
-<figure class="concept-diagram" tabindex="0">
-<svg viewBox="0 0 760 255" role="img" aria-labelledby="retrieval-title retrieval-desc" xmlns="http://www.w3.org/2000/svg">
-<title id="retrieval-title">受权限约束的记忆检索管线</title><desc id="retrieval-desc">先按租户、用户与有效时间限定候选；再并行全文、向量、实体检索；接着融合与重排；最后按上下文预算打包并保留来源。</desc>
-<g fill="none" stroke="currentColor" stroke-opacity=".42" stroke-width="2"><path d="M170 106h36m152 0h36m152 0h36"/><path d="m198 99 8 7-8 7m188-14 8 7-8 7m188-14 8 7-8 7"/></g>
-<g fill="none" stroke="currentColor" stroke-width="2"><rect x="12" y="55" width="158" height="102" rx="8"/><rect x="206" y="55" width="152" height="102" rx="8"/><rect x="394" y="55" width="152" height="102" rx="8"/><rect x="582" y="55" width="166" height="102" rx="8"/></g>
-<g fill="currentColor" font-size="17" font-weight="600" text-anchor="middle"><text x="91" y="91">范围过滤</text><text x="282" y="91">多路召回</text><text x="470" y="91">融合重排</text><text x="665" y="91">预算打包</text></g>
-<g fill="currentColor" fill-opacity=".7" font-size="13" text-anchor="middle"><text x="91" y="125">租户 · 主体 · 时间</text><text x="282" y="125">全文 · 向量 · 实体</text><text x="470" y="125">去重 · 相关性</text><text x="665" y="125">证据 · 来源 · 限额</text></g>
-<path d="M91 170v23h573v-23" fill="none" stroke="currentColor" stroke-opacity=".42" stroke-width="2"/><text x="378" y="222" fill="currentColor" font-size="14" text-anchor="middle">作用域由可信身份确定；记忆内容只是证据，不是指令</text>
-</svg><figcaption>图：先限制可见范围，再召回和排序，最后把证据送入上下文。</figcaption>
-</figure>
-
-## 多路候选
-
-- **BM25/全文**：精确术语、错误码、函数名、专有名词强。
-- **Dense embedding**：同义表达、抽象意图强。
-- **实体匹配**：人、项目、服务、产品等稳定锚点。
-- **图遍历**：关系、多跳、来源追溯强。
-- **时间过滤**：当前状态、历史状态、即将发生事件。
-- **直接读取**：用户画像或固定 core memory 不应每次走向量检索。
-
-同样写着 hybrid，项目实际候选边界并不相同：
-
-- **Mem0** 本地 `_search_vector_store()` over-fetch 语义候选，计算 keyword 与 entity boost 后给语义池排序。BM25-only 命中未必进入最终集合，不能把三信号评分写成三路并集召回。
-- **MCP Memory Service** 的 SQLite hybrid 并行取 BM25 与 vector 各两倍候选，按 content hash 并集融合，并回取只有 BM25 命中的正文。这能补语义漏召回，但各路过滤和 query 分词还要独立测试。
-- **Graphiti** 在不同 search configuration 中组合 edge/node/episode 的语义、全文与图遍历，返回关联事实与来源。图扩展用来补连接证据，不等于证明边内容真实。
-- **HippoRAG** 先找相关三元组，把主体/客体和 dense passage 作为图种子，再用 PPR 给 passage 排序。它通过扩散产生关联收益，与简单合并两个 top-k 不同。
-- **Basic Memory** 搜索定位笔记，再从 URI 展开 observation 与关系邻域；已知路径时可以直接读。**A-MEM** 先近邻后尝试补 links 邻居，但本地最终 k 截断可能挤掉邻居。
-- **MemoryOS** 先检索主题 session 再给 page 排序，同时检索长期知识；**Memobase** 稳定 profile 直接获取，事件另搜；**Letta Code** core 已在 prompt，详细文件和 recall 由 Agent 主动读。
-- **MemOS** 文本 backend 与插件可使用图/向量或 FTS5/向量路径，activation/parametric 不走同一种文本检索。**TencentDB** 在授权资产与 Loadout 内召回，无 embedding 的 standalone 仍可用 BM25。**Cognee** 根据数据与调用配置选择 retriever，不能把所有 recall 都当相同 top-k。
-- **Hippo** 本地搜索结合相关性、strength 与可选 reranker；**Hermes Jev Skills** 只处理已有候选；**Beacon** 提供 trace 供下游提取，本身不替代上述检索层。
-
-完整源码路径与限制见 [事实路线](10-fact-profile.md)、[图谱路线](11-graph.md)、[生命周期](12-memory-os.md)、[接入路线](13-integration.md) 和 [Jev](16-jev.md)。
-
-## Fusion 与 rerank
-
-不同检索器的原始分数不可直接相加。常见方法：
-
-- Reciprocal Rank Fusion：只依赖名次，稳健且便宜。
-- 归一化加权：便于注入 recency、importance、confidence。
-- Cross-encoder：查询与候选成对评分，质量较好但增加推理。
-- LLM/判别模型：可判断证据充分性、注入风险、时间匹配，但成本和故障面更大。
-
-RRF 的教学公式是 `score(m) = Σ 1/(k + rank_i(m))`，只累计候选在各路出现的名次，不直接相加 BM25 与 cosine。比如 m 在关键词第 1、向量第 4，另一条只在向量第 1，前者可因两路支持得到更高分；常量 k 调节头部名次差的影响。MCP Memory Service 在此基础上还支持 consensus boost，因此实际结果要按配置复现。
-
-Mem0 则对语义候选结合 BM25 与 entity boost 评分，不应称其本地路径为 RRF。Hippo 可用本地 cross-encoder 逐对评分，或 Jev 对有限候选批量打概率；Hermes 还单独判断注入风险与充分性，云判别异常时保留受本地检查和预算约束的回退。融合、相关性重排和安全过滤是三个操作，消融实验应分别开关。
-
-`top_k=5` 不是设计。应记录候选生成 recall、rerank NDCG/MRR、最终证据命中和任务成功，才能知道错在哪一层。
-
-## Context packing
-
-排序之后仍需打包：
-
-1. 去掉互相重复的候选。
-2. 保留来源和置信度。
-3. 为核心约束、当前任务、背景知识设置分区预算。
-4. 尽量保留原文；摘要必须能回到来源。
-5. 显式提示“记忆是证据而非指令”。
-
-Hippo 的一个 Jev 实验报告称，Jev 排名前两条能达到本地 cross-encoder 前五条相近的答题效果，但三项 graded test 没证明最终答案率更高。它说明 rerank 可能首先改善**上下文长度**，不必然改善任务正确率。
-
-## 项目的预算具体放在哪里
-
-Letta 的根文件大小决定每次都支付的 core token，子目录/recall 只有读取后才进入窗口；Memobase 通过短 profile 避免每次加载全事件；MemoryOS 用 page queue 容量控制条数，但还需要 token 限额。Hippo 有 recall token budget，Jev 实验则用更少候选尝试维持答案质量。
-
-MCP hybrid 的 `n_results`、Graphiti 的搜索 limit、Basic Memory 的 depth/max_related、HippoRAG 的 passage 数都是中间预算，不自动等于最终 token。TencentDB Proxy 区分高层注入与低层工具读取，减少反复膨胀前缀；Hermes 的截断限制只约束云判别可见字符，最终读取原文仍可能很长。无论选哪个项目，context assembler 都应统一计数、去重、保留来源，并为工具结果与回答预留窗口。
-
-## 何时图检索值得
-
-如果查询主要是“用户喜欢什么”“上次决定是什么”，平面事实库通常足够。以下情况图开始产生收益：
-
-- 需要多跳关联；
-- 同一实体在多来源出现；
-- 关系随时间变化；
-- 要追踪事实来源和冲突；
-- 需要沿项目、服务、人员、决策组织共享上下文。
-
-图不是免费午餐。实体抽取、消歧、边去重和图数据库运维都会增加写入成本。先用失败查询证明单点检索不够，再引入图。
-
-## 把 fusion、rerank、扩展与打包分别比较
-
-### Graphiti：配置决定检索对象和重排方法
-
-[`search/search_config.py`](../../sources/repos/graphiti/graphiti_core/search/search_config.py) 为 edge/node 提供 cosine、BM25、BFS，为 episode 提供 BM25。各对象的候选列表按 UUID 合并，可用 RRF；cross-encoder 路径先 RRF，再取有限事实文本逐对评分。MMR 则以相关性与已选内容相似度的折中避免大量同义事实，node distance 用到中心节点的距离，episode mentions 参考来源引用。这些不是同时默认执行，选择 configuration 时应记录哪种对象、哪些路、哪个 reranker。
-
-### Hippo：同一池内排名融合后还乘生命周期系数
-
-[`src/search.ts`](../../sources/repos/hippo-memory/src/search.ts) 默认 blend，可选 `scoring='rrf'`。BM25 与 dense 对已传入的 entries 排名，RRF 结果之后还乘 strength、recency 和其他 scope/outcome/path 因素。分数变化不能都归因于 embedding。可选 graph stream 把 BFS 邻近的池内记录变成第三路 ranking；缺文档向量、空图或无有效图路时不加入这一路，而不是给空列表随意加常数。另一个 graph recall 机制可能补池外邻居，不能与池内 graph stream 混同。
-
-### TencentDB 与 MCP：都能融合，过滤作用域不同
-
-TencentDB 的候选 helper 优先后端 native dense/sparse hybrid，否则并行 FTS/client-vector 再 RRF。若后端只有词搜索，则不浪费 embedding 调用。用户跨会话搜索与写入阶段同 session 去重可以复用检索算法，但不能复用错 scope。MCP 的 SQLite hybrid 也将两路候选并集，但其 hash 补取与 superseded 条件应分别测 weighted/RRF 分支，两者没有共享身份系统。
-
-### 关联和直接读取：不应硬套 RRF
-
-HippoRAG 的 PPR 把 query seeds 传播到 passage，再读 passage 分数；A-MEM 在近邻后补 link；Basic 从笔记/URI 展开关系。它们增加连接证据的方式不同。MemoryOS 的两阶段主题/page 与 Memobase 直接 profile，减少需要全库搜索的内容；Letta 更依赖 Agent 主动发现文件/recall，搜索未被触发也会失败。
-
-Cognee 的 session lexical 与不同 graph/chunk/Skill retriever，MemOS 的 backend/插件，以及 Hermes 的 relevance/injection/sufficiency 都说明：相同 recall 名字可能经过不同支路。Beacon 是供给原始 trace 的入口，不能当作同类 retriever。最终统一验收应问“期望证据是否在可见池、是否被选、是否装入、是否真的被用”。
-
-</details>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/rewrite-memory-a/05-overview.svg" alt="从查存在与权限、查初选与融合到查打包与使用的排障路径" loading="lazy"><figcaption>图：按六格排查表找到首次漏失阶段，再对症下药，别把一切检索问题都归罪于向量模型。</figcaption></figure>
 
 <details class="comparison-reference">
-<summary>项目对照图与速查（选读）</summary>
-
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/05-retrieval.svg" alt="同一批命中中 B 能否进入最终集合：Mem0 池内加分、MCP 与 Graphiti 合并候选、HippoRAG 图扩散" loading="lazy"><figcaption>图：向量找到 A、C，关键词找到 A、B；同样写着 hybrid，B 能否进入最终集合并不相同。</figcaption></figure>
+<summary>项目对照速查（选读）</summary>
 
 ## 本章对照结论
 
-| 项目 | 候选怎么来 | 排序/扩展怎么做 | 预算与特殊盲区 |
-|---|---|---|---|
-| Mem0 | 先多取一些语义候选 | 关键词与对象匹配加分，可选重排 | 仅被关键词找到的记录可能不入池；应用控制输入长度 |
-| Memobase | profile 直接读 + event 搜索 | 字段已在写入阶段整合 | 不同读取路径不能共用 top-k 指标 |
-| Graphiti | 按配置搜索关系、对象或原材料 | 可按名次融合、去相似、距离或模型评分排序 | 返回条数不限制总长度；邻域扩展需明确启用 |
-| Cognee | route 选 session/chunk/graph/Skill 等 | 各 retriever 自己组织结果 | 返回证据与生成答案要分开 |
-| HippoRAG | fact candidates + dense passage seeds | fact filter、PPR passage 排序 | 图错误扩散；reader 与 passage 数独立 |
-| MemoryOS | 主题 session 再 page；并行长期知识 | 阈值、page heap | 上层主题漏召回；条数非 token |
-| MemOS | textual backend/插件 | 图/向量或 FTS/vector 依配置 | KV/LoRA 不按同一文本流程 |
-| Hippo | 本地 entries 的 BM25/dense | blend/RRF、生命周期系数、可选 graph/reranker | 池内排名与池外扩展不同 |
-| A-MEM | Chroma 近邻 | 补 links 邻居 | 最后 k 截断可能丢邻居 |
-| Letta Code | core 常驻、索引发现、recall/file tools | Agent 决定继续读或回答 | 没触发工具便没有证据 |
-| Basic Memory | 搜索或 URI 确定笔记 | observation + 限深关系邻域 | depth/limit 仍需 token 上限 |
-| MCP Memory Service | FTS 与 vector 候选并集 | weighted 或 RRF、共识 boost | 各路过滤、全文 query 语义 |
-| TencentDB | native hybrid 或 FTS/vector；资产集合 | RRF 与 L2/L3/Skill/Knowledge 读取 | ACL/Loadout、注入缓存、scope |
-| Hermes Jev Skills | 调用方已经产生的候选 | relevance/injection 与 sufficiency | 截断/未判别、分支各限 top-k |
-| Agent Beacon | trace 查询供下游 | 不据此认定它完成 memory rerank | 需另设提炼与 assembler |
-| MemGPT / 旧 Letta | 论文 recall/archival 工具 | 模型主动选择搜索 | 不是当前 SDK 的固定检索算法 |
+| 项目 | 候选是怎么生成的 | 排查漏召回时最独有的坑 |
+|---|---|---|
+| Mem0 | 语义初选池 + 池内 BM25 / 实体加分 | 精确编号掉在语义池外、被语义 `threshold` 提前刷掉 |
+| Memobase | 稳定画像直接读 + 事件单独检索 | 画像与事件两条路分开评测，别混成一个指标 |
+| Graphiti | 按对象（边/点/原文）配置多路并集 + RRF/CE | 默认 `rank_const=1` 头部极陡；基础 `search()` 不自动多跳 |
+| Cognee | 按路由选块/图/Session Retriever | 有的路径直接生成答案而非返回原始证据 |
+| HippoRAG | 事实与段落种子经 PPR 在图上传播 | 高连接泛化节点带噪、最终 reader 预算截断 |
+| MemoryOS | 先筛中期主题摘要，再筛主题内 Page | 主题摘要漏词会直接挡住底下整批 Page |
+| MemOS | 文本后端检索，或加载兼容 KV/LoRA | 不同物理形态模块不能套同一套文本召回指标 |
+| Hippo Memory | BM25 + 向量融合 × 强度衰减 + 可选图召回 | 池内加权排序与池外图扩展（`graphExpandRecall`）要分开消融 |
+| A-MEM | 向量近邻后追加 `links` 邻居 | 末端 `[:k]` 截断可能把刚补进来的邻居全切掉 |
+| Letta Code | 根核心常驻 + 模型主动调工具查 MemFS/recall | 模型根本没意识到要调工具去翻笔记 |
+| Basic Memory | 关键词搜索或已知 `memory://` URI 限深展开 | 深度控制与最终 Token 预算要分开算 |
+| MCP Memory Service | FTS5 BM25 与向量并行取并集（支持 `as_of`） | 各路过滤条件与 hash 补取必须保持权限一致 |
+| TencentDB | ACL 授权资产内的混合检索 + Loadout 过滤 | 权限缓存与不同层级（L0~L3）的注入策略 |
+| Hermes Jev Skills | 对已有候选做相关性、防注入与充分性判别 | 900 字符截断盲区与故障时的 `unjudged` 状态 |
 
 </details>
-

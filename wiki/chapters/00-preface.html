@@ -1,249 +1,226 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>前言：记忆不是聊天记录 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="00-preface"><div class="eyebrow">前言</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#从一个会忘事的助手开始">从一个会忘事的助手开始</a></li><li><a href="#你需要知道什么-不需要知道什么">你需要知道什么，不需要知道什么</a></li><li><a href="#先把两条最小流程跑在纸上">先把两条最小流程跑在纸上</a></li><li><a href="#怎样跟着学">怎样跟着学</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="前言-记忆不是聊天记录">前言：记忆不是聊天记录</h1><p>本书先用日常对话和开发小任务讲机制，再在“项目例子与源码”里对照 Mem0、Graphiti。例子中的记录是教学示意，不是服务实测输出；应用需要补做的动作会单独说明。</p>
-<h2 id="从一个会忘事的助手开始">从一个会忘事的助手开始</h2><p>你有一个小待办 App，叫 Todo。你让编程助手把日期显示改成“周一 09:00”，它改完说好了，结果原定 9 点的提醒变成了 8 点。你补充：“改提醒相关代码后，提交前先跑提醒测试。”</p>
-<p>几天后换个会话，你让它修“重复提醒”的 bug。如果助手又改完就说完成，没跑测试，上次的教训就没有派上用场。记忆要做的是保存这条要求，在下次改提醒功能时查回，并放进模型输入。</p>
-<p>日常对话也会遇到相同问题：你说“平时用中文，这封邮件用英文”，助手不该从此全用英文。开发里说“今天只帮我找原因，别改文件”，也不等于以后都不准改文件。我们会用这几种小场景区分长期偏好、临时要求和过去的经历。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：Alice 说“Todo 提交代码前先跑提醒测试”。把它存成一条短记录。下次她问“提交代码前注意什么”，应用查回这句话，交给助手；助手才有依据先做检查。</p>
-<p>Graphiti：文档写“Todo 由前端组维护”“前端组改代码由 Lin 评审”。把两句话分别记成关系。应用先找维护团队，再找该团队的评审人，就能带着两份来源回答“Lin”。</p>
-<figure class="source-flow"><img src="../assets/source-flows/00-01.svg" alt="从一个会忘事的助手开始：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：记录已保存，不表示本次模型已读到；关系成立，也不等于本次提交通过评审。</figcaption></figure>
-
-<h3 id="在-mem0-中-教训先成为可以搜索的事实">在 Mem0 中，教训先成为可以搜索的事实</h3><p>Mem0 是供应用调用的记忆程序。你自己的助手仍负责回答和修改代码，Mem0 帮它把有用的话存下，再按问题取回来。用户说“Todo 提交代码前要跑提醒测试”，应用把这句话交给 Mem0；它可以请一个提取模型整理出短记录，再保存。下次应用问“Todo 提交代码前注意什么”，取回这条记录，并放进回答模型的输入。</p>
-<p>这里有两次不同的模型工作：提取模型整理旧话，回答模型处理当前任务。它们可以使用相同型号，也可以分别配置。保存接口叫 <code>add()</code>，搜索接口叫 <code>search()</code>；接口就是程序对外提供的调用入口，名字本身不会让记忆自动进入下一次回答。</p>
-<h3 id="在-graphiti-中-教训成为有来源的关系">在 Graphiti 中，教训成为有来源的关系</h3><p>Graphiti 也是供应用调用的程序，它尝试把材料中的对象与关系分别保存。比如“Todo 由前端组维护”，会涉及项目 Todo、团队前端组，以及“维护”这件事。下一份资料说“前端组的合并代码由 Lin 评审”，两份资料就能通过同一个前端组连接。程序还要留下这些关系分别出自哪份材料。</p>
-<p>Graphiti 将一次收到的材料称为 episode，将 Todo、前端组这样的对象称为实体，将两个对象之间的事实连接称为边。写入入口叫 <code>add_episode()</code>。图画好了以后，应用仍要查询，取回支持当前问题的关系和原文，再交给回答模型；基本搜索不会因为图上有连接就自动完成所有多步查找。</p>
-</details>
-
-<h2 id="你需要知道什么-不需要知道什么">你需要知道什么，不需要知道什么</h2><p>你可以把 Agent 理解成“能调用工具、连续做任务的模型程序”。模型每次处理的输入叫上下文，包括系统规则、当前消息和工具结果。Token 是模型计算这段输入长度的单位，和汉字数或单词数并不完全相同。上下文有容量和费用限制，因此我们不能把所有旧聊天都塞进去。</p>
-<p>读概念章节不需要知道向量数据库、知识图谱或论文里的评测指标。遇到这些技术时，会先用少量记录演示它解决什么问题，再解释计算过程。跟做代码实验需要 Python 3，以及打开终端、运行命令的基本经验；示例只用标准库，不需要模型密钥。</p>
-<p>读完后，你应能自己回答三个问题：这句话要保存成什么；下一次任务怎样找到它；它过时或错误时怎样处理。项目比较帮助你把这些做法映射到真实实现，不要求你先记住 16 个项目的名字。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：给一条教训编号 M1，正文是“先跑提醒测试”，来源是昨天的对话。搜索取回 M1 后，给模型的是正文；M1 这个编号用来查来源或改记录。</p>
-<p>Graphiti：给文档编号 E1，给 Todo 和前端组分别编号 N1、N2，再保存“N1 由 N2 维护，来源 E1”。查到这条关系后，还能按 E1 回看文档，确认没有连错团队。</p>
-<figure class="source-flow"><img src="../assets/source-flows/00-02.svg" alt="你需要知道什么，不需要知道什么：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：编号用于定位记录，给模型的证据是具体正文；编号本身不能证明事实正确。</figcaption></figure>
-
-<h3 id="mem0-的学习入口是消息与短事实">Mem0 的学习入口是消息与短事实</h3><p>一条记录有两部分：人能读的正文，以及程序用来管理和寻找它的信息。正文可以是“Todo 提交代码前跑提醒测试”；附加信息可以说明它属于 Alice、来自 session-42。程序里的 metadata 就是这些附加信息，payload 是后端保存的一包字段。后文出现 <code>payload[&quot;data&quot;]</code> 时，指的就是从这包字段里取正文。</p>
-<p>Embedding 是把一段文字转换成一串数字的动作，这串数字叫向量，用来比较意思是否接近。它不能取代原文，也不是把知识训练进模型。返回对象里的 <code>memory</code> 字段保存正文，应用要读取这个字段，才能让回答模型看到具体教训。</p>
-<h3 id="graphiti-的学习入口是-episode-entity-与-edge">Graphiti 的学习入口是 episode、entity 与 edge</h3><p>可以把一次收到的文档叫 E1，把它谈到的 Todo 叫 N1，把“Todo 由前端组维护”这条关系叫 R1。E1 是材料，N1 是对象，R1 是陈述，三者用途不同。Graphiti 用 UUID 给它们编号；UUID 是程序生成的标识符，阅读时先把它理解成不应随意混用的身份证号，不必记住长字符串。</p>
-<p>以后看到 <code>fact</code>，读作一条关系的人类可读正文；看到 <code>episodes</code>，读作“支持这条关系的材料编号列表”；看到 <code>summary</code>，读作围绕某个对象整理的摘要。摘要方便快速了解对象，确认谁评审改代码时，还要检查具体关系和来源。</p>
-</details>
-
-<h2 id="先把两条最小流程跑在纸上">先把两条最小流程跑在纸上</h2><p>下面使用 Alice 的 Todo 项目。Alice 是用户，Todo 是项目；第二个用户 Bob 也可能有一个同名项目，所以姓名和项目名还不足以决定哪些资料可读。示例中的 M1、E1、N1、R1 是便于手算的编号，不是两套服务的实际返回结果。模型抽取也可能产生不同措辞和结构。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：输入“Todo 昨天失败，以后提交代码前跑提醒测试”→整理成“Todo 提交代码前跑提醒测试”→保存。下次搜索“Todo 提交要求”→取回这条文字→应用放进当前消息。存下与用上是两次操作。</p>
-<p>Graphiti：输入“Todo 由前端组维护”→保存维护关系和原文。再输入“前端组改代码由 Lin 评审”→接到同一个前端组。应用查齐两条关系后回答“Lin”；只查到维护关系，就还不能回答评审人。</p>
-<figure class="source-flow"><img src="../assets/source-flows/00-03.svg" alt="先把两条最小流程跑在纸上：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 的搜索之后还要组装消息；Graphiti 的基础搜索不保证自动走完两段关系。</figcaption></figure>
-
-<h3 id="mem0-写入时-长消息在哪里变短">Mem0 写入时，长消息在哪里变短</h3><p>输入是一条用户消息：“Todo 昨天提醒功能改坏了。以后提交代码前先跑提醒测试。”应用先决定哪些消息允许记忆，去掉秘密，并附上 Alice 的可信身份，再调用 <code>add()</code>。Mem0 普通写入会先读取同范围近期消息，帮助理解“那个项目”“以后也这样”的指代；再搜索一小批相关旧记录，供提取器参考。它没有先读完整个历史库。</p>
-<p>提取模型收到新话、近期话和相关旧记录后，提出要新增的短陈述。假设它给出 M1：“Todo 提交代码前需要跑提醒测试。”这一步会丢掉闲聊，却也可能丢掉“本次”“可能”等条件。应用不能只因返回的格式正确就相信陈述准确，仍要与原话核对。当前普通路径以新增事实为主，不会自动把所有旧事实更新或删除。</p>
-<p>程序为 M1 生成向量，保留正文与所属身份，计算正文的 hash，并写到事实后端。Hash 是文字指纹，相同正文得到相同指纹，用于快速查重；“先跑提醒测试”和“先跑提醒测试”的指纹不同。事实后端可以理解成实际保存记录并提供搜索的数据库服务。历史数据库另记消息和变更，不是同一张事实表。</p>
-<pre tabindex="0"><code class="hljs">新消息 + 近期消息 + 找到的旧记录
-                 ↓ 提取模型整理
-候选 M1：“Todo 提交代码前需要跑提醒测试。”
-                 ↓ 数字表示、查重、附上身份和来源
-事实库：M1 的正文 + 向量 + 附加信息
-历史库：消息与记录变化</code></pre><p>一段聊天可能整理出多条记录，也可能没有值得新增的内容。提取服务不可用与“没有新内容”不同：前者需要处理故障，后者可能是正常结果。事实和历史分开保存，也意味着检查一次写入时不能只看返回条数。</p>
-<h3 id="mem0-读取时-为什么还需要应用多做一步">Mem0 读取时，为什么还需要应用多做一步</h3><p>几天后，Alice 问：“帮我修 Todo 的提醒时间 bug。”应用调用 <code>search()</code>，并限定 Alice 的可读范围。Mem0 将问题也转成向量，在事实库里找意思接近的记录，形成第一批候选。候选就是待挑选的记录，并非最终答案。关键词匹配和 Todo 等对象的关联可以调整这些候选的次序；当前快照没有保证把第一批之外的记录都补进来。</p>
-<p>假设返回 M1，应用取出正文，加上“来源为上次对话，当前状态仍需验证”，与新任务一起发给回答模型。模型才有机会先调用提醒测试工具。Mem0 的搜索分数表示它认为这条记录有多相关，不表示提醒测试已运行、事实已核实或改代码已批准。</p>
-<pre tabindex="0"><code class="hljs">当前问题 → 受范围限制的搜索 → 取回 M1
-                                  ↓ 应用组装消息
-回答模型看到：历史教训 + 当前改代码任务
-                                  ↓ 应用授权并执行工具
-这次提醒测试结果 → 决定继续或停止</code></pre><h3 id="graphiti-写入时-为什么要认出对象再连关系">Graphiti 写入时，为什么要认出对象再连关系</h3><p>先收到文档 A：“Todo 由前端组维护。”Graphiti 为原文建立材料对象 E1，再请模型找出它谈到的对象 Todo、前端组。接下来查询已有对象，判断这次前端组是否已经存在。这叫身份解析，也常称消歧：两个名字不同可能指同一团队，两个名字相同也可能是不同公司的团队。</p>
-<p>假设得到 N1=Todo、N2=前端组，程序把维护关系的两端指向这两个确定编号。原文还另存为 E1，关系 R1 记着它来自 E1。再收到文档 B：“前端组的合并代码由 Lin 评审。”同一个前端组应继续用 N2，Lin 得到 N3，新关系 R2 来自新材料 E2。</p>
-<pre tabindex="0"><code class="hljs">材料 E1：Todo 由前端组维护。
-材料 E2：前端组的合并代码由 Lin 评审。
-
-对象 N1：Todo      N2：前端组      N3：Lin
-关系 R1：N1 → 由谁维护 → N2，来源 E1
-关系 R2：N2 → 合并代码由谁评审 → N3，来源 E2</code></pre><p>这是本书的一种建模示意，不保证模型自动使用这些中文关系名。程序还要检查新关系是不是旧关系的重复，或是否描述了状态变化；最后保存材料、对象、关系以及相互引用。若前端组身份识别错了，后面即使正确理解“批准”，连接仍会指错对象。</p>
-<h3 id="graphiti-读取时-连线和答案之间还隔着核验">Graphiti 读取时，连线和答案之间还隔着核验</h3><p>用户问谁评审 Todo。应用先查询相关事实边；基础 <code>search()</code> 同时利用文字匹配和向量相似度来找边，再合并排序。它通常返回关系正文和来源编号，不是整篇原文，也不保证把 N1 到 N2 再到 N3 的两段路都走完。找到了 R1 而没找到 R2 时，可以继续以前端组查询，或显式选择支持邻域扩展的高级搜索。</p>
-<p>拿到 R1、R2 后，应用检查中间对象编号是否同为 N2，评审关系是否针对合并代码，以及目标日期是否有效，再按 E1、E2 取回原文。回答模型读到两份证据，才可以形成“Lin”的答案。如果第二份材料实际说的是出差审批，就不能因为同样连到 Lin 而回答改代码问题。</p>
-<p>以后代码评审人变成 Mei，图可以为旧关系记结束时间，并保留新关系的开始时间；是否正确判断变化、是否正确过滤查询日期，都要单独验证。Mem0 的新增卡片也能保存变更文字，但默认追加并没有提供同等的关系有效区间。后文将用同一变化分别展开这两条路线。</p>
-</details>
-
-<h2 id="怎样跟着学">怎样跟着学</h2><p>前八章交替使用写邮件、修 Todo 的提醒 bug、选择 npm / pnpm 和找代码评审人这些例子。先读正文里的例子，看到“动手检查”时暂停，尝试写出自己的答案；再看答案提示。第 4 章给出可运行的最小系统，第 10 至 13 章把同样的数据送进不同项目，观察它们的处理差别。</p>
-<p>正文按原话、记录、读取和动作展开，遇到一种机制，会解释它为什么有用、怎样判断结果，以及条件变化后会在哪里失效。每章后面的“实现笔记与源码对照”保留版本细节，章末项目表也收在可展开的速查区中；准备接入或读源码时再查看。图用于回顾正文里的过程，不必先背项目名和对照结论。书中的示意输出是教学用例，不是声称我们运行过每个项目。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：读“默认中文”这个例子时，检查存下的是否仍是默认，而非“所有回答必须中文”。再试问“这封邮件请用英文”，看应用是否保留本次要求。</p>
-<p>Graphiti：读评审人例子时，先画“Todo→前端组→Lin”。后来改成 Mei，再分别问变更前和变更后的评审人，看查询选中了哪条关系。</p>
-<figure class="source-flow"><img src="../assets/source-flows/00-04.svg" alt="怎样跟着学：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：下面是教学推演，不是模型必定给出的抽取结果；整理后的记录和关系仍需核验。</figcaption></figure>
-
-<h3 id="两条标志性实现怎样贯穿全书">两条标志性实现怎样贯穿全书</h3><p>读 Mem0 段落时，先问输入是哪句原话、形成哪张卡、下次取回哪段正文；读 Graphiti 段落时，先问材料里有哪些对象、关系接到哪里、原文怎样回查。正文先用这些具体变化解释，再列源码入口。函数名用于复查对应实现，初读不需要凭名称猜流程。</p>
-<p>每个正文概念小节都用 Mem0 与 Graphiti 继续推演。Mem0 以本地 <code>mem0/memory/main.py</code> 的同步实现为主，Graphiti 以 <code>graphiti_core/graphiti.py</code> 及其维护、搜索模块为主。正文中的小段代码用于解释调用契约，除明确说明的最小 SQLite 实验外，不表示本书已配置并运行两套服务。</p>
-<p>本次源码核对锁定 Mem0 的 <code>a39a802bbc93e85b820078cd3c4dbaf53af25dbe</code> 和 Graphiti 的 <code>0de2993c5199ebd4c1efcf09ea9984ec4e53e86f</code>。默认值只对应这些快照。遇到巩固、Skill 发布、权限或预算等概念，会明确区分框架已有动作与应用需要补充的机制，不能把推荐接法读成内置功能。</p>
-<p>源码入口：<a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/main.py">Mem0 主流程</a>、<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/graphiti.py">Graphiti 主流程</a>。初读跟着正文理解状态变化，复查时再打开对应函数。</p>
-<p>以下材料索引帮助你查找项目，不必在开始学习前逐行阅读。</p>
-</details>
-
-<details class="implementation-notes">
-<summary>资料索引与项目导航（选读）</summary>
-
-<p>Agent Memory 最容易被做成“把历史消息塞进向量库”。这能工作，却只解决了最简单的问题：过去某句话还能不能被搜到。真正的记忆系统还必须回答：</p>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>前言：记忆不是聊天记录 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="00-preface"><div class="eyebrow">前言</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#2026-年-11-月重编导读-过去两个月记忆生态发生了什么">2026 年 11 月重编导读：过去两个月记忆生态发生了什么</a></li><li><a href="#从一个总忘事的研发助手开始">从一个总忘事的研发助手开始</a></li><li><a href="#读这本书之前-你需要知道什么">读这本书之前，你需要知道什么</a></li><li><a href="#先在纸上把两条核心路线走一遍">先在纸上把两条核心路线走一遍</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="前言-记忆不是聊天记录">前言：记忆不是聊天记录</h1><blockquote>
+<p><strong>阅读约定与事实边界</strong>：本书全部源码分析与链接锚定于 <strong>2026 年 11 月 21 日</strong> 同步的仓库快照（覆盖 11 个活跃上游项目的最新提交，以及 5 个停更/归档项目的保留快照）。贯穿全书的“工程研发助手”对话、服务名和事故单均为便于推演的技术示例；文中会明确区分开源本地库实际交付的能力、托管云产品的扩展能力，以及需要业务宿主自己补齐的认证、组装与执行边界。</p>
+</blockquote>
+<h2 id="2026-年-11-月重编导读-过去两个月记忆生态发生了什么">2026 年 11 月重编导读：过去两个月记忆生态发生了什么</h2><p>如果你之前翻过 2026 年 9 月的旧版草稿，这轮重编不仅把原本生硬的虚构剧本全部换成了开发者每天都会碰到的研发工程场景，还同步吸收了 2026 年 9 月底至 11 月 21 日这短短两个月里，Agent Memory 开源生态最值得关注的五项真实变化：</p>
 <ol>
-<li><strong>写什么</strong>：原始对话、提炼事实、用户画像、行动轨迹、失败教训，还是可执行 Skill？</li>
-<li><strong>何时写</strong>：每轮同步写，还是会话结束异步巩固？</li>
-<li><strong>如何变更</strong>：用户从上海搬到杭州，旧事实应删除、覆盖，还是保留有效时间？</li>
-<li><strong>何时取</strong>：每轮自动召回，还是由 Agent 主动查询？</li>
-<li><strong>取多少</strong>：top-k 不是上下文预算。五段长文本可能比二十条原子事实更贵。</li>
-<li><strong>何时忘</strong>：错误、重复、过期信息若永久保留，记忆越多，Agent 反而越差。</li>
-<li><strong>怎么证明有效</strong>：检索命中不等于任务完成，LLM judge 分数也不等于真实生产收益。</li>
+<li><strong>Mem0：托管侧补出结构化画像与“后台做梦巩固”，开源与商业边界更清晰</strong><ul>
+<li>Python SDK 在 <code>v2.2.x</code> 补齐了按 JSON Schema 异步维护的 <strong>User Profiles</strong>（<code>get_profile()</code> / <code>generate_profile()</code>）和防重复提交的 <code>Idempotency-Key</code>；托管 Pro/Enterprise 侧推出了后台异步巩固引擎 <strong>Dream</strong>，专门用来合并重复事实、提炼高层模式并把过时信息标成 <code>superseded</code>。</li>
+<li>与此同时，核查 <code>2026-11-18</code> 的开源主仓（<code>fff8a6472512</code>）可见：本地同步 OSS 核心依然是 <strong>ADD-only 批量追加 + 语义池内加分</strong>。同期官方也针对作用域隔离漏洞（如 <code>CVE-2026-116575</code>）发了安全补丁（要求升级 Python SDK ≥ <code>2.0.18</code>、TS SDK ≥ <code>3.1.6</code>）。换句话说，用开源版时，长期治理与权限边界仍得自己抓牢。</li>
+</ul>
+</li>
+<li><strong>Graphiti / Zep：进入 <code>v0.31.x</code>，引入一等公民 <code>SagaNode</code> 并修复删源摘要重建</strong><ul>
+<li><code>v0.31.2+</code>（本书同步至 <code>2026-11-20</code> 提交 <code>9b8a46300920</code>）新增了 <strong><code>SagaNode</code></strong> 与叙事汇总能力，把连续多段 episode 卷成主线；参考 MCP 和 REST 服务默认收紧为仅监听 <code>localhost</code>；更重要的是，我们在最新源码里核实到 <strong><code>remove_episode()</code> 已经升级</strong>——不再粗暴只看 <code>episodes[0]</code>，而是保留被其他 episode 共同支持的边，并对存活实体自动重算 <code>summary</code>。</li>
+</ul>
+</li>
+<li><strong>Letta：旧 Python 服务端彻底退役，<code>Letta Code</code> 成为唯一主战场</strong><ul>
+<li>旧仓 <code>letta-ai/letta</code> 已归档，主线全面收敛到基于 Git-backed Markdown 的 <strong><code>letta-code</code>（MemFS）</strong>。10—11 月间沿 <code>v0.33 → v0.34.x</code>（同步至 <code>2026-11-21</code> 提交 <code>76428c1b0ee7</code>）密集补齐了多子 Agent 并发的 <strong>worktree 隔离</strong>、会话级 <code>client_skills</code> 冻结、压缩摘要遥测与工具溢出脱敏。</li>
+</ul>
+</li>
+<li><strong>Cognee 与 MemOS：一个加固企业安全，一个从供应链事故中警醒</strong><ul>
+<li><strong>Cognee</strong> 在 <code>v1.6.8+</code>（同步至 <code>2026-11-20</code> 提交 <code>1961133d0c68</code>）默认拦截外部 HTTP URL、裸数据库连接串与服务器本地路径（防 SSRF 和凭据泄露），并新增异步 embedding worker 与混合查询分解。</li>
+<li><strong>MemOS</strong> 在 2026 年 9 月底经历过一起严重的 PyPI / npm 供应链投毒事件（恶意 <code>MemoryOS v2.0.34</code> 及插件包），随后团队开展全面审计并在 <strong><code>v2.0.36</code></strong>（同步至 <code>2026-11-09</code> 提交 <code>3a16e5fe3048</code>）修复了 PostgreSQL 图对齐与限流等问题。引入任何记忆依赖前，核验洁净版本与包哈希已成为必做项。</li>
+</ul>
+</li>
+<li><strong>工程周边与模块化加速</strong>：<code>mcp-memory-service</code> 发布 <strong><code>v13.0.0</code></strong>（补齐 Cloudflare 每 store 凭据隔离、防跨库哈希覆盖与 <code>as_of</code> 历史过滤）；<code>hippo-memory</code> 演进到 <strong><code>v3.12.0</code></strong>（彻底模块化重构 <code>src/entry/</code> 与 <code>src/domain/</code>，并补出带 <code>asOf</code> 的多跳图召回）；<code>hermes-jev-skills</code> 发布 <strong><code>0.25.3</code></strong>（扩展到 13 项轻量判别技能与网页注入筛查）。而 <code>A-MEM</code>、<code>Memobase</code>、<code>MemoryOS</code> 三个项目截至 11 月仍处于停滞状态，适合学思想，不适合直接当生产依赖。</li>
 </ol>
-<p>本书把记忆看成一条受治理的数据管线：</p>
-<pre tabindex="0"><code class="hljs">事件 → 捕获 → 提取 → 规范化 → 去重/冲突 → 存储
-                                      ↓
-Agent ← 上下文组装 ← 预算控制 ← 重排 ← 候选召回 ← 查询
-                                      ↓
-                             使用反馈、巩固、遗忘</code></pre><h2 id="本书的材料">本书的材料</h2><p>本地保存 16 个源码仓库，其中旧 Letta 仓用于核对迁移，另 15 个是当前产品、研究实现或配套工具。论文有 11 篇，包含 MemGPT、LoCoMo、LongMemEval。正文先讲机制，再逐个项目追踪数据模型、写入、读取、演化与失败边界。</p>
+<hr>
+<h2 id="从一个总忘事的研发助手开始">从一个总忘事的研发助手开始</h2><p>先看一个每天都在团队里上演的真实痛点。</p>
+<p>上周二，开发者林远让研发助手帮忙准备 <code>payment-gateway</code>（支付网关）的发布清单。助手顺手生成了命令，结果上线后踩了个大坑：新版本改了重试超时，却忘了同步核对幂等键（<code>idempotency_key</code>）的有效窗口，导致一批超时请求重复扣款。复盘会上，团队定下一条铁律：</p>
+<blockquote>
+<p>“以后只要发 <code>payment-gateway</code>，上线前必须先查一遍 <code>idempotency_key</code> 配置有没有覆盖最大重试窗口。”</p>
+</blockquote>
+<p>结果这周二，林远新开了一个对话窗口：“帮我发一下 <code>payment-gateway</code> 的 v2.14。”</p>
+<p>如果你的助手只是把上周的聊天记录存进了数据库日志里，而今天发给大模型的 Prompt 里只有林远刚才那句话，会发生什么？<strong>大模型依然会直接给出发布命令，把上周的血泪教训原封不动再踩一遍。</strong></p>
+<p>大语言模型本质上是一个无状态函数：你这一次塞进上下文窗口什么文字，它就只看得见什么文字。后台落盘了多少 G 的历史日志，跟“模型这一轮做决策时有没有读到那条教训”，完全是两码事。</p>
+<p>一个真正管用的记忆系统，至少要把三件事串成闭环：</p>
+<ol>
+<li><strong>留得住</strong>：把值得复用的规程、偏好和教训提炼出来，和原始上下文一起存稳；</li>
+<li><strong>找得准</strong>：下次遇到 <code>payment-gateway</code> 发版时，在权限允许的范围内把那条幂等键检查规则精准捞出来，塞进当前 Prompt；</li>
+<li><strong>分得清边界</strong>：如果林远今天顺嘴补了一句“今天演示环境只跑 <code>dry-run</code>，不要真发版”，系统得知道这只是<strong>今天这一次任务的例外</strong>，千万别把它存成“以后永远禁止发布 <code>payment-gateway</code>”。</li>
+</ol>
+<details class="source-example">
+<summary>源码与边界：Mem0 与 Graphiti 怎么走通第一步（选读）</summary>
+
+<p><img src="../assets/rewrite-memory-a/00-01.svg" alt="为什么聊天记录不等于记忆"></p>
+<h3 id="在-mem0-里-事故教训变成可搜索的短事实">在 Mem0 里：事故教训变成可搜索的短事实</h3><p>应用先在自己的业务库里留住原始事故复盘 <code>release-14</code>（同时筛掉密钥、Token 等敏感字段），再把整理好的消息交给 <code>add()</code>。Mem0 会调用抽取模型提炼短事实——理想情况下要保住“发版前”“覆盖重试窗口”这两个关键限定词，而不是缩水成一句空泛的“注意支付网关配置”。</p>
+<p>等下周发版时，应用再调 <code>search()</code> 把这条短事实搜出来，把里面的 <code>memory</code> 正文（而不只是记录 ID！）拼进发给回答模型的 Prompt 里。注意：抽事实的模型和回答问题的模型即使配置成同一个型号，也是两次独立调用；而且搜到规则后，真正去线上查配置的工具还得由宿主程序去调。</p>
+<h3 id="在-graphiti-里-教训和归属变成有来源的关系边">在 Graphiti 里：教训和归属变成有来源的关系边</h3><p>如果问题变成“发 <code>payment-gateway</code> 找谁终审？”，单条短事实可能分散在两份文档里：一份写着 <code>payment-gateway</code> 归基础交易组维护，另一份写着基础交易组的生产发布由老李终审。</p>
+<p>Graphiti 把每份输入存成 <code>EpisodicNode</code>（原始材料），从中抽取出实体节点（服务、团队、人员）并统一归并成规范 UUID，再连出带有效时间的关系边（<code>EntityEdge</code>）。这样回答“找谁审批”时，应用就能顺着服务找到团队、再找到审批人，并顺着 <code>episodes</code> 字段回查原始文档核对细节。</p>
+</details>
+
+<h2 id="读这本书之前-你需要知道什么">读这本书之前，你需要知道什么</h2><p>你不需要懂深度学习推导，也不需要提前买一堆大模型 API 额度或 GPU：</p>
+<ul>
+<li><strong>Agent</strong> 在本书里很朴素：就是一个围绕大模型转的程序循环——接任务、拼上下文、调工具、看返回、决定下一步。</li>
+<li><strong>上下文窗口与 Token</strong>：模型一次能吞下的所有系统提示、历史消息、记忆片段和工具结果都在这一个窗口里。就算模型号称支持 100 万 Token，每轮把过去半年的聊天记录和构建日志全量重发，账单、延迟和注意力干扰也会立刻失控。</li>
+<li><strong>动手门槛极低</strong>：第 4 章的最小实现 <a href="https://github.com/StarDust0083-GP03/agent-memory-from-scratch/blob/main/examples/mini_memory.py">mini_memory.py</a> 只用 300 行 Python 标准库 + SQLite，零外部依赖，本地终端直接能跑通持久写入、用户隔离、版本替代和 Token 预算。</li>
+</ul>
+<p>读任何开源记忆项目时，最容易踩的第一个坑就是<strong>搞混不同对象的身份</strong>。比如在 Mem0 里，记录 ID 只是定位句柄，真正能让模型看懂的是 <code>memory</code> 正文；在 Graphiti 里，原始材料（Episode）、规范实体（Entity）和关系边（Edge）是三种完全不同的东西——拿材料 ID 去查实体，或者把节点摘要直接当成审批证据，都会在生产环境埋雷。</p>
+<details class="source-example">
+<summary>源码与边界：认清不同框架里的核心对象（选读）</summary>
+
+<p><img src="../assets/rewrite-memory-a/00-02.svg" alt="同一份故障复盘里的三种对象"></p>
+<h3 id="mem0-的核心对象-消息-payload-与短事实">Mem0 的核心对象：消息、payload 与短事实</h3><p>Mem0 的向量库里存着每条事实的 embedding 和 payload：<code>data</code> 字段放事实正文，同时还有 <code>hash</code>、<code>text_lemmatized</code> 和业务自己塞进去的 <code>metadata</code>（比如事故单号 <code>release-14</code>）。搜索返回给你的 <code>memory</code> 是文本正文，宿主必须把正文和必要的出处一起写进 Prompt，别只把 ID 和分数丢给模型。</p>
+<h3 id="graphiti-的核心对象-episode-entity-与-edge">Graphiti 的核心对象：Episode、Entity 与 Edge</h3><p>一份复盘文档落盘成 <code>EpisodicNode</code>，里面的 <code>payment-gateway</code> 和基础交易组解析成带规范 UUID 的 <code>EntityNode</code>，“归属”和“审批”连成带时间区间的 <code>EntityEdge</code>。UUID 才是对象真身，名字只是给人看的标签——不同业务线完全可能同时存在叫 <code>billing-api</code> 的服务，光看名字合并必出事故。</p>
+</details>
+
+<h2 id="先在纸上把两条核心路线走一遍">先在纸上把两条核心路线走一遍</h2><p>在急着装任何框架之前，先拿三段真实研发资料在脑子里过一遍流程：</p>
+<ul>
+<li><strong>复盘记录</strong>：<code>payment-gateway</code> 上次发版漏查 <code>idempotency_key</code> 导致重复扣款，以后发版前必查。</li>
+<li><strong>团队归属</strong>：<code>payment-gateway</code> 归基础交易组维护。</li>
+<li><strong>审批通知</strong>：基础交易组生产发布从 11 月 1 日起改由老李终审（之前是老张），但通知 11 月 4 日才录入。</li>
+</ul>
+<p>你会立刻发现两条路线的发力点完全不同：</p>
+<ul>
+<li><strong>事实路线（以 Mem0 为代表）</strong>：擅长把分散对话拆成独立短事实卡片。重点要防两件事——一是抽取时别把“发版前”“覆盖重试窗口”等条件压丢了；二是检索时别被底层的候选池边界把精确错误码 <code>PAY-409</code> 漏在门外。</li>
+<li><strong>关系与时间路线（以 Graphiti 为代表）</strong>：擅长把跨文档的对象连成链，并给每条关系挂上“现实何时生效”和“系统何时知道”两根时间轴。重点要防两件事——一是同名服务别合错 UUID；二是查 11 月 2 日的历史状态时，要分清是在问“那天现实中该找谁”，还是“那天助手为什么找了老张”。</li>
+</ul>
+<p>贯穿全书，我们会沿着 <strong>“发现真实痛点 → 拆透底层原理 → 扒开真实源码核对边界 → 动手验证”</strong> 的节奏推进。Mem0 和 Graphiti 会作为两条主参照系贯穿绝大多数章节，你可以在每章的折叠区里随时核对它们的真实函数入口（如 <a href="https://github.com/mem0ai/mem0/blob/fff8a6472512/mem0/memory/main.py">Mem0 主模块</a> 与 <a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/graphiti.py">Graphiti 主模块</a>），不用被营销文案牵着鼻子走。</p>
+<details class="implementation-notes">
+<summary>全书资料索引与三条阅读路线（选读）</summary>
+
+<h2 id="本书拆解的-16-个项目与-11-篇论文">本书拆解的 16 个项目与 11 篇论文</h2><p>全书覆盖 16 个开源仓库（11 个已同步至 2026 年 11 月最新提交，5 个停滞/归档仓保留用于机制与迁移对照）和 11 篇核心论文：</p>
 <table>
 <thead>
 <tr>
 <th>项目</th>
-<th>它在管线中的角色</th>
-<th>详细讲解</th>
+<th>重点观察的机制</th>
+<th>主要对应章节</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>MemGPT / 旧 Letta</td>
-<td>有限窗口与主动换入历史的来源；旧仓仅作历史入口</td>
-<td><a href="08-agent-native.html">Agent 原生记忆</a></td>
+<td>MemGPT / 历史 Letta</td>
+<td>有限窗口里的主动换入与虚拟上下文思想</td>
+<td><a href="08-agent-native.html">原生记忆</a></td>
 </tr>
 <tr>
 <td>Letta Code</td>
-<td>Agent 编辑 core、读取 deferred memory，Git 提交后重新编译上下文</td>
-<td><a href="08-agent-native.html">MemFS 与生效时机</a></td>
+<td>Git-backed MemFS、worktree 隔离与编译生效</td>
+<td><a href="08-agent-native.html">原生记忆</a></td>
 </tr>
 <tr>
 <td>Mem0</td>
-<td>从消息批量提取事实，用语义池和词/实体信号排序</td>
-<td><a href="10-fact-profile.html">事实路线</a></td>
+<td>ADD-only 批量事实写入、语义池内加分、托管 Profile/Dream</td>
+<td><a href="10-fact-profile.html">事实与画像</a></td>
 </tr>
 <tr>
 <td>Memobase</td>
-<td>buffer 批处理，稳定画像直接读取，事件另行检索</td>
-<td><a href="10-fact-profile.html">画像路线</a></td>
+<td>Buffer/Flush 批处理与直接读取用户画像</td>
+<td><a href="10-fact-profile.html">事实与画像</a></td>
 </tr>
 <tr>
 <td>Graphiti</td>
-<td>episode 来源、实体消歧、带时间的关系边</td>
-<td><a href="11-graph.html">时间图谱</a></td>
+<td>Episode、实体消歧、双时间边、SagaNode 与删源重建</td>
+<td><a href="11-graph.html">图谱路线</a></td>
 </tr>
 <tr>
 <td>Cognee</td>
-<td>异构输入、schema 抽取、多存储与多检索器</td>
-<td><a href="11-graph.html">知识平台</a></td>
+<td>多模态 Schema 管线、检索路由与 v1.6.8 SSRF 防护</td>
+<td><a href="11-graph.html">图谱路线</a></td>
 </tr>
 <tr>
 <td>HippoRAG</td>
-<td>事实/段落种子与 Personalized PageRank 关联召回</td>
-<td><a href="11-graph.html">关联检索</a></td>
-</tr>
-<tr>
-<td>MemOS</td>
-<td>MemCube 封装多形态记忆，scheduler 组织处理与调用</td>
-<td><a href="12-memory-os.html">资源管理</a></td>
+<td>OpenIE 短语图 + PPR 多跳段落传播</td>
+<td><a href="11-graph.html">图谱路线</a></td>
 </tr>
 <tr>
 <td>MemoryOS</td>
-<td>近期问答提升为主题 pages，再更新长期画像/知识</td>
-<td><a href="12-memory-os.html">层级提升</a></td>
+<td>短/中/长期三层页搬运与热度提升</td>
+<td><a href="12-memory-os.html">生命周期与 OS</a></td>
+</tr>
+<tr>
+<td>MemOS</td>
+<td>Plaintext / KV / LoRA 多形态容器与调度队列</td>
+<td><a href="12-memory-os.html">生命周期与 OS</a></td>
 </tr>
 <tr>
 <td>Hippo Memory</td>
-<td>衰减、召回强化、outcome、sleep 巩固与可选重排</td>
-<td><a href="12-memory-os.html">生命周期</a>、<a href="16-jev.html">Jev 接法</a></td>
+<td>半衰期衰减、outcome 反馈、sleep 巩固与图召回</td>
+<td><a href="12-memory-os.html">生命周期与 OS</a></td>
 </tr>
 <tr>
 <td>A-MEM</td>
-<td>生成笔记描述、建立连接、更新邻居属性</td>
-<td><a href="12-memory-os.html">演化网络</a></td>
-</tr>
-<tr>
-<td>MCP Memory Service</td>
-<td>多客户端服务、全文/向量融合、巩固与运维</td>
-<td><a href="13-integration.html">服务接入</a></td>
+<td>笔记描述与邻接关系的动态演化</td>
+<td><a href="12-memory-os.html">生命周期与 OS</a></td>
 </tr>
 <tr>
 <td>Basic Memory</td>
-<td>Markdown 源文件解析成观察与关系，按 URI 展开上下文</td>
-<td><a href="13-integration.html">文件知识库</a></td>
+<td>人类可编辑 Markdown 作为权威真相源</td>
+<td><a href="13-integration.html">工程接入</a></td>
+</tr>
+<tr>
+<td>MCP Memory Service</td>
+<td>跨客户端 MCP 存取、混合并集检索与 v13.0 存储隔离</td>
+<td><a href="13-integration.html">工程接入</a></td>
 </tr>
 <tr>
 <td>Agent Beacon</td>
-<td>跨 harness 归一动作事件，保留可审计 trace</td>
-<td><a href="13-integration.html">捕获层</a></td>
+<td>跨 20+ 宿主的标准化工具动作 Trace 采集</td>
+<td><a href="13-integration.html">工程接入</a></td>
 </tr>
 <tr>
 <td>TencentDB Agent Memory</td>
-<td>L0 至 L3、团队 ACL、资产 Loadout 与请求代理</td>
-<td><a href="13-integration.html">团队接入</a></td>
+<td>团队多租户 ACL、Loadout、L0~L3 分层与 Proxy 接入</td>
+<td><a href="13-integration.html">工程接入</a></td>
 </tr>
 <tr>
 <td>Hermes Jev Skills</td>
-<td>候选隐私检查、判别重排、证据充分性与决策缓存</td>
-<td><a href="16-jev.html">判别层</a></td>
+<td>检索后的轻量化相关性/防注入/充分性判别闸门</td>
+<td><a href="16-jev.html">Jev 判别门控</a></td>
 </tr>
 </tbody></table>
-<p>教学例子用同一类包管理器偏好、提醒功能改坏了与评审关系说明机制，不是项目实测。源码观察、论文算法与托管 README 宣称分开注明，避免把某个概念自动当成每个版本都已实现的功能。</p>
-<p>所有项目排名都提高了维护权重，但“提交多”不是唯一标准：机器人提交、文档批量更新和单人高频提交都会放大 commit 数。因此书中同时观察最近更新时间、30 天活跃天数、活跃作者数、主仓迁移、测试/评测与开源边界。</p>
-<h2 id="三条阅读路线">三条阅读路线</h2><ul>
-<li><strong>只想选型</strong>：第 1、9、14、17 章，再按上表读候选项目详解。</li>
-<li><strong>要自己实现</strong>：第 1 至 8 章，边读边运行 <code>examples/mini_memory.py</code>。</li>
-<li><strong>要做研究或评测</strong>：第 6、7、14 章，再读附录中的论文原文。</li>
+<h2 id="三条推荐读法">三条推荐读法</h2><ul>
+<li><strong>急着选型或做方案评审</strong>：按 <code>前言 → 01 → 05（重点看候选并集 vs 池内加分）→ 06（双时间轴）→ 09 → 10/11/13 按需看 → 15 → 17</code> 速通。</li>
+<li><strong>打算自己动手写轻量记忆层</strong>：顺序读 <code>01 ~ 08</code>，第 4 章亲手跑完 <code>mini_memory.py</code>，再结合 <code>14</code> 和 <code>15</code> 补齐回归测试与多租户安全防线。</li>
+<li><strong>线上排障或翻源码研究</strong>：直接用右上角搜索页搜关键词（如 <code>ADD-only</code>、<code>rank_const</code>、<code>invalid_at</code>、<code>MemFS</code>），或从 <a href="appendix-sources.html">源码与论文索引</a> 顺着函数名直接定位。</li>
 </ul>
-<p>本书不承诺一个万能冠军。用户画像、编码 Agent、长期陪伴、多 Agent 团队和企业知识图谱需要的是不同记忆。正确的问题不是“谁是 SOTA”，而是“在我的数据、查询、预算与风险约束下，哪一种机制产生净收益”。</p>
-<h2 id="如何读本书的跨项目对照">如何读本书的跨项目对照</h2><p>每章的对照范围是本地 16 仓快照，不是互联网上所有 memory 产品。表中“可选”表示依赖后端、配置或插件；“应用负责”表示该框架没有替你完成这个环节；“历史/论文”不能当成当前 SDK 保证。未找到某项机制的证据时，写成“不据此认定”，不把空白自动解释为绝不支持。</p>
-<p>讲解统一回答四个问题：输入是什么，在哪一步改变状态，输出如何进入 Agent，以及会在哪种样例上失败。结论表比较这些操作，不把接口名、营销名或不同协议的分数直接排在一起。</p>
 </details>
 
-<h2 id="动手检查">动手检查</h2><p>一个系统保存了全部聊天，但每次回答只把最新一条消息发给模型。它能避免第二次改代码重复犯错吗？</p>
-<p>答案提示：还不能。保存解决了“以后还有没有原文”，读取和上下文组装解决“这次模型能不能看到”。你可以在纸上画三个框：旧对话、挑选相关内容、当前模型输入，看看自己的方案缺的是哪一个框。</p>
-<details class="comparison-reference">
-<summary>项目对照图与速查（选读）</summary>
+<h2 id="动手检查">动手检查</h2><p>研发助手把上周的复盘原话存进了数据库，这周发版时却只把用户的新请求发给了模型；修复后，它把复盘搜出来了，却只把记录 ID <code>mem_8912</code> 塞进了 Prompt。这两次分别缺了哪一步？</p>
+<p>答案提示：第一次缺了“检索并注入当前上下文”这一步，光落盘不参与调用等于没记住；第二次虽然搜到了，却没把可读的正文和来源交给模型。再往前想一步：就算模型真的读到了“发版前核对幂等键”的正文，也不代表今天线上配置就一定没问题——还得由宿主调用实时配置查询工具去核验。</p>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-a/00-overview.svg" alt="研发助手的三道记忆检查点：存得住、找得到、用得上" loading="lazy"><figcaption>图：判断记忆系统有没有生效，必须把存盘、召回注入和业务核验三道关分开检查。</figcaption></figure>
 
-<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/00-preface.svg" alt="写入、读取、治理三条管线，分别从原始事件、可信查询与任务结果出发" loading="lazy"><figcaption>图：技术章节围绕三条管线比较，不假设每个项目承担全部职责。</figcaption></figure>
+<details class="comparison-reference">
+<summary>项目对照速查（选读）</summary>
 
 <h2 id="本章对照结论">本章对照结论</h2><table>
 <thead>
 <tr>
-<th>想理解的区别</th>
-<th>应同时阅读的项目</th>
-<th>比较对象</th>
-<th>不应混同</th>
+<th>研发助手的真实痛点</th>
+<th>优先核对的开源路线</th>
+<th>重点验收什么</th>
+<th>必须由宿主自己补齐的责任</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>事实与稳定画像</td>
-<td>Mem0、Memobase、MemoryOS、TencentDB、Letta、MemOS</td>
-<td>提取/提升时机与读取方式</td>
-<td>query top-k 与按用户直接读</td>
+<td>每轮稳定记住个人偏好（中文、先给 diff）</td>
+<td>Memobase、Mem0、Letta Code、MemoryOS</td>
+<td>偏好是否无需碰运气就能稳定进 Prompt</td>
+<td>本轮对话的临时例外优先覆盖长期默认</td>
 </tr>
 <tr>
-<td>图与关联检索</td>
-<td>Graphiti、Cognee、HippoRAG、A-MEM、Basic、Hippo、MCP、TencentDB、MemOS 文本后端</td>
-<td>连接说了什么、搜索如何沿连接找资料</td>
-<td>沿图传播、逐层找邻居、打开笔记链接、给已有候选加分</td>
+<td>跨文档查服务归属与发布终审人</td>
+<td>Graphiti、HippoRAG、Cognee、Basic Memory</td>
+<td>中间团队节点是否同一实体、原文能否回查</td>
+<td>核对审批用途与生效日期，不把旧边当授权</td>
 </tr>
 <tr>
-<td>演化与遗忘</td>
-<td>Hippo、MCP、MemoryOS、A-MEM、Memobase、Graphiti、Cognee、MemOS、TencentDB、Letta</td>
-<td>价值、描述、层级或事实状态怎么变</td>
-<td>衰减、覆盖、过期与隐私删除</td>
+<td>长期积累几十次事故复盘，防止记忆发臭</td>
+<td>Hippo Memory、MCP、A-MEM、MemoryOS</td>
+<td>巩固到底改了内容、权重还是组织层级</td>
+<td>保护低频高危规程，保留反例与回滚入口</td>
 </tr>
 <tr>
-<td>接入与选择</td>
-<td>Beacon、Basic、MCP、TencentDB、Letta、Hermes，并对照开发库和图框架</td>
-<td>谁收材料、谁验证身份、谁组装模型输入</td>
-<td>采集日志、传输请求、保存资料、筛选候选</td>
+<td>多团队共用一套研发助手与知识库</td>
+<td>TencentDB、MCP Memory Service、Basic、MemOS</td>
+<td>租户身份、资产版本与撤权边界</td>
+<td>服务端统一认证与最终 Prompt 组装</td>
+</tr>
+<tr>
+<td>把排障轨迹沉淀成可复用发布检查流程</td>
+<td>Agent Beacon、Letta Code、Hermes Jev</td>
+<td>采集、判别、审核与执行是否职责分离</td>
+<td>所有写操作和生产发布由确定性工具授权</td>
 </tr>
 </tbody></table>
 </details>
-
 </article><nav class="pager" aria-label="章节导航"><span></span><a href="01-mental-model.html"><small>下一章</small>统一心智模型</a></nav></main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div></div><script src="../assets/wiki.js"></script></body></html>

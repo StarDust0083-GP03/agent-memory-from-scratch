@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="392" viewBox="0 0 1080 392" role="img" aria-labelledby="title"><title id="title">文件变化到可检索状态</title>
+<style>text{font-family:system-ui,"Noto Sans CJK SC",sans-serif;fill:#203342}.head{font-size:24px;font-weight:650}.label{font-size:18px;font-weight:600}.value{font-size:18px}.small{font-size:15px;fill:#526571}</style>
+<rect width="1080" height="392" fill="#faf8f1"/>
+<text x="30" y="40" class="head">文件变化到可检索状态</text>
+<text x="32" y="80" class="small">观察对象</text><text x="320" y="80" class="small">输入或当前状态</text><text x="700" y="80" class="small">应核对的结果</text>
+<rect x="24" y="100" width="1032" height="76" rx="5" fill="#e8eee9"/>
+<text x="38" y="132" class="label">权威文件</text>
+<text x="320" y="132" class="value">装箱笔记修订 3</text>
+<text x="700" y="132" class="value">保留稳定文档 ID</text>
+<rect x="24" y="188" width="1032" height="76" rx="5" fill="#e9edf1"/>
+<text x="38" y="220" class="label">同步动作</text>
+<text x="320" y="220" class="value">解析 / 重提取 / 更新</text>
+<text x="700" y="220" class="value">明确新增与替代</text>
+<rect x="24" y="276" width="1032" height="76" rx="5" fill="#e8eee9"/>
+<text x="38" y="308" class="label">读取验收</text>
+<text x="320" y="308" class="value">URI 与搜索结果</text>
+<text x="700" y="308" class="value">不再返回无说明旧版本</text>
+</svg>

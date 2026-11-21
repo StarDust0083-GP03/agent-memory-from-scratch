@@ -1,270 +1,153 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>巩固、遗忘与自我改进 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="07-lifecycle"><div class="eyebrow">第 7 章</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#改代码做了几十次-记忆也开始挤在一起">改代码做了几十次，记忆也开始挤在一起</a></li><li><a href="#一条教训是怎样被巩固出来的">一条教训是怎样被巩固出来的</a></li><li><a href="#用半衰期理解优先级下降">用半衰期理解优先级下降</a></li><li><a href="#取过一次-与帮上一次忙的区别">取过一次，与帮上一次忙的区别</a></li><li><a href="#把流程改进放在更谨慎的一层">把流程改进放在更谨慎的一层</a></li><li><a href="#压缩时最容易丢掉的-是规律之外的条件">压缩时最容易丢掉的，是规律之外的条件</a></li><li><a href="#用反例检查一条改进是否真的有用">用反例检查一条改进是否真的有用</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="巩固-遗忘与自我改进">巩固、遗忘与自我改进</h1><h2 id="改代码做了几十次-记忆也开始挤在一起">改代码做了几十次，记忆也开始挤在一起</h2><p>Todo 连续三次改代码都遇到提醒测试问题。库里现在有三段失败记录、几条同义教训和许多无关调试消息。每次问改代码，助手都看一堆相似文字，既花输入额度，也可能漏掉不同日期的例外。</p>
-<p>我们可以把重复经历组织成一条高层教训：“Todo 合并代码前跑提醒测试。”这叫巩固。它减少反复读取细节的成本，但三次经历可能并非同一根因，所以高层教训仍要连回原始证据。</p>
-<p>也可以降低长期无用记录的优先级，把失效记录移出当前结果，或归档。遗忘指这些控制影响的做法；用户请求删除数据则要清理实际副本，不能只把排名降低。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：十次改代码都留下“先跑提醒测试”。应用可以选一条已核验的长期要求，把十次经历留作来源，不让每轮输入重复十遍。</p>
-<p>Graphiti：多次材料支持同一项提交要求，可以核验这些来源是否重复。十份报告若都抄自同一次失败，不能算十次独立证明。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-01.svg" alt="改代码做了几十次，记忆也开始挤在一起：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：重复出现可以来自同一来源；次数不能直接作为真实性或巩固依据。</figcaption></figure>
-
-<p>十次改代码都提到同一检查要求，不必给每次回答十份重复文字。Mem0 可能积累多张相似卡，应用需检查合并与保留策略；Graphiti 若认出相同关系，可以复用关系并增加来源引用。来源变多仍不意味着已经验证十次，可能只是同一句话被复制了十遍。</p>
-<h3 id="mem0-add-only-会把长期治理责任留给外层">Mem0：ADD-only 会把长期治理责任留给外层</h3><p>同义教训可能多次追加，hash 只能去完全相同的正文。普通写入没有按周期 sleep 的高层巩固器；应用可召回同项目候选，人审或模型生成摘要，再显式保存。压缩前保留原事件与支持 ID，不要用覆盖一张卡的方式把三次经历的区别抹掉。</p>
-<h3 id="graphiti-重复关系可以汇聚来源-图仍会增长">Graphiti：重复关系可以汇聚来源，图仍会增长</h3><p>解析重复边时可复用旧关系，将新 episode 加入支持列表；独立事件仍保留。节点 summary 提供压缩入口，但不是删除低价值历史的统一政策。建图长时间运行后，需要检查同义节点、重复边和到期事实是否干扰搜索，不能认为关系去重已经处理了所有生命周期问题。</p>
-</details>
-
-<h2 id="一条教训是怎样被巩固出来的">一条教训是怎样被巩固出来的</h2><p>先把三次事件按项目和问题归在一起，检查它们是否真的支持同一个规律。再生成候选教训，明确“合并代码”这个条件，并保存支持它的三条来源。最后通过回放或人审，确认未来照这条做不会破坏只读排查和其他项目。</p>
-<p>Memobase 合并稳定画像，MemoryOS 将常被访问的中期页面进一步整理为长期知识，Hippo 的 sleep 和 MCP 的巩固流程可以做聚类、压缩等操作。相同的词“巩固”可能意味着合并字段、提升层级或压缩正文，应看实际被改的对象。</p>
-<p>A-MEM 则可能在新证据加入时改旧笔记的描述和标签，让它更容易被找到。这是组织变化，不一定减少记录数量，也不自动证明教训真实。Cognee 的 improve 根据所启用阶段更新知识与经验，不表示每次都训练模型权重。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：三次失败都漏跑提醒测试核验，应用整理成“提交代码前跑提醒测试”，并保留三次报告。若其中一次其实是配置错误，就不能继续把它当改代码教训的依据。</p>
-<p>Graphiti：提交要求连回支持它的报告。纠正一份报告后，应用重新检查其余来源能否支撑这条要求，不能只因为摘要已有就一直沿用。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-02.svg" alt="一条教训是怎样被巩固出来的：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：摘要和关系的存在不会自动完成证据审查；撤回来源后要复核派生结论。</figcaption></figure>
-
-<p>把三次经历总结成“提交代码前跑提醒测试”，中间省略了每次具体命令，这叫巩固。Mem0 的过程总结能提出步骤文字，Graphiti 的对象摘要能整理相关关系；两者都需要回查原事件，确认没有把“失败时检查”改成“每次必须重写提醒模块”。生成摘要是一次理解工作，不是一次流程审批。</p>
-<h3 id="mem0-过程摘要可以生成候选-不能替审核">Mem0：过程摘要可以生成候选，不能替审核</h3><p>带 agent scope 的 <code>procedural_memory</code> 调用 <code>_create_procedural_memory()</code>，模型总结轨迹，去掉代码围栏后生成向量并保存一条文本。该路径说明框架能表达过程经验，但没有自动回放改代码任务验证规则。三次成功、输入边界和人工批准仍要由应用收集并核验。</p>
-<h3 id="graphiti-实体摘要是局部视图-不是通用流程学习">Graphiti：实体摘要是局部视图，不是通用流程学习</h3><p>新增边参与节点属性与 summary 整理，可让 Todo 的描述包含常见改代码风险。需要稳定教训时，可以另外建模流程与约束关系，并保存支持 episode。摘要生成没有检查“照此执行是否安全”，把摘要当可执行 Skill 会跨过未经验证的推广步骤。</p>
-</details>
-
-<h2 id="用半衰期理解优先级下降">用半衰期理解优先级下降</h2><p>假设一条临时教训的初始强度为 1，半衰期为 7 天，不考虑其他因素。那么 7 天后为 0.5，14 天后为 0.25，21 天后为 0.125：</p>
-<pre tabindex="0"><code class="hljs">n = 经过天数 / 半衰期
-剩余强度 = 0.5 ^ n</code></pre><figure class="lesson-illustration"><img src="../assets/illustrations/decay.svg" alt="半衰期 7 天，强度从 1 降到 0.5、0.25、0.125" loading="lazy" width="440"><figcaption>教学计算，不是项目实测。曲线控制优先级，不判断事实真假。</figcaption></figure>
-
-<p>这里的强度是管理排序和生命周期的信号，不是事实为真的概率。昨天写的一条错误推断依然错误，十年前的一条数学结论也不会因为过了很多半衰期而变假。</p>
-<p>Hippo 使用半衰期相关机制并结合反馈等因素。MCP 的纯衰减项是 <code>exp(-天数/保留期)</code>，它的保留期是另一种参数：设为 7 天，第 7 天约剩 0.368，不是 0.5。所以搬默认参数时要读公式，不能只看单位都叫天。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：周五会议提醒到了周六可以过期隐藏；长期代码修改规则不该只因一个月没查询就失效。应用把提醒期限和规则有效性分开处理。</p>
-<p>Graphiti：Lin 的评审关系已结束，就不用于今天的答案；只是很久没查过的当前关系仍可能有效。使用频率低，不等于事实已经改变。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-03.svg" alt="用半衰期理解优先级下降：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：Mem0 到期隐藏不是半衰期；热度、过期日和事实有效性不可混为一项。</figcaption></figure>
-
-<p>一条过时活动提醒可以随时间减少优先级，也可以到某天直接隐藏；“Lin 不再负责评审”则是事实状态改变。这三种动作要分开。Mem0 的 expiration_date 是隐藏门槛；Graphiti 的 invalid_at 是关系不再有效的时间。它们没有直接表示“一条正确旧教训今天只有一半重要”。</p>
-<h3 id="mem0-expiration-date-是阈值-不是半衰期">Mem0：expiration_date 是阈值，不是半衰期</h3><p>到期后记录退出默认搜索，是可见性切换，不会按天把评分逐渐乘 0.5。将 <code>half_life_days</code> 写入 metadata 也不会自动改变 <code>score_and_rank()</code>。需要衰减时，应用实现额外评分或归档任务，明确区分事实可信度与业务价值，并保留保护规则。</p>
-<h3 id="graphiti-invalid-at-表达事实失效-不表达热度下降">Graphiti：invalid_at 表达事实失效，不表达热度下降</h3><p>旧评审人关系结束，是现实状态变化；一条少被查询的正确流程边并不会因此自动写 <code>invalid_at</code>。框架的关系时间不等于 Hippo 的价值衰减。应用若按访问热度降权，应保存独立信号，避免把“少用”转写成“过去事实已不成立”。</p>
-</details>
-
-<h2 id="取过一次-与帮上一次忙的区别">取过一次，与帮上一次忙的区别</h2><p>一次搜索命中某条教训，只表示它与问题相关。如果它进了候选但没装进输入，模型根本没见过；如果看见后导致错误，更不应该增加它的价值。</p>
-<p>可以分别记录四件事：被搜索选中、进入输入、被回答或动作使用、任务是否成功。Hippo 的 outcome 提供结果反馈入口，和召回强化是不同信号；MemoryOS 的访问热度主要帮助决定哪些段值得分析，不能直接作为正确性证据。</p>
-<p>若错误记录总因关键词匹配而被命中，又每次命中都被强化，它会越来越难被摆脱。遇到用户纠正时，除了负反馈，还要显式修正内容或标记替代，让下次读到的是正确适用的版本。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：教训被搜索取回十次，助手十次都没执行检查。应用应记“取回十次、实际采用零次”，不能把热度当成效果。</p>
-<p>Graphiti：评审关系被展示了，但助手找错人。记录查询命中与最终核验结果，才能区分“资料找到了”和“答案用对了”。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-04.svg" alt="取过一次，与帮上一次忙的区别：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：框架返回结果只证明读取发生；帮助任务要用实际行为与结果验证。</figcaption></figure>
-
-<p>搜索返回了改代码教训，助手仍漏检，不能计为成功使用。应用接 Mem0 时要把返回卡片编号与真实动作对应；接 Graphiti 时要把使用的关系和来源与结果对应。Outcome 是任务实际结果，比如是否避免漏检；它和相关分数、关系来源数量是不同的观察。</p>
-<h3 id="mem0-搜索分数与任务-outcome-分开记录">Mem0：搜索分数与任务 outcome 分开记录</h3><p>普通结果有相关评分，没有自动把成功改代码回传为可信度提高的完整闭环。应用关联 request ID、返回 ID、实际打包 ID 和工具结果，只有确认使用后才更新业务价值。否则一次关键词误召回会因“被用过”反复奖励，形成自我强化。</p>
-<h3 id="graphiti-episode-引用数量不是成功次数">Graphiti：episode 引用数量不是成功次数</h3><p>多个 episode 支持同一边，可以表明多处材料重复陈述；来源可能互相转述，并非独立验证。<code>episode_mentions</code> 重排参考来源相关信息，也不能证明该规则曾帮助完成任务。outcome 应作为新的可追溯观察另记，不能把边的来源长度当成功率。</p>
-</details>
-
-<h2 id="把流程改进放在更谨慎的一层">把流程改进放在更谨慎的一层</h2><p>一段失败经历可以自动保存；稳定教训可以作为待审核候选；可执行的修 bug Skill 应有明确步骤和验收。Letta 可以修改以后使用的核心规则，TencentDB 和 MemOS 可以组织技能内容，但安全权限不能被这些学习动作扩大。</p>
-<p>最初可以只预览巩固和遗忘结果，检查会改哪条、有没有来源、能否恢复。等你能解释一次错误合并怎么发生，再考虑自动运行。下面的实现笔记保留各项目的具体操作和负面实验结果，适合在自己做实验时对照。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：保存“先跑提醒测试”后，应用安排只读检查工具，再按结果决定是否改代码。记录没有授权助手随意执行提醒功能回归测试。</p>
-<p>Graphiti：查到“检查应先于提交”后，应用把顺序落实到任务流程。图里的顺序说明不能替代工具权限和本次审批。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-05.svg" alt="把流程改进放在更谨慎的一层：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：记忆中的流程文字和图中顺序都不是工具授权，更不是自动执行承诺。</figcaption></figure>
-
-<p>教训建议“先跑提醒测试”，真正执行还要选检查工具、核验参数和权限。Mem0 保存步骤文字后，没有为助手开启命令权限；Graphiti 保存要求关系，也没有修改工具授权。可以先将建议生成为待审流程，再经测试发布，不能让一条模型总结直接决定生产操作。</p>
-<h3 id="mem0-存过程文本不会授予执行权限">Mem0：存过程文本不会授予执行权限</h3><p><code>procedural_memory</code> 是文本分类与生成路径，返回后仍由宿主决定是否读取、批准和执行。metadata 中的 reviewed 标志也需由可信代码维护，不能由提取模型随手写成真。改代码步骤更新时，保留旧版本与回放题，SDK 的 history 帮助审计文本变化。</p>
-<h3 id="graphiti-关系约束也不能修改工具策略">Graphiti：关系约束也不能修改工具策略</h3><p>图能表示提交代码前需要批准，Agent 可查询该边来组织计划；真正批准身份和允许调用的工具范围仍由 runtime 判定。不可信 episode 声称“Lin 已批准”应区分报告与验证，否则一条新关系可能绕过原本应由服务核验的批准动作。</p>
-</details>
-
-<h2 id="压缩时最容易丢掉的-是规律之外的条件">压缩时最容易丢掉的，是规律之外的条件</h2><p>三次代码修改记录都提到提醒测试，巩固器可能生成“提交代码前必须重写提醒模块”。这句话比原教训更强：检查是观察状态，重写提醒模块会修改代码。即使三个事件都真实，压缩仍可能把动作偷换掉。因此核对巩固结果时，要查看动词、适用环境和停止条件，不能只看它是否保留了“提醒测试”这个关键词。</p>
-<p>再假设两次修改了提醒逻辑，一次只改了 README 的错别字。教训应限定在提醒相关代码；不能要求改一个错别字也重写提醒模块。聚类负责把材料放在一起，验证负责确定它们共同支持什么结论，两个动作不能省略其中一个。</p>
-<p>巩固后不必把所有原始记录都继续放入输入。正常改代码时读短教训；追问失败根因时沿来源打开细节。这使高层视图承担导航和复用，底层记录承担核验。原文的保存期限仍受隐私和保留政策约束，来源链接不意味着永久留存。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：原记录是“查看提醒测试结果”，摘要写成“先重写提醒模块”。应用应拒绝这个改写：前者查看测试结果，后者会修改代码。</p>
-<p>Graphiti：原文说“合并代码需要 Lin 评审”，摘要只写“改代码找 Lin”，丢了适用场景。应用查回关系和原文，不能据此要求每次只读排查也走同样审批。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-06.svg" alt="压缩时最容易丢掉的，是规律之外的条件：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：压缩可能丢适用条件或改变动作副作用；必须核对具体用词与任务范围。</figcaption></figure>
-
-<p>“查看提醒测试结果”与“执行提醒功能回归测试”只差几个字，副作用却不同。Mem0 卡片压缩时应保留检查动词；Graphiti 即使把边命名为改代码步骤，也要看 fact 正文是否变成执行。原文保留“只读检查”，摘要若删掉只读条件，就可能把安全观察升级成修改数据库。</p>
-<h3 id="mem0-检查与执行的动词需要原文核验">Mem0：检查与执行的动词需要原文核验</h3><p>过程摘要把“检查 migration 状态”写成“运行 migration”，会在向量上仍然高度相关，搜索难以发现错误。生成后应对照 source 验证动词、环境和停止条件，必要时显式 update 修正；更新产生新向量，却不会自动修复已经复制到其他摘要里的同一错误。</p>
-<h3 id="graphiti-边类型不能掩盖-fact-的过强表述">Graphiti：边类型不能掩盖 fact 的过强表述</h3><p>抽取关系名可能仍是代码修改约束，但 <code>fact</code> 已把观察改成动作。节点摘要又可能传播这个表述。核验要同时看 relation、fact、限定属性和来源，而非只检查有一条 RELEASE_CHECK 边。高层派生内容需可重建，才能纠正范围漂移。</p>
-</details>
-
-<h2 id="用反例检查一条改进是否真的有用">用反例检查一条改进是否真的有用</h2><p>一条新规则在曾经失败的案例里有效，还不够。可以拿“合并代码且提醒测试未通过”“合并代码且检查通过”“纯文档更新”“只读排查”四种场景回放。规则应在第一种阻止继续，在第二种允许继续，并对另外两种按真实适用范围处理。如果四种都停止，事故也许减少了，但助手已经失去正常完成任务的能力。</p>
-<p>对遗忘也要用反例。假设一条回滚经验半年没用到，它的访问热度很低；但提醒功能改坏了时缺少它的代价可能很高。保留价值既取决于频率，也取决于遗漏的风险。低频不能直接变成自动删除理由，可以先归档或从常规结果中降权，同时保留明确的应急读取入口。</p>
-<p>结果反馈还可能存在归因错误：一次改代码成功，可能因为当前测试发现问题，与某条记忆无关。若把输入里所有记录都奖励一次，系统会强化无关内容。可以先记录结果而不自动改寿命，再通过明确引用、工具行为或人工反馈确认哪些记忆确实有帮助。自动学习的力度应与反馈证据相匹配。</p>
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-<p>Mem0：测试“先跑提醒测试”时，准备“已完成”“本次只改文案”“只读只读排查”三题。助手应核验后分别处理，不是每题都重写提醒模块。</p>
-<p>Graphiti：测试评审链时，加一题“前端组出差由 Lin 评审”。它不能支持 Todo 合并代码也由 Lin 评审；若系统仍这样答，说明关系用途没分清。</p>
-<figure class="source-flow"><img src="../assets/source-flows/07-07.svg" alt="用反例检查一条改进是否真的有用：Mem0 与 Graphiti 的案例流程" loading="lazy"><figcaption>检查点：一条规则不仅要在正例有效，也要在例外和禁止操作的场景中不误触发。</figcaption></figure>
-
-<p>试验新规则时，准备测试已通过、只改文案、用户仅要求解释原因三种反例。Mem0 的测试库若吸收试验中生成的新卡，后一次就不再与第一次可比；Graphiti 的测试图若新增或结束关系，同样改变了底稿。固定初始资料，再比较行为，才能解释差别来自哪一步。</p>
-<h3 id="mem0-对照库不要继承测试产生的改写">Mem0：对照库不要继承测试产生的改写</h3><p>关闭自动提取、用审核事实直接保存，可以作为简化 baseline；另一个库启用过程总结和外层巩固。两边使用相同 query、reader 和预算，比较合并代码、只读排查与无关项目。显式更新只在各自实验内发生，不能把改好后的事实传给旧版对照。</p>
-<h3 id="graphiti-分别消融摘要-解析和关系扩展">Graphiti：分别消融摘要、解析和关系扩展</h3><p>固定输入，核对实体身份与有效时间，再比较 fact 搜索和图扩展，避免把错误抽取混入检索收益。测试纠正后旧边是否仍被返回、只读排查是否误失效默认，以及摘要是否重复旧结论。这些指标比“节点减少了多少”更接近可靠长期治理。</p>
-</details>
-
-<h2 id="动手检查">动手检查</h2><p>同时保存“上月改代码教训”“明天取快递提醒”“未经证实的根因”和“不得读取凭据”四条记录。它们应该一起衰减吗？如果某条归档了，用户请求删除时还需处理它吗？</p>
-<p>答案提示：按用途设计不同保护规则，安全约束由可信策略控制，不能仅依赖记忆热度。归档仍可能含正文，隐私删除要继续检查它和其他副本。</p>
-<details class="implementation-notes">
-<summary>实现笔记与源码对照（选读）</summary>
-
-<h2 id="保存一切会让记忆退化">保存一切会让记忆退化</h2><p>随着库增长，重复、过期和低价值内容会抬高检索噪音。标准 LongMemEval 常给每个问题预先限定约几十个 session；当所有 session 放进一个全局池，许多项目的召回会显著下降。真正困难的不是小 haystack 内找针，而是长期运行后的治理。</p>
-<h2 id="生命周期状态机">生命周期状态机</h2><pre tabindex="0"><code class="hljs">captured → observed → verified
-    ↓          ↓          ↓
-  stale ← superseded ← conflicted
-    ↓
- forgotten/deleted</code></pre><p>不同状态应影响排序和呈现，但不能把“被频繁召回”自动当成“真实”。错误记忆也可能因为误召回而被强化。</p>
-<h2 id="巩固">巩固</h2><p>巩固把多个 episode 提炼成更稳定的 semantic/procedural memory：</p>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>巩固、遗忘与自我改进 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="07-lifecycle"><div class="eyebrow">第 7 章</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#跑了半年之后-为什么记忆库越用越傻">跑了半年之后，为什么记忆库越用越傻？</a></li><li><a href="#巩固-consolidation-压缩冗余-但别把不同根因强行揉成假规律">巩固（Consolidation）：压缩冗余，但别把不同根因强行揉成假规律</a></li><li><a href="#四种-淡出与删除-语义-绝对不能混为一谈">四种“淡出与删除”语义，绝对不能混为一谈</a></li><li><a href="#切断-误召回自我强化-的死循环">切断“误召回自我强化”的死循环</a></li><li><a href="#自我改进的安全底线-记忆永远不能自己给自己提权">自我改进的安全底线：记忆永远不能自己给自己提权</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="巩固-遗忘与自我改进">巩固、遗忘与自我改进</h1><h2 id="跑了半年之后-为什么记忆库越用越傻">跑了半年之后，为什么记忆库越用越傻？</h2><p>很多团队刚接上记忆系统那两周觉得特别惊艳，结果跑了半年发现助手越来越蠢：</p>
 <ul>
-<li>三次改提醒功能后都出现相同问题 → “提交代码前运行 reminder test”。</li>
-<li>多轮对话反复表达偏好 → 画像字段及证据列表。</li>
-<li>一条成功工具轨迹 → 经评审的 Skill。</li>
+<li>同样一条“发 <code>payment-gateway</code> 前查幂等键”，因为每次发版复盘都提一遍，库里攒了十几张说法大同小异的卡片，一搜 Top-5 全是重复废话，把真正不同的例外全挤没了；</li>
+<li>三个月前修掉的临时 workaround、早就下线的老接口配置，依然靠高字面相似度霸占着搜索前排；</li>
+<li>更要命的是，某条写错了根因的旧猜测因为标题写得像，每次都被搜出来，而系统只要“搜到就给它加活跃度”，结果<strong>错误记忆越错越顽固</strong>！</li>
 </ul>
-<p>保留 episode 引用。高层记忆应当是索引和压缩视图，而不是不可追溯的新真相。</p>
-<h2 id="遗忘">遗忘</h2><p>Hippo 明确采用指数衰减、召回延长 half-life、错误记忆更慢衰减、outcome 调节寿命、<code>sleep</code> 合并/清理。其 README 同时保留负面结果与撤回记录，这是比单个高分更重要的工程信号：早期 sequential-learning 的 78%→14% 宣称未能在正式预注册实验中复现，已撤回。</p>
-<p>可落地的遗忘策略：</p>
-<pre tabindex="0"><code class="hljs">strength = importance × confidence × 0.5^(idle_days / half_life)</code></pre><p>再加保护条件：pinned 不删、法律/安全记录单独保留、低样本不自动学阈值、删除先 dry-run、有审计与恢复窗口。</p>
-<h2 id="巩固在各项目中的动作不同">巩固在各项目中的动作不同</h2><p><strong>MemoryOS</strong> 用短期容量触发生成 pages、多主题摘要和 session 合并，热度过阈值后对尚未分析的 pages 提取长期画像与知识。它的 promotion 是“改变信息驻留层”，不是每天删掉最旧记录；中期容量还有 LFU 淘汰路径。</p>
-<p><strong>Memobase</strong> 在 flush 时把聊天提炼/合并为 profile 和 event，重点是稳定属性直接读取；<strong>TencentDB</strong> 把 L0 归纳为原子、场景、核心记忆并记录 prompt 版本。二者都可能把一次例外误提升到长期规则，必须测“这次”与“今后”的区别。</p>
-<p><strong>A-MEM</strong> 用新笔记修改 links 与邻居 context/tag，属于关联/描述演化；<strong>Graphiti</strong> 用新 episode 更新实体摘要与事实边有效性，属于图事实维护。<strong>Cognee improve</strong> 针对知识/经验与反馈改结构，也不等于自动训练模型。</p>
-<p><strong>Hippo sleep</strong> 结合衰减、重复处理与高层合并，outcome 再调节寿命；<strong>MCP Memory Service consolidation</strong> 按 horizon 选择聚类、压缩、关联与受控遗忘阶段。两个 sleep/dream 类比都应落实成具体配置、报告与恢复测试，不可当作生物学学习证明。</p>
-<p><strong>Letta Code</strong> 的反思可以改记忆文件，commit 后在后续编译生效；<strong>MemOS</strong> 通过 scheduler 组织资源处理与反馈；<strong>Beacon</strong> 只先捕获证据，<strong>Hermes Jev Skills</strong> 的筛选不构成长期巩固。完整操作和 source of truth 见 <a href="08-agent-native.html">第 8 章</a>、<a href="10-fact-profile.html">第 10 章</a>、<a href="11-graph.html">第 11 章</a>、<a href="12-memory-os.html">第 12 章</a>、<a href="13-integration.html">第 13 章</a>。</p>
-<h2 id="用一个长期实验检查遗忘">用一个长期实验检查遗忘</h2><p>建立已验证代码修改规则、一次性环境选择、错误根因猜测与 pinned 安全约束四类记录。模拟时间推移，并区分“被检索”“被送入 prompt”“帮助成功”“导致失败”四种事件。Hippo 的 strength/outcome 应分别改变；MemoryOS 的热度不应自动证明事实为真；MCP 的 controlled forgetting 不应误删保护项。</p>
-<p>记录被遗忘后，检查是降低排序、标记失效、归档还是物理删除。Mem0/Graphiti 的旧状态保留、Basic Memory/Letta 的 Git 历史与云备份都可能仍含正文。降低召回概率是生命周期治理，满足用户删除是另一项完整数据清除任务。</p>
-<h2 id="反馈闭环">反馈闭环</h2><p>至少记录：</p>
+<p>解决“记忆发臭”的药方，就是<strong>生命周期治理</strong>：把零散经历提炼成干净规程（巩固）、让过时噪音有序退场（遗忘）、用真实任务结果而不是“命中次数”来校准记忆（反馈闭环）。</p>
+<h2 id="巩固-consolidation-压缩冗余-但别把不同根因强行揉成假规律">巩固（Consolidation）：压缩冗余，但别把不同根因强行揉成假规律</h2><p>举个研发里特别常见的反面教材：过去一个季度，<code>payment-gateway</code> 上线被拦下来三次：</p>
 <ul>
-<li>哪些记忆被召回；</li>
-<li>哪些实际进入 prompt；</li>
-<li>回答引用或使用了哪些；</li>
-<li>任务成功/失败；</li>
-<li>用户是否纠正；</li>
-<li>延迟、token 和费用。</li>
+<li>第 1 次：幂等键 TTL 配短了；</li>
+<li>第 2 次：改错了环境变量文件，发到了预发集群；</li>
+<li>第 3 次：幂等键配置没问题，但缺少压测报告审批。</li>
 </ul>
-<p>“召回过”不是正反馈。只有任务结果或可靠人工信号才能调整价值。Hippo 的 <code>outcome --good/--bad</code> 是显式反馈例子；Cognee 的 <code>improve</code> 和 MemOS 的自然语言反馈则提供更高层更新入口。</p>
-<h2 id="自我改进的安全边界">自我改进的安全边界</h2><p>让 Agent 自动修改长期规则可能产生策略漂移。生产上建议分级：</p>
+<p>如果你用粗糙的聚类器把这三次“发版失败”揉成一条总结——“以后 <code>payment-gateway</code> 每次发版失败都是因为幂等键问题，直接重新生成幂等键配置”——那就酿成了两个经典压缩翻车：</p>
 <ol>
-<li>episode 自动写；</li>
-<li>fact 自动提取但带低置信度；</li>
-<li>semantic pattern 达到证据阈值后生成候选；</li>
-<li>procedural Skill 或 core memory 必须评测/审核；</li>
-<li>安全、权限和系统策略永远不由记忆覆盖。</li>
+<li><strong>强行归因</strong>：三次根本不是同一个原因，最多只能汇总成清单“发版前分别核对幂等键、目标环境与压测审批”，每条各自挂回自己的原始事故单；</li>
+<li><strong>动词悄悄扩权</strong>：原话只是“<strong>核对</strong>幂等键配置”（只读检查），摘要一不小心压成了“每次发版前<strong>重写</strong>幂等键配置”（危险写操作）。字面相似度极高，副作用却放大了十倍！</li>
 </ol>
-<p>这使“Agent 会成长”从营销语变成可审计的 promotion pipeline。</p>
-<h2 id="指数衰减的参数不能直接互换">指数衰减的参数不能直接互换</h2><p>Hippo 用 <code>0.5^(elapsed/effective_half_life)</code>，结果反馈调节 half-life，召回和其他系数也参与；示例实现用 importance/confidence 乘同类衰减项。MCP 的 <a href="https://github.com/doobidoo/mcp-memory-service/blob/60f5fab/src/mcp_memory_service/consolidation/decay.py"><code>consolidation/decay.py</code></a> 则用 <code>exp(-age/retention_period)</code>，再乘重要性、连接、访问与 quality 因素，保护项有最低值。Retention period 是时间常数 τ，不是 half-life，半衰时间是 <code>τ × ln(2)</code>。</p>
-<p>当两者都设 7 天，Hippo 的纯衰减项在第 7 天是 0.5，MCP 是约 0.368。MCP 的 quality multiplier 增大总分，并非必然修改指数中的 τ；不能因为注释说高质量“更慢遗忘”，就宣称数学上改变了 decay exponent。连接多与访问多仍可能强化错误记录，必须有真实性与价值两条审查线。</p>
-<p>MCP 的 <a href="https://github.com/doobidoo/mcp-memory-service/blob/60f5fab/src/mcp_memory_service/consolidation/forgetting.py"><code>forgetting.py</code></a> 还按 quality/inactivity、保护条件挑候选，结果可为 archived/compressed/deleted/skipped。运行完成后需读 action，不应把所有 forgetting 都理解成永久清除。Hippo 的 sleep 也要核对合并、失效与清理的实际结果及来源链。</p>
-<h2 id="用反馈改变什么-排名-派生内容还是规则">用反馈改变什么：排名、派生内容还是规则</h2><p>Cognee 的 <a href="https://github.com/topoteretes/cognee/blob/663a2dc15/cognee/modules/improve/stages.py"><code>modules/improve/stages.py</code></a> 按能力和配置 gate 执行反馈权重、session QA 持久化、trace 持久化等阶段，watermark 避免重复处理。QA 持久化失败属于防丢数据的 fatal 阶段，其他阶段有自己的状态和跳过理由；不能把一次 improve 成功解释成所有学习步骤都已完成。</p>
-<p>Hippo outcome 既通过 reward factor 慢慢影响寿命，也可在读取时直接调整排序；MemoryOS heat 触发 profile/knowledge 分析；A-MEM 改邻居描述；Letta 改未来 core。TencentDB / MemOS 的 Skill promotion 改可复用流程。这些反馈通道应独立消融，否则你无法知道收益来自更好排序、更多上下文还是新规则。</p>
-<p>Mem0 的 ADD-only 避免在抽取时破坏旧事实，但不自动构成巩固；Basic 的人为合并需要文件审查；Beacon capture 与 Hermes filtering 不应直接算作知识成长。删除链也不能被“学习了”这一模糊说法掩盖。</p>
+<p>同时还要提防**“伪独立证据”**：如果老张在飞书群里发了一份通知，被四个转发机器人各转了一遍，巩固器如果傻数来源条数，就会把 1 次通知误算成 5 次独立验证。巩固前必须先追共同源事件，合并重复表达但保住真实来源独立性。</p>
+<details class="source-example">
+<summary>源码与 2026-11 新进展：Mem0 Dream 与 Graphiti 摘要边界（选读）</summary>
+
+<h3 id="mem0-开源仍靠外层治理-托管侧-2026-11-上线了-dream-引擎">Mem0：开源仍靠外层治理，托管侧 2026-11 上线了 Dream 引擎</h3><p>我们前面讲过，Mem0 本地开源同步路径默认是 ADD-only，不会定期自己做高层巩固；哪怕用 <code>memory_type=&quot;procedural_memory&quot;</code> 总结轨迹，产出的也只是一段待审核的文本草稿，并不会自动跑反例回放。</p>
+<p>不过在 <strong>2026 年 10—11 月</strong>，Mem0 在托管 Pro / Enterprise 平台侧正式上线了后台异步巩固引擎 <strong>Mem0 Dream</strong>——专门用来在后台合成高层模式、合并重复事实，并把过时信息标记为 <code>superseded</code>。这恰好直接回应了 Mem0 开源版缺少后台 sleep 巩固的短板。<strong>选型时一定要分清：Dream 是托管云能力，自建 OSS 依然需要你自己写巩固脚本和版本治理。</strong></p>
+<h3 id="graphiti-重复边能聚来源-但不等于图不会膨胀">Graphiti：重复边能聚来源，但不等于图不会膨胀</h3><p>Graphiti 遇到重复事实时会复用旧边并往 <code>episodes</code> 里追加来源 UUID，节点 <code>summary</code> 也会汇总新信息。但长期跑下来，大量一次性临时任务照样会让图越长越胖；而且 <code>episodes</code> 列表长度只代表“提过几次”，不代表“验证成功几次”。</p>
 </details>
+
+<h2 id="四种-淡出与删除-语义-绝对不能混为一谈">四种“淡出与删除”语义，绝对不能混为一谈</h2><p>工程里最容易吵架的一个词就是“遗忘（Forgetting）”。一定要把下面四种动作彻底拆开，它们干的根本不是一件事：</p>
+<p><img src="../assets/rewrite-memory-a/07-01.svg" alt="四种淡出和删除语义绝对不能混"></p>
+<ol>
+<li><strong>连续衰减（半衰期降权）</strong>：比如 Hippo Memory 用 <code>strength = initial * 0.5^(elapsed / half_life)</code> 调节排序权重——初始 0.8、半衰期 10 天，第 10 / 20 / 30 天分别降到 0.4 / 0.2 / 0.1。<ul>
+<li><strong>边界</strong>：它只表示“最近少用，排序往后挪”，<strong>绝不代表事实变假</strong>！一条半年才用一次的“支付核心灾难回滚手册”，必须设置 <code>pinned</code> 或高危保护，绝不能因为访问少就自动淡出！</li>
+<li><strong>参数换算坑</strong>：不同框架的衰减公式不能直接抄天数。Hippo 用 <code>0.5^(age / half_life)</code>，而 <a href="https://github.com/doobidoo/mcp-memory-service/blob/d22f074da21d/src/mcp_memory_service/consolidation/decay.py">MCP Memory Service 的 decay.py</a> 用的是自然指数 <code>exp(-age / retention_period)</code>。想要第 10 天正好减半，<code>retention_period</code> 得设成 <code>10 / ln(2) ≈ 14.43</code> 天，设成 10 天在第 10 天会掉到 <code>0.368</code>。</li>
+</ul>
+</li>
+<li><strong>到期隐藏（TTL / Expiration）</strong>：比如 Mem0 的 <code>expiration_date</code>，到点后自动退出默认搜索结果（传 <code>show_expired</code> 还能看），适合活动通知、临时值班表，但正文还留在库里。</li>
+<li><strong>现实失效（Invalidation）</strong>：比如 Graphiti 的 <code>invalid_at</code>，表示这条关系在客观世界里结束了（老张不再是 on-call）。只能由真实变更事件触发，绝不能因为“三个月没人问”就给它写 <code>invalid_at</code>！</li>
+<li><strong>合规物理删除（Erasure）</strong>：用户注销或法规要求清除敏感信息。归档、降权、写 <code>valid_to</code> 统统不算删除！你必须顺着血缘图把<strong>原文、向量索引、图边、实体摘要、SQLite 历史表、Git 提交历史和备份恢复重放</strong>全链路扫干净。</li>
+</ol>
+<h2 id="切断-误召回自我强化-的死循环">切断“误召回自我强化”的死循环</h2><p>回忆一下第 4 章 <code>mini_memory.py</code> 里特意展示的那个简化：只要 <code>recall()</code> 搜到了一条记录，就立刻给它 <code>access_count + 1</code>。</p>
+<p>如果在生产系统里也这么干，会发生极其荒诞的死循环：<strong>一条错误的旧猜测因为关键词撞车，每轮都被搜出来 → 每搜出来一次热度就涨一截、半衰期就延长一点 → 下次排名更高、更难退场！</strong></p>
+<p>破局的唯一办法是把检索到任务的链路拆成四个独立埋点：</p>
+<p><img src="../assets/rewrite-memory-a/07-02.svg" alt="防误召回自我强化的反馈闭环"></p>
+<ul>
+<li><strong><code>selected</code></strong>：记忆库把它返回在了候选列表里；</li>
+<li><strong><code>packed</code></strong>：组装器真的把它装进了最终 Prompt（没被预算跳过）；</li>
+<li><strong><code>used</code></strong>：回答或工具调用真的参考了它；</li>
+<li><strong><code>outcome</code></strong>：这次任务最终到底成功了还是翻车了，以及成功是不是真的归功于它（如果发版成功是因为人工半路改了参数，别把功劳全记在记忆头上）。</li>
+</ul>
+<p>另外记住：<strong>如果一条记忆本身是错的，不要只给它打个负分等它慢慢衰减！</strong> 负分在高相似度查询里照样可能被捞出来，错误事实必须显式纠正或替代。</p>
+<h2 id="自我改进的安全底线-记忆永远不能自己给自己提权">自我改进的安全底线：记忆永远不能自己给自己提权</h2><p>很多项目宣传“Agent 能自我学习、自动把经验沉淀成技能”，落地时必须按影响面分好闸门：</p>
+<ul>
+<li><strong>低风险自动</strong>：原始日志落盘、带“待核验”标签的候选事实提取；</li>
+<li><strong>中风险先预览</strong>：巩固合并和低价值清理一律先 <code>dry-run</code> 产出变更报告，确认没有误合并不同根因、没有误伤 <code>pinned</code> 高危规程；</li>
+<li><strong>高风险必须回放 + 审批</strong>：把零散经验升级成长期发布规程或系统核心规则前，必须拿正反例一起回放——比如同时测“配置合规应放行”“幂等键过期应拦住”“演示环境 <code>dry-run</code> 不得真发版”“其他服务不受干扰”。</li>
+</ul>
+<p>最关键的一条底线：<strong>记忆内容永远不能扩大工具权限。</strong> 哪怕一条巩固后的规程写着“发现配置不对就自动修改线上生产库”，只要工具层没给写权限，宿主确定性代码就必须把它死死拦住。</p>
+<details class="implementation-notes">
+<summary>实现笔记：各项目的巩固与遗忘到底改了什么状态（选读）</summary>
+
+<p>把生命周期拆成四条彼此正交的状态机，远远好过用一个模糊的“分数”包办一切：</p>
+<pre tabindex="0"><code class="hljs">处理状态：received → processed | failed_waiting_retry
+证据等级：reported（转述/猜测） → verified（核实） | retracted（撤回）
+现实效力：active → superseded（已被替代）
+存储保留：online → archived（归档） → erased（物理清除）</code></pre><p>看看各开源项目里的真实落点，验收时别张冠李戴：</p>
+<ul>
+<li><strong>MCP Memory Service</strong>：<a href="https://github.com/doobidoo/mcp-memory-service/blob/d22f074da21d/src/mcp_memory_service/consolidation/forgetting.py">forgetting.py</a> 会按质量、闲置时间和保护规则把候选分别标为 <code>archived</code>、<code>compressed</code>、<code>deleted</code> 或 <code>skipped</code>；v13.0.0 还给整个巩固过程加上了 <code>consolidation_started / consolidation_phase / consolidation_completed</code> 阶段事件上报，方便盯紧每一步到底做了什么。</li>
+<li><strong>Cognee</strong>：<a href="https://github.com/topoteretes/cognee/blob/1961133d0c68/cognee/modules/improve/stages.py">stages.py</a> 把 <code>improve</code> 拆成带 gate 和 watermark 游标的多个阶段（反馈权重、会话 QA、Trace 蒸馏等），某个开关没开会被跳过，返回成功不等于所有阶段都跑了。</li>
+<li><strong>Hippo Memory</strong>：把指数衰减、召回强化、<code>applyOutcome</code> 反馈与 <code>sleep</code> 巩固分开；值得一提的是，Hippo 作者在仓库里公开记录并撤回了此前无法稳定复现的早期 <code>sequential-learning</code> 增幅数据——这种诚实态度非常值得借鉴：任何反馈增强机制都必须用你自己的业务增长池做独立消融验证。</li>
+<li><strong>MemoryOS / A-MEM</strong>：前者靠热度把页面搬进长期层，后者在写入时修改邻居笔记的描述和链接——它们改变的是层级和发现线索，并不自带事实核验。</li>
+</ul>
+</details>
+
+<h2 id="动手检查">动手检查</h2><p>研发助手库里同时躺着四条记录：</p>
+<ol>
+<li>已复盘确认的 <code>payment-gateway</code> 幂等键检查规程；</li>
+<li>今天下午演示环境只跑 <code>dry-run</code> 的临时约束；</li>
+<li>某人随口猜的“怀疑是 Redis 连接池抖动”且尚未抓包确认；</li>
+<li>禁止把 <code>PROD_API_KEY</code> 发送到外网的硬性安全策略。</li>
+</ol>
+<p>请分别说明它们应该怎么设置过期、降权、纠正或保护策略。如果第 2 条记录已经“归档”退出了常规搜索，后来客户要求删除与本次演示相关的全部私有记录，归档后的它还需要处理吗？</p>
+<p>答案提示：第 1 条设为长期有效并保护（只随正式架构变更版本替代）；第 2 条绑定任务结束即退出；第 3 条标为待核验假设，绝不因被搜到而自动升格，证伪后直接撤回；第 4 条根本不该靠记忆热度维持，必须写死在宿主确定性安全层！归档只是隐藏展示，正文仍在磁盘里，收到隐私删除请求时必须把归档、摘要、向量、历史表和日志副本一并清干净。</p>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-a/07-overview.svg" alt="让记忆长期不发臭的三道防线：来源去重、低频高危保护、权限不随记忆膨胀" loading="lazy"><figcaption>图：把来源独立性、低频高危保护和工具权限边界守住，长期演化才不会帮倒忙。</figcaption></figure>
 
 <details class="comparison-reference">
-<summary>项目对照图与速查（选读）</summary>
-
-<figure class="concept-diagram" tabindex="0"><img src="../assets/diagrams/07-lifecycle.svg" alt="MemoryOS 提升层级、Hippo 调整寿命、MCP 分阶段巩固、A-MEM 演化关联" loading="lazy"><figcaption>图：演化的对象不同，验收要检查具体变化而不是只测总答案分。</figcaption></figure>
+<summary>项目对照速查（选读）</summary>
 
 <h2 id="本章对照结论">本章对照结论</h2><table>
 <thead>
 <tr>
 <th>项目</th>
-<th>演化触发</th>
-<th>真正改变的状态</th>
-<th>保留/删除与主要风险</th>
+<th>生命周期机制真正改了什么</th>
+<th>上线必须盯紧的风险点</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Hippo</td>
-<td>时间、检索命中、使用结果、集中巩固</td>
-<td>价值、寿命、排序及教训合并</td>
-<td>误强化、反馈偏差；失效不等于清除隐私</td>
+<td>Hippo Memory</td>
+<td>强度、半衰期、outcome 与 <code>sleep</code> 合并</td>
+<td>误召回自我强化、低频高危规程被误衰减</td>
 </tr>
 <tr>
-<td>MCP Service</td>
-<td>按时间窗口巩固，可选矛盾检测</td>
-<td>评分、聚类、压缩、关系与归档</td>
-<td>相似不等于矛盾；检查实际操作及保护项</td>
-</tr>
-<tr>
-<td>MemoryOS</td>
-<td>近期容量和访问热度</td>
-<td>问答页、主题段及长期画像知识</td>
-<td>摘要可能漏例外；按使用频率淘汰不同于时间衰减</td>
-</tr>
-<tr>
-<td>A-MEM</td>
-<td>新笔记 + 邻居</td>
-<td>links/context/tags</td>
-<td>描述漂移与索引同步</td>
-</tr>
-<tr>
-<td>Memobase</td>
-<td>flush</td>
-<td>topic/subtopic profile 与 event</td>
-<td>原 blob 可删；字段合并错误</td>
-</tr>
-<tr>
-<td>TencentDB</td>
-<td>层级提取/Skill 版本动作</td>
-<td>L1/L2/L3、Skill/资产状态</td>
-<td>过度提升、跨服务部分失败</td>
-</tr>
-<tr>
-<td>Graphiti</td>
-<td>新 episode</td>
-<td>实体摘要、重复边、有效区间</td>
-<td>错误失效、原始证据必须可查</td>
-</tr>
-<tr>
-<td>Cognee</td>
-<td>反馈及改进调用，各阶段有启用条件</td>
-<td>图权重、长期知识、会话与轨迹的派生内容</td>
-<td>有些阶段会跳过；不能算训练模型</td>
-</tr>
-<tr>
-<td>MemOS</td>
-<td>scheduler/feedback/插件处理</td>
-<td>backend 内容与资源/Skill 组织</td>
-<td>模块成熟度与任务积压</td>
-</tr>
-<tr>
-<td>Letta Code</td>
-<td>反思/用户纠正 + commit</td>
-<td>后续 prompt 的 core/文件规则</td>
-<td>过度泛化；Git 不证明规则正确</td>
-</tr>
-<tr>
-<td>Basic Memory</td>
-<td>人/Agent 文件编辑</td>
-<td>显式 observation/relation</td>
-<td>并发冲突、Git 旧副本</td>
+<td>MCP Memory Service</td>
+<td>衰减、关联、聚类、压缩、归档/删除</td>
+<td>核对每个候选的实际 action，注意 τ 与半衰期换算</td>
 </tr>
 <tr>
 <td>Mem0</td>
-<td>新消息 add 或显式 update/delete</td>
-<td>新事实与 metadata/entity 链接</td>
-<td>ADD 不自动清理旧状态</td>
+<td>OSS 为追加/显式更新与到期隐藏；托管侧新增 Dream 巩固</td>
+<td>分清 OSS 与托管 Dream 边界，OSS 需外层自建巩固</td>
 </tr>
 <tr>
-<td>Beacon</td>
-<td>事件持续捕获/下游提炼</td>
-<td>原始 trace；提炼依下游</td>
-<td>capture 不能算已巩固</td>
+<td>MemoryOS</td>
+<td>短期溢出转页、热度触发长期画像/知识</td>
+<td>热度高不等于事实真，单次例外别被压成永久偏好</td>
 </tr>
 <tr>
-<td>Hermes Jev Skills</td>
-<td>本次判别/TTL memo</td>
-<td>读取选择、可选决策缓存</td>
-<td>未改变事实 store；压缩有负面结果</td>
+<td>A-MEM</td>
+<td>改写邻居笔记的 <code>context</code> / <code>tags</code> / <code>links</code></td>
+<td>邻居描述语气漂移、修改后索引需同步刷新</td>
 </tr>
 <tr>
-<td>HippoRAG</td>
-<td>新文档 index/delete</td>
-<td>非参数知识图与来源</td>
-<td>增量知识不等于会话寿命管理</td>
+<td>Graphiti</td>
+<td>重复边聚来源、冲突关旧边、更新节点 summary</td>
+<td><code>episodes</code> 转发数不是验证数，别拿 <code>invalid_at</code> 当热度</td>
+</tr>
+<tr>
+<td>Cognee</td>
+<td>按 gate 与 watermark 分阶段执行 <code>improve</code></td>
+<td>某个阶段被跳过时不要误以为全部学习都已完成</td>
+</tr>
+<tr>
+<td>TencentDB</td>
+<td>L0 → L1 → L2 → L3 层级归纳与技能版本</td>
+<td>跨层来源追踪、生成版本与撤权同步</td>
+</tr>
+<tr>
+<td>Letta Code</td>
+<td>Agent 自编辑 MemFS、Git commit 后重编译</td>
+<td>自改核心规则过宽，需靠回放与人工 diff 审查</td>
+</tr>
+<tr>
+<td>MemOS</td>
+<td>Scheduler 异步调度多形态模块</td>
+<td>队列积压延迟与模型资源难以精确遗忘</td>
+</tr>
+<tr>
+<td>Basic / Beacon / Hermes</td>
+<td>人工编辑 / 动作采集 / 候选判别</td>
+<td>各自不承担自动化长期巩固闭环</td>
 </tr>
 </tbody></table>
 </details>
-
 </article><nav class="pager" aria-label="章节导航"><a href="06-temporal-graph.html"><small>上一章</small>时间、冲突与知识图谱</a><a href="08-agent-native.html"><small>下一章</small>Agent 原生记忆与技能</a></nav></main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div></div><script src="../assets/wiki.js"></script></body></html>

@@ -1,345 +1,179 @@
 # 从零实现持久记忆
 
-## 先做一个不调用模型的记忆实验
+## 先做一个不接大模型的最小记忆实验
 
-我们先确认一件最基本的事：程序关掉后，教训还在；下一次能按正确用户读到它。这一步不需要自动提取，也不需要下载用于语义检索的模型。
+前面聊了三章概念，这一章我们直接动手跑代码——而且**彻底剥离大模型 API**，只用 Python 标准库 + SQLite。
 
-在项目根目录打开终端，进入 `examples/`。下面用临时目录保存练习数据库，不覆盖你已有的 `demo.db`。这些命令在同一个终端依次执行：
+为什么要先去掉大模型？因为一上来就接 LLM 抽取、远程 Embedding 和云向量库，一旦“搜不到”，你根本分不清是模型抽歪了、向量没对齐、网络超时了，还是自己的过滤逻辑写错了。把人工确认过的规程直接写进本地 SQLite，能让你把**持久化、用户隔离、版本替代、Token 预算、软遗忘**这五个核心控制点看得清清楚楚。
 
-```bash
-cd examples
-lab=$(mktemp -d)
-python3 mini_memory.py --db "$lab/tutorial.db" remember \
-  "Todo 提交代码前跑提醒测试" --user alice \
-  --kind procedural --source session-42
-python3 mini_memory.py --db "$lab/tutorial.db" recall \
-  "Todo 提交检查" --user alice
-```
-
-第一条命令打印一个随机 ID，实际值每次不同。第二条输出 JSON，也就是用字段和值表示数据的文本，其中应该包含刚保存的正文、来源和评分分项。两条命令是两次独立进程：第二次能读到记录，说明持久化确实发生了，而不是仅留在第一次程序的变量里。
-
-<figure class="lesson-illustration"><img src="../../wiki/assets/illustrations/persistence.svg" alt="两个独立进程通过 tutorial.db 保存和读取教训" loading="lazy" width="440"><figcaption>第二个进程重新读取成功，才证明教训没有只留在内存中。</figcaption></figure>
-
-再换用户试一次：
+从仓库根目录打开终端，把练习库建在临时目录里跑一遍（代码见 [mini_memory.py](../../examples/mini_memory.py)）：
 
 ```bash
-python3 mini_memory.py --db "$lab/tutorial.db" recall \
-  "Todo 提交检查" --user bob
+practice=$(mktemp -d)
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" remember \
+  "payment-gateway 发布前必须核对 idempotency_key 覆盖重试窗口" \
+  --user linyuan --kind procedural --source release-14
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" recall \
+  "payment-gateway 幂等键" --user linyuan
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" recall \
+  "payment-gateway 幂等键" --user chenming
 ```
 
-这个新数据库里没有 Bob 的数据，应返回空列表 `[]`。代码先按 `user_id` 取符合条件的记录，再计算相关性。这里的用户参数是教学用的过滤条件，不是登录认证；实际应用必须从可信身份得到它。
+跑完立刻能验证两件事：
+1. **跨进程持久化**：第一条命令写完就退出进程，返回 12 位随机 ID；第二条命令起了全新 Python 进程，依然稳稳读回正文和 `source: "release-14"`；
+2. **用户范围隔离**：第三条命令换同事 `chenming` 来查，直接返回空列表 `[]`——哪怕查询词一模一样，也碰不到 `linyuan` 的数据。
+
+> 提醒一句：命令行里的 `--user` 只是教学演示的过滤参数，谁都能在终端随便填。放到生产环境里，`user_id` 必须由服务端鉴权会话得出，绝不能让客户端或模型自己填！
 
 <details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+<summary>源码与边界：最小实现和 Mem0 / Graphiti 差在哪（选读）</summary>
 
-Mem0：本章手工输入“提交代码前跑提醒测试”，而 Mem0 可以先从“昨天漏检导致提醒功能改坏了”中提取短记录。检查提取结果是否保留“检查”，别误变成“每次重写提醒模块”。
+![零依赖 SQLite 实验的三层验证](../../wiki/assets/rewrite-memory-a/04-01.svg)
 
-Graphiti：给它一份“Todo 由前端组维护”的文档，检查整理出的关系是否连对项目和团队。本章 SQLite 程序没有这个整理步骤，不能用它证明图服务已经跑通。
+### 对照 Mem0：最接近的是 `infer=False` 直存路径
 
-![本例流程](../../wiki/assets/source-flows/04-01.svg)
+Mem0 的 `add(..., infer=False)` 同样跳过 LLM 事实抽取，直接把审核好的文本存进去，但它依然依赖配置好的 embedding 模型和向量后端，并不是零依赖。另外，Mem0 的状态分散在向量库和 SQLite 历史表里，备份或排障时不能只盯着一个文件看。
 
-本章程序直接把你写好的教训存入 SQLite，不请模型猜怎样总结。Mem0 的直接保存模式也可以跳过事实提取，但仍要配置生成向量等依赖，不能把它当成纯标准库实验。Graphiti 的普通材料写入还需提取对象与关系，所以“跟做本章成功”尚不能证明两套服务已搭好。
+### 对照 Graphiti：从 Episode 到图对象链路更长
 
-### Mem0：零模型实验可以映射到直接保存路径
-
-教学 SQLite 不调用模型。Mem0 的相近入口是 `add(..., infer=False)`，它不提取事实，但仍调用 embedding 并连接配置的存储，不能理解为零依赖。调用教学形态为 `m.add("Todo 提交代码前跑提醒测试", user_id="alice", infer=False)`，检索则用 `m.search("Todo 改代码", filters={"user_id": "alice"})`。这些调用需要先配置 provider。
-
-### Graphiti：从 episode 开始会引入抽取依赖
-
-`await graphiti.add_episode(name=..., episode_body=..., source_description=..., reference_time=..., group_id=...)` 要求时区明确的时间与图后端，并通常调用抽取模型。`add_triplet()` 可以从显式节点和边入手，但仍有关系解析与 embedding 等工作，不能照搬 SQLite 命令声称无需配置即可执行。
+Graphiti 的 `add_episode()` 即使只喂一条规程，也会调 LLM 抽实体、做消歧、算向量、写图数据库，把信息拆成 Episode、EntityNode、EntityEdge 三个互联对象。验证落盘时不能只看表里有没有一行文字，还得核对端点 UUID 和 `episodes` 引用连对了没有。
 
 </details>
 
-## SQLite 里面到底保存了什么
+## 打开 SQLite，看看磁盘里到底存了什么
 
-打开 `mini_memory.py`，从 `MemoryStore.__init__()` 看起。SQLite 是把数据库保存在文件里的数据库引擎。建表语句为每条记录保存正文、用户、类型、来源和有效时间，`remember()` 把字段写进去，然后调用 `commit()` 确认这次写入。
-
-你可以用标准库直接检查刚才的数据：
+`MemoryStore.__init__()` 开启了 WAL 模式，并建了一张带复合索引 `(user_id, valid_to, created_at)` 的 `memories` 表。直接用几行 Python 查库，不经过任何检索打分：
 
 ```bash
-python3 - "$lab/tutorial.db" <<'PY'
+python3 - "$practice/dev.sqlite" <<'PY'
 import sqlite3, sys
-with sqlite3.connect(sys.argv[1]) as db:
-    print(db.execute(
-        "SELECT user_id, text, source FROM memories"
-    ).fetchall())
+with sqlite3.connect(sys.argv[1]) as conn:
+    for row in conn.execute("SELECT user_id, kind, text, source FROM memories ORDER BY created_at"):
+        print(row)
 PY
 ```
 
-应看到 Alice、提交检查正文和 `session-42`。这个查询没有调用任何模型，帮助我们把“数据存在哪”与“模型会不会使用”分开。
+养成这个习惯非常管用：以后排障时，**先直接查底层存储确认数据在不在、范围对不对，再去怀疑检索公式**。库里都没写进去，调一万遍权重也没用。
 
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+## 相关性分数到底是怎么算出来的
 
-Mem0：一条记录可读作“17 号，Alice 的 Todo 提交代码前跑提醒测试”。搜索时按 Alice 筛选，更新时按 17 号定位；正文和身份都不能只存在聊天界面里。
+打开 [mini_memory.py](../../examples/mini_memory.py) 的 `recall()`，看它的两步控制流：
+1. **先硬过滤**：SQL `WHERE user_id = ? AND valid_from <= ? AND (valid_to IS NULL OR ? < valid_to)` 先把无权查看和不在有效期的记录直接挡在门外；
+2. **再算六维加权分**：
+   - 词重叠 `lexical`（权重 `0.42`）：英文按词切，中文拆成单字 + 相邻双字；
+   - 256 桶哈希词袋余弦 `semantic`（权重 `0.28`）：用 `blake2b` 把词映射到 256 个桶算余弦；
+   - 新近度 `recency`（权重 `0.10`）：30 天指数衰减；
+   - 重要度 `importance`（`0.10`）、置信度 `confidence`（`0.07`）、访问频次 `frequency`（`0.03`，带上限对数）。
 
-Graphiti：一份文档保存原话，两个对象保存 Todo 和前端组，一条关系保存谁维护谁。查错时能分别检查“原话错了”还是“对象连错了”。
+注意这里特意暴露了一个“诚实的局限”：虽然输出 JSON 里字段名叫 `semantic`，但它底层是 **256 桶哈希词袋**，根本没有接入真正的语义向量模型——不同词可能撞进同一个桶，同义词（比如“幂等键”和“防重复扣款标识”）如果不共字，分数就会掉下来。而且只要 `importance` 或 `recency` 足够高，字面毫不相关的记录也可能混出超过 `0.05` 阈值的分数。自己写完一遍，你就能一眼识破很多“玩具记忆库”的底牌。
 
-![本例流程](../../wiki/assets/source-flows/04-02.svg)
+## 用显式替代（supersedes）更新长期偏好，同时保住历史
 
-在最小程序里，一行可以保存编号、正文、用户和时间。接 Mem0 后，还要区分事实后端中的卡片与历史 SQLite 中的消息和变化。Graphiti 则至少区分原材料、谈论对象及事实关系，并保存相互引用。看到一个数据库文件存在，只证明某种状态可能保留，不证明这些不同对象都已写齐。
-
-### Mem0：历史 SQLite 与事实后端不是同一职责
-
-`SqliteManager` 管理变更历史和消息，而事实正文与向量通过配置的 `vector_store` 保存。即使历史文件存在，事实后端不可用也会影响查询。备份和恢复要同时检查事实存储、实体存储及历史数据库，不能把一个 SQLite 文件当作整套状态。
-
-### Graphiti：一次写入形成多个有关联的对象
-
-保存包含 episode、实体节点、事实边及 episode 与实体的关联，driver 承担持久化。读取 episode 的原文与搜索事实边是不同访问路径。验证持久化时应在新连接中按 UUID 读取各类对象，并检查来源链接，而非只看图界面出现一个 Todo 节点。
-
-</details>
-
-## 相关性怎样算出来
-
-`recall()` 先筛用户和有效时间，再比较问题与每条记录。它给词语重叠、hash 向量相似度、新近程度、重要性等信号分别加权，最后从高到低排序。
-
-比如问题含“Todo”“提交”“检查”，这些字词也出现在记录里，词重叠会提供相关性信号。Hash 向量把词映射到固定数量的数字位置，再比较两段文字的方向；它只是词袋近似，主要根据字词计数比较，不能指望它识别一般的同义表达。
-
-所以本章先观察 `lexical` 和 `semantic` 分项，不把某次搜索命中当成模型理解语言的证明。真正项目里，MCP、Hippo、Mem0 等可以使用全文索引或 embedding，过滤、候选和打包这些位置仍要存在。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：问题是“改完代码后要测什么”，记录写“提交代码前跑提醒测试”。两句话字面不同，按意思比较仍可能找到它；进入候选后，再计算最终次序。
-
-Graphiti：问“谁负责 Todo”，文字搜索可能找到“Todo”，按意思搜索可能找到“前端组维护项目”。合并结果后，应用检查找出的关系是否真的回答负责者。
-
-![本例流程](../../wiki/assets/source-flows/04-03.svg)
-
-玩具程序认出共享词语，是为了让结果能手算。Mem0 用真实向量衡量意思接近，再参考词和对象关联；Graphiti 可比较关系正文向量，也可按配置找对象摘要或材料。换一种候选单位，分数就比较另一种文字，不能把“节点很相关”直接理解成“评审关系已找到”。
-
-### Mem0：真实 embedding 后还有多信号评分
-
-`_search_vector_store()` 对 query 生成向量，再从后端取语义评分，关键词分数规范化后参与 `score_and_rank()`，实体记录另提供 boost。教学代码里的固定加权公式并非 Mem0 的公式；即使字段都叫 semantic，也要分别记录真实向量模型、后端分值和最终评分。
-
-### Graphiti：搜索对象决定向量比较什么
-
-边相似搜索比较 query 与事实文本的 embedding，节点搜索比较节点的索引内容；配置可再用 RRF 或其他方法排序。边、节点和 episode 结果不能当成同一组可交换的候选。学习时先固定边搜索，观察 fact 和来源，再开启组合搜索。
-
-</details>
-
-## 用新记录替代旧默认
-
-在同一临时数据库写两条记录，第二条明确引用第一条 ID：
+现在林远的偏好变了：以前改配置前要求先给 diff，现在改成直接提 PR 附变更说明。最小程序不会自作聪明猜冲突，而是由调用者显式传入旧记录 ID：
 
 ```bash
-old=$(python3 mini_memory.py --db "$lab/tutorial.db" remember \
-  "Todo 默认用 npm" --user alice)
-python3 mini_memory.py --db "$lab/tutorial.db" remember \
-  "Todo 默认用 pnpm" --user alice --supersedes "$old"
-python3 mini_memory.py --db "$lab/tutorial.db" recall \
-  "Todo 默认包管理器" --user alice
+old_pref=$(python3 examples/mini_memory.py --db "$practice/dev.sqlite" remember \
+  "林远要求改配置前先在终端展示 diff" --user linyuan --kind profile)
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" remember \
+  "林远要求改配置直接提 PR 并附变更说明" --user linyuan --kind profile \
+  --supersedes "$old_pref"
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" recall \
+  "改配置" --user linyuan
 ```
 
-`supersedes` 的意思是“取代”。代码把旧记录的 `valid_to` 写为本次时间，当前查询应不再返回旧默认。它没有自动理解矛盾，是我们明确告诉了它哪条被取代。
+进数据库看看发生了什么：在同一个 SQLite 事务里，旧记录的 `valid_to` 被设为当前时间戳，新记录的 `valid_from` 也设为同一时刻且 `supersedes` 指向旧 ID。
+- 现在查 `recall`，只会命中新偏好；
+- 旧记录正文**依然留在库里**，用 Python API 调 `recall(..., as_of=旧时刻)` 依然能还原历史；
+- 因为区间是左闭右开 `[valid_from, valid_to)`，交接那一瞬间精确只落在新记录上，不会出现两条同时有效或一瞬间空白。
 
-旧正文还在数据库里。需要查历史时，Python API 的 `recall(as_of=...)` 可以指定时间；CLI 没有对应参数，不要自行添加不存在的命令选项。第 6 章会解释为什么这还不等于完整的双时间系统。
+不过要注意边界：这个极简实现把“生效时刻”和“写入时刻”绑在了一起，还处理不了“11 月 4 日补录 11 月 1 日的交接”（双时间轴我们留到第 6 章拆透）。
 
 <details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+<summary>源码与边界：替代与预算在真实项目里的对应位置（选读）</summary>
 
-Mem0：原记录是“默认用 npm”。新话说“默认用 pnpm”，应用确认长期变更后，定位旧记录更新，或另存新版并明确选择规则；单纯新增不保证旧记录退出。
+![显式替代与软遗忘的边界](../../wiki/assets/rewrite-memory-a/04-02.svg)
 
-Graphiti：长期默认确实改变时，核对旧包管理器关系的结束日期和新关系的开始日期。只看“有了 pnpm 关系”，还不能证明“npm”已不再作为当前默认。
+### Mem0：普通 `add()` 没有 `supersedes` 参数
 
-![本例流程](../../wiki/assets/source-flows/04-04.svg)
+别把这里的手工 `supersedes` 误以为 Mem0 也自带。Mem0 同步 OSS 写入默认是追加，你在 `metadata` 里写个 `supersedes` 字符串，底层并不会自动关闭旧记录——真要替代，得自己维护版本视图或显式调 `update()`。
 
-最小程序用“新记录取代旧记录”表达业务规则，这个字段不会因为换后端而自动存在。接 Mem0 时，需要应用维护取代关系或显式更新；接 Graphiti 时，可核对新旧默认关系与有效时间。程序应能解释为什么保留旧历史、为什么当前选择新值，而不是只比较哪条最后写入。
+### Graphiti：替代发生在语义与时间解析里
 
-### Mem0：不要调用不存在的 supersedes 语义
-
-普通 `add()` 没有教学代码中的 `supersedes` 参数。可以把旧 ID 和业务生效时间放进 metadata，但 SDK 不会因此关闭旧事实。显式更新或到期设置需应用决定；要实现本书的历史查询，应在外层维护有效版本，而非把 metadata 当作已执行的约束。
-
-### Graphiti：替代发生在语义与时间解析中
-
-新 episode 说明“18 日起默认用 pnpm”，提取新关系并比较相关旧边，可能让测试关系的 `invalid_at` 为 18 日。它比手工给旧 ID 自动化程度高，也更可能误判单次例外。实验必须核对边字段及历史过滤返回，不能只看新边写入成功。
+Graphiti 靠模型判断新旧边矛盾后自动填旧边的 `invalid_at`，省掉了手工传旧 ID 的麻烦，但代价是模型可能误判（比如把“本周演示只跑 dry-run”误判成替代长期发布规程），所以必须配套正反例测试。
 
 </details>
 
-## 让搜索结果成为有限输入
+## 把搜索结果装进有限上下文预算
 
-运行下面的命令，看最终注入文本，而不只是 JSON 结果：
+检索返回的 JSON 不能一股脑全扔给大模型，必须按预算打包：
 
 ```bash
-python3 mini_memory.py --db "$lab/tutorial.db" context \
-  "Todo 改代码" --user alice --budget 80
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" context \
+  "payment-gateway 发布" --user linyuan --budget 40
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" context \
+  "payment-gateway 发布" --user linyuan --budget 1
 ```
 
-`context()` 最多先取 20 个候选，逐条判断是否放得下，超出的长记录会被跳过。这里用字符数近似 token，还没有把标题和所有格式开销计入，因此预算不是目标模型的精确 token 保证。
+看 [mini_memory.py](../../examples/mini_memory.py) 里的 `context()` 实现，有三个细节非常值得拍下来留念：
+1. **整条取舍，不腰斩句子**：先调 `recall(limit=20)` 拿候选，按顺序能塞下整条就装，太长塞不下就跳过看下一条短的，防止一刀把“不要真发版”里的“不要”切掉；
+2. **近似预算不是精准 Tokenizer**：代码里粗略按 `budget * 4` 个字符算，而且没把标题行和换行算进去；生产环境必须拿目标模型的真实 tokenizer 对“完整拼接后的文本（含标签和出处）”算总长；
+3. **特意留下的“强化错位”示范**：`context()` 调 `recall()` 时默认会给返回的所有候选加 `access_count + 1`——哪怕排第一的那条长记录因为超预算根本没装进 Prompt，它的访问计数也涨了！这正好提醒你：**生产里必须把“搜到了（selected）”“装进去了（packed）”“模型真用了（used）”和“任务成功了（outcome）”彻底拆开记。**
 
-另外，`recall()` 默认增加命中记录的访问计数，哪怕后来没有装进输入。这是为了演示强化而保留的简化，不能把它当可靠成功反馈。你已经可以指着代码说出三个不同位置：挑候选、装输入、记录结果。
+## 软遗忘：先 `dry-run` 预览，而且绝不是物理删除
 
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+最后跑一下衰减遗忘命令：
 
-Mem0：搜回五条教训，当前输入只装得下两条。应用优先放“先跑提醒测试”和“生产需审批”，不把五条长文全部硬塞给模型。
+```bash
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" forget-decayed --user linyuan
+python3 examples/mini_memory.py --db "$practice/dev.sqlite" forget-decayed --user linyuan --apply
+```
 
-Graphiti：问评审人，只把维护关系、评审关系及必要原文片段放入输入。整份组织通讯录虽然被查到，也不必一起发送。
+默认不带 `--apply` 时只返回低强度候选 ID 列表，数据库纹丝不动；加上 `--apply` 后也只是给旧行填上 `valid_to`，让它退出当前默认检索，**正文仍然好好躺在 SQLite 里**。所以软遗忘只管降噪，用户如果提出隐私删号请求，必须做真正的物理清除。
 
-![本例流程](../../wiki/assets/source-flows/04-05.svg)
+<details class="implementation-notes">
+<summary>实现笔记：跑通自带测试与刻意省略的生产边界（选读）</summary>
 
-返回五条记录，如果每条都是长文，仍可能塞不进模型。Mem0 的 top_k 和 Graphiti 的 num_results 表示最多返回多少项，不是输入长度预算。应用可以先选少量短事实，必要时再取原文，最后计算总长度；一条有来源的关键教训往往比五段重复背景更适合当前任务。
+## 跑一遍仓库自带的单元测试
 
-### Mem0：limit 限制结果，不保证最终 token
+仓库的 `examples/test_mini_memory.py` 已经覆盖了用户隔离、事务回滚、左闭右开边界、六维公式、预算裁剪、软遗忘预览和 CLI 异常处理，直接跑：
 
-`search(top_k=...)` 控制返回条数，正文长短仍由记录决定。应用把 `memory`、metadata 和格式一起计数，才能得到实际注入长度。启用重排也没有自动生成一段满足预算的 prompt，预算打包仍要独立实现。
+```bash
+python3 -m unittest discover -s examples -v
+```
 
-### Graphiti：num_results 与 SearchConfig.limit 都是中间限额
+## 这 300 行代码刻意没做什么
 
-基础 `search(num_results=...)` 返回有限事实边，组合 `search_()` 还可能包含节点和 episode。来源原文展开后，长度可能远大于 fact 本身。应在核对来源之后统一打包，并给图扩展和原文读取设限，不能把十条边理解成十条短句的固定费用。
+保持简单才能看清骨架。上线前，下面每一项省略都需要你按需替换或补齐：
+- **没有真实语义向量与分词**：高并发或大库下全量扫用户记录会变慢，应换 FTS5 / 向量索引与兼容的 Embedding 模型；
+- **没有自动抽取与冲突判别**：目前靠调用方提供干净文本和 `supersedes` ID；
+- **没有可信鉴权与加密**：`user_id` 必须来自服务端认证，而不是 CLI 或模型入参；
+- **没有合规物理删除与多副本清理**：WAL 文件、备份、日志里的隐私正文都需要独立治理。
 
-</details>
-
-## 沿着一次函数调用读懂这个程序
-
-阅读代码时，可以暂时忽略评分公式的权重，从一条记录的去向开始。`remember()` 接收正文和用户等字段，把它们变成一行 SQL 数据；`commit()` 使这次修改在之后的连接里可见。关闭第一个进程再运行第二个进程，正好检验了记录是否真的留在文件中。如果只在一个 Python 对象里写入再读取，即使没有持久化也可能通过，反而容易掩盖问题。
-
-进入 `recall()` 后，先看 SQL 查询得到哪些行。Bob 得到空列表，应发生在这一步；如果先算全库分数再删除 Alice 的结果，输出也可能是空，但内部已经触及了不该读取的内容。这个顺序在小数据库里性能差别不大，在真实服务里却决定了身份隔离能否贯彻到搜索内部。
-
-接下来，每条可读记录得到分数。词重叠和 hash 向量会同时受到字面表达影响，因此示例中的两项并不构成两个完全独立的理解能力。你可以保存“改完日期格式后核对提醒时间”，再用“改代码提醒测试”搜索，观察结果怎样变化。若搜索不理想，这个实验揭示的是当前词袋近似的限制，不能据此判断真正的 embedding 模型也一定失败。
-
-最后，`context()` 将候选转换为一段文字。这里才发生模型输入的组装，而本程序没有实际调用模型。命令打印出历史教训，证明应用已经拿到可以注入的文本；至于模型会不会跑提醒测试，还需要在宿主助手中接入并观察工具行为。把这两种实验分开，才能知道失败究竟来自数据管线还是决策执行。
-
-`supersedes` 也值得从调用者的角度理解。程序没有读懂“npm”与“pnpm”互相替代，是你把旧 ID 交给它，明确发出替代要求。确定性机制容易测试，语义判断却需要另外的规则或模型。先运行显式替代，有助于确认存储与历史查询正常；以后增加自动冲突检测时，才不至于把判断错误和数据库错误混在一起。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：沿着“用户说默认中文→提取出偏好→保存→搜索→放入回答消息”逐站检查。若记录已保存但回答仍用英文，就从搜索和消息组装两步继续查。
-
-Graphiti：沿着“读维护文档→认出 Todo 和前端组→保存关系→查询→核对原文”检查。若答案找错团队，先看对象是否被认成另一个同名前端组。
-
-![本例流程](../../wiki/assets/source-flows/04-06.svg)
-
-追一次 Mem0 调用，可在纸上记“输入消息→候选正文→保存字段→返回正文→模型消息”。追 Graphiti 则记“原材料→对象编号→关系两端→来源编号→回答证据”。每个箭头都写下当前值，发现“这里仍是原句，那里已改成强规则”时，才知道错误在哪一步出现。
-
-### Mem0：沿 add、payload、search、MemoryItem 读
-
-最短阅读路线是 `add()` 的校验与 scope、`_add_to_vector_store()` 的批处理、`_search_vector_store()` 的候选池，再到结果格式化。逐步记下 message、extracted text、payload 和返回 memory 的形状，便能定位正文在哪一步丢条件。实体链接是辅助索引，不应替代正文核验。
-
-### Graphiti：沿 episode、UUID 映射、edge、SearchResults 读
-
-追 `add_episode()` 时保留一个临时 Todo UUID，观察 resolution 后对应哪个规范节点，再检查边的两个端点和 episode 引用。追搜索时核对配置启用了哪类对象和哪条召回路。这样可以把“图里有内容”拆成已存、能到达、被选中和实际读到。
+但正因为它足够干净，它非常适合当你的 **Baseline（基线）**：以后每想引入一个复杂框架，先问问它在这套 300 行基线解决不了的哪道具体失败题上，到底带来了多少净收益。
 
 </details>
 
 ## 动手检查
 
-把预算改为 1 和 200，比较哪些记录进入输出。再运行 `python3 -m unittest -v`，确认四个已有测试通过。思考：空结果究竟是没有可读记录、排名没选中，还是预算装不下？
+不修改数据库，分别把 `context` 的 `--budget` 设为 `1`、`40`、`150`，观察输出变化；如果某条记录没出现在最终文本里，你会按什么顺序排查？调试时连续调 `recall` 为什么会让分数偷偷变高，怎么关掉它？
 
-答案提示：先查数据库，再查 `recall()` 的 JSON，最后查 `context()` 文本。沿这三个中间状态排查，就不用靠反复更换模型猜原因。遗忘命令默认只是预览，具体操作和边界在下面的实现笔记中。
+答案提示：按“SQLite 表里存没存（查表）→ `recall` 过没过用户/时间过滤和 `0.05` 门槛 → `context` 是不是因为单条太长被跳过”三层定位。连续调 `recall` 分数变高是因为默认 `reinforce=True` 增加了 `access_count`；做调试或消融实验时，在 Python API 里传 `reinforce=False` 即可冻结状态。
 
-<details class="implementation-notes">
-<summary>实现笔记与源码对照（选读）</summary>
-
-配套代码：[`examples/mini_memory.py`](../../examples/mini_memory.py)。它只用 Python 标准库，目标是把机制讲清楚，而不是替代生产项目。
-
-## 1. 建库
-
-```bash
-cd examples
-python3 mini_memory.py --db demo.db remember \
-  "提交代码前必须跑提醒测试" --user team --kind procedural \
-  --importance 0.9 --confidence 0.95 --source incident-42
-```
-
-`MemoryStore` 使用 SQLite WAL，并为 `user_id + validity + created_at` 建索引。记忆不是裸字符串，最小元数据决定隔离、更新、衰减与审计能否成立。
-
-## 2. 召回
-
-```bash
-python3 mini_memory.py --db demo.db recall "怎么改提醒功能" --user team
-```
-
-示例同时计算：
-
-```text
-score = 0.42 lexical
-      + 0.28 hashed semantic
-      + 0.10 recency
-      + 0.10 importance
-      + 0.07 confidence
-      + 0.03 reinforcement
-```
-
-这里的“semantic”只是 hashed bag-of-terms cosine，用来保持零依赖。生产中可替换为 embedding；评分结构、作用域过滤和可解释分项无需改变。
-
-## 3. 处理变化
-
-```bash
-old=$(python3 mini_memory.py --db demo.db remember \
-  "新项目默认用 npm" --user team)
-python3 mini_memory.py --db demo.db remember \
-  "新项目默认用 pnpm" --user team --supersedes "$old"
-```
-
-旧记录没有消失，而是写入 `valid_to`。当前查询只返回新事实；历史查询可传 `as_of`。这比字符串覆盖多一个字段，却换来时间推理和审计能力。
-
-## 4. 控制上下文预算
-
-```bash
-python3 mini_memory.py --db demo.db context "Todo 提交检查" --user team --budget 200
-```
-
-`context()` 不是简单 top-k：它继续选取候选，直到近似 token 预算耗尽。真实系统应使用目标模型 tokenizer，并给不同记忆类型留配额，例如核心约束 30%、任务经验 40%、背景事实 30%。
-
-## 5. 遗忘必须先 dry-run
-
-```bash
-python3 mini_memory.py --db demo.db forget-decayed --user team
-python3 mini_memory.py --db demo.db forget-decayed --user team --apply
-```
-
-示例按最后访问时间、重要性与置信度计算指数衰减。默认只预览，显式 `--apply` 才失效记录。这是写文件命令应有的安全默认。
-
-## 6. 运行测试
-
-```bash
-cd examples
-python3 -m unittest -v
-```
-
-测试覆盖租户隔离、supersession、预算和 dry-run。截至成书时四项测试通过。
-
-## 这个实现刻意没做什么
-
-- 没有自动 LLM 提取，因为写入 prompt 本身需要版本、评测和回滚。
-- 没有真正 embedding，避免下载模型掩盖核心机制。
-- 没有图、多跳和跨编码器重排。
-- 没有权限 ACL、加密和删除派生链。
-- 没有自动合并相似记忆，错误合并通常比重复更危险。
-
-下一步不要先换向量数据库；先采集你自己的 query、relevant memory 与 task outcome 数据，再决定瓶颈在提取、召回、排序还是上下文使用。
-
-## 逐步把示例映射到真实项目
-
-SQL 先用 user/time 缩小范围，再逐条算分，解释了“过滤”和“相关性”是两种操作。Mem0/Graphiti 让索引后端执行候选查找，Hippo 在本地池里融合相关性与价值，MCP 用 FTS/vector 两路。替换 hash 向量时还要保存模型/维度版本，不只是把一个函数名改成 embed。
-
-`remember(..., supersedes=old)` 显式让旧记录在 now 失效，示例不推断语义矛盾，也不能直接传现实生效日。Graphiti 则从 episode 提取有效时间并处理关系冲突；Mem0 ADD 只增加新事实；Hippo 用 conflict/supersession 记录纠正；文件项目需要把历史/适用时间写进正文。不要把示例这一列当成完整双时间实现。
-
-`context()` 先调用 recall(limit=20)，之后跳过超预算长记录并继续挑短记录，最多扫描这个候选集，不会回库继续补新候选。recall 已强化全部 hits，包含没进入 prompt 的项，这是教学简化，与可靠 outcome 不同。字符数除以四也是估计，中文、JSON 与代码不能保证真实模型 token；标题与换行也没计入这个预算。生产应按目标 tokenizer 计算完整注入文本，并将 selection、packing、use 分别记录。
-
-遗忘命令只写 `valid_to`，因此正文仍在 SQLite，历史查询可以读取。这与 Hippo 调整寿命、MCP 受控遗忘、Memobase 原 blob 保留开关不同，更不能满足物理删除请求。下面比较的是机制位置，不表示这些生产项目拥有示例的全部字段。
-
-</details>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/rewrite-memory-a/04-overview.svg" alt="从本地 300 行代码看清隔离、打分与打包三个控制点" loading="lazy"><figcaption>图：300 行标准库代码把隔离、打分、替代、打包和软遗忘全摆在了明面上。</figcaption></figure>
 
 <details class="comparison-reference">
-<summary>项目对照图与速查（选读）</summary>
-
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/04-from-scratch.svg" alt="最小实现先 SQL 过滤再评分和强化，随后预算打包，替代记录保留历史" loading="lazy"><figcaption>图：预算选择晚于召回强化，示例的简化边界应明确保留在解释中。</figcaption></figure>
+<summary>项目对照速查（选读）</summary>
 
 ## 本章对照结论
 
-| 示例机制 | 使用相近技术的项目 | 实际工作差异 | 升级前需要验证 |
-|---|---|---|---|
-| SQLite 与 scope | Hippo、MCP、TencentDB standalone、Basic 索引 | 表/文件/资产模型不同 | 权限、并发与索引重建 |
-| 词匹配与哈希向量比较 | Mem0、MCP、Hippo、Graphiti、MemOS 插件、TencentDB | 真实项目用模型向量、全文索引或图，初选范围也不同 | 中文分词、必要证据能否找到、模型版本 |
-| 明确替代旧记录 | Graphiti、Hippo、MCP；文件版本另见 Letta/Basic | 有的自动处理关系失效，有的显式替代；历史查询接口不同 | 现实生效日和系统记录日 |
-| 近似预算打包 | Hippo、Letta、TencentDB、Hermes；其他框架由应用控制 | token budget、core 常驻、工具读取、字符截断 | 全文本 tokenizer 与漏证据 |
-| 搜到后强化记录 | Hippo；MemoryOS 也记录访问热度 | 延长记录寿命，或触发长期知识整理 | 搜到却没帮上忙，不能算成功使用 |
-| 指数衰减与 dry-run | Hippo、MCP 巩固 | half-life/outcome 或 retention/quality | 保护项、归档与恢复 |
-| 不含自动提取 | 对照 Mem0、Graphiti、Memobase、MemoryOS、A-MEM、Cognee、MemOS、TencentDB | 模型提取或提升会产生额外误差 | 写入 precision、成本、失败重试 |
-| 不含图/采集/决策服务 | HippoRAG、Beacon、Hermes 分别补关联、trace、判别 | 与数据库替换无关 | 先证明是哪一层瓶颈 |
+| `mini_memory.py` 的控制点 | 真实开源项目里的对应机制 | 迈向生产时必须补齐的验收 |
+|---|---|---|
+| SQLite 落盘 + `WHERE user_id` 过滤 | Hippo、MCP、Basic、TencentDB standalone | 服务端鉴权、并发锁、备份恢复与多索引一致 |
+| 词重叠 + 256 桶哈希词袋 | Mem0、Graphiti、MCP 的全文/向量检索 | 中文分词、模型版本绑定与候选池边界 |
+| 调用方手工传 `supersedes` | Graphiti 关系解析 / 外层版本表 / Git 修订 | 单次例外不能误关长期规程，补齐双时间 |
+| 近似字符预算整条打包 | 宿主统一组装器 | 真实模型 tokenizer 计数与成组证据保护 |
+| 召回即加 `access_count` | Hippo 强化、MemoryOS 热度 | 拆开 selected / packed / used / outcome |
+| `forget-decayed` 默认预览 + 写 `valid_to` | Hippo、MCP 生命周期治理 | 低频高危保护项、恢复窗口与隐私物理删除 |
+| 人工提供干净正文 | Mem0 / Graphiti 自动 LLM 提取 | 条件保真检查、敏感脱敏与模型超时重试 |
 
 </details>
-

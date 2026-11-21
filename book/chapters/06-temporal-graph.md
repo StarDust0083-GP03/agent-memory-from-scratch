@@ -1,346 +1,167 @@
 # 时间、冲突与知识图谱
 
-## 两句话相反，也可能都曾经正确
+## 两句完全相反的话，其实都曾经是真的
 
-9 月 10 日，Todo 默认用 npm。9 月 18 日，团队改为默认用 pnpm。9 月 20 日，助手才收到关于变更的消息。
+研发团队里人员交接是家常便饭：
+- 10 月 3 日起，`payment-gateway` 的 on-call 与发布终审由**老张**负责；
+- **11 月 1 日**起，职责正式交接给**老李**；
+- 但因为交接表忘填，系统直到 **11 月 4 日**才收到这条交接通知。
 
-现在问“Todo 默认用哪个包管理器”，应回答 pnpm；问“9 月 15 日默认用哪个”，应回答 npm。我们不能仅保存一个最新值，也不能把两条记录同时扔给模型却不解释日期。
+现在团队里有两个人来问研发助手：
+- 问一（今天查现行规则）：“今天发版找谁终审？” → **老李**。
+- 问二（审计历史事故）：“10 月 20 日那次发布为什么找老张签字？” → 因为 10 月 20 日那天现实中就是**老张**负责！
 
-先写成两个有效区间：
+如果你把“老张”直接 `UPDATE` 覆写成“老李”，审计历史就毁了；如果你把两条记录都留在库里却不带有效区间，模型每次都会同时看到“老张负责”和“老李负责”，只能抓阄。
 
-```text
-npm：从 9 月 10 日起，到 9 月 18 日前有效。
-pnpm：从 9 月 18 日起，目前没有确认结束日期。
-```
+最干净的表达是**左闭右开有效区间 `[valid_at, invalid_at)`**：
+- 老张：`[2026-10-03, 2026-11-01)`
+- 老李：`[2026-11-01, null)`（`null` 代表“尚未记录结束”，不是“永久不变”）
 
-在程序里常用左闭右开的区间。`[10 日, 18 日)` 表示包含开始、不包含结束，这样 18 日切换时不会让两个默认同时成立。
+用左闭右开的好处立竿见影：在 11 月 1 日零点交接那一瞬间，查询只精确落在新关系（老李）上，既不会两个人都生效，也不会出现一秒钟的真空期。
 
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+## 为什么一根时间轴不够用：拆开“现实有效时间”和“系统获知时间”
 
-Mem0：分别存了“9 日由 Lin 评审”和“18 日起由 Mei 评审”。问 15 日时，应用检查日期选 Lin，不能只取最近写入的 Mei。
+刚才那个“11 月 1 日交接、11 月 4 日才录入”的晚到通知，直接把单时间轴打穿了。看下面两个关于 **11 月 2 日**的追问：
 
-Graphiti：Lin 的评审关系在 18 日结束，Mei 的从 18 日开始。应用按目标日期筛选：15 日取 Lin，19 日取 Mei。
+1. **“11 月 2 日那天，现实中到底该找谁当 on-call？”**
+   答案是**老李**——这问的是**业务有效时间（Valid Time：`[valid_at, invalid_at)`）**。
+2. **“既然 11 月 2 日已经是老李了，为什么那天凌晨告警时，研发助手把告警派给了老张？”**
+   因为 11 月 2 日那天，4 日的通知还没录入系统，当时系统手里掌握的合法资料就是老张！这问的是**系统录入时间（Transaction / Ingestion Time：`created_at` / `expired_at`）**，必要时还要配合当时请求实际注入的快照来佐证。
 
-![本例流程](../../wiki/assets/source-flows/06-01.svg)
-
-“9 日由 Lin 评审”“18 日起由 Mei 评审”，历史问题查 15 日应选 Lin，当前问题可能选 Mei。Mem0 的到期时间是控制何时不再展示一张卡，不完整表达它在现实中何时成立。Graphiti 的关系可以保留开始与结束时间；搜索时应用仍需把目标日期明确带入，不能只拿分数最高的关系回答。
-
-### Mem0：到期隐藏与现实有效区间不同
-
-当前支持 `expiration_date`，搜索与列举默认隐藏到期 payload，可用 `show_expired` 查看。它表达一条记录何时退出常规视图，没有自动表达测试从 10 日到 18 日有效、pnpm从 18 日生效的两段历史。`timestamp` 顶层参数在这个 OSS 快照会被拒绝，不能照搬托管时间接口。
-
-### Graphiti：当前视图需要明确时间过滤
-
-事实边保存 `valid_at` 与 `invalid_at`。业务要求时点 t 有效，通常需 `valid_at <= t`，并满足 `invalid_at` 为空或大于 t；缺开始时间的关系需另外定义策略。`SearchFilters` 提供日期比较，但调用默认空过滤不能等同于自动完成所有当前状态筛选，必须核对所选查询和后端。
-
-</details>
-
-## 有效时间和录入时间分别回答什么
-
-有效时间回答“现实中什么时候成立”。录入时间回答“系统什么时候知道”。在这个例子中，新默认的有效时间从 18 日开始，系统知道它却是在 20 日。
-
-问“9 月 19 日的现实默认”应答 pnpm；问“19 日助手当时知道什么”，它可能仍答 npm。
-
-<figure class="lesson-illustration"><img src="../../wiki/assets/illustrations/valid-time.svg" alt="9 月 18 日生效，9 月 20 日录入的两条时间轴" loading="lazy" width="440"><figcaption>按现实日期和按当时所知查询，需要不同的条件。</figcaption></figure>
-
-同时保留两条时间轴的思路叫双时间。Graphiti 的事实边用 `valid_at/invalid_at` 表达有效区间，还保留创建、过期等系统时间和来源。具体怎样按两种时间查询，要看搜索过滤与应用实现，不能只见到字段就假设所有历史接口已经齐备。
-
-Mem0 的 `created_at` 说明写入时间，不能代替 18 日这个现实变更时间。Letta 或 Basic 的 Git commit 也是一次文字变更的时间；文字可以写“18 日生效”，但 Git 不会自动懂得这个区间。
+<figure class="concept-diagram" tabindex="0" data-review-figure="memory-bitemporal">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 488" role="img" aria-labelledby="memory-bitemporal-title memory-bitemporal-desc" style="display:block;width:100%;min-width:620px;height:auto">
+<title id="memory-bitemporal-title">晚到交接通知：现实生效日与系统获知日不是同一天</title>
+<desc id="memory-bitemporal-desc">payment-gateway 的 on-call 职责在 11 月 1 日从老张交接给老李，系统直到 11 月 4 日才录入通知。回答 11 月 2 日现实该找谁与当时助手为何找老张，需要两条不同的时间轴。</desc>
+<rect width="960" height="488" fill="var(--paper,#faf8f1)"/>
+<g font-family="'IBM Plex Sans','Noto Sans CJK SC',system-ui,sans-serif"><text x="40" y="48" font-size="28" fill="var(--ink,#243b48)" text-anchor="start">晚到交接通知：现实生效日与系统获知日不是同一天</text><text x="40" y="96" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">现实有效时间</text><text x="40" y="284" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">系统获知时间</text><path d="M240 180H840M240 360H840" stroke="var(--muted,#536772)"/><path d="M240 172V188M240 352V368" stroke="var(--muted,#536772)"/><text x="240" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/1</text><text x="240" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/1</text><path d="M440 172V188M440 352V368" stroke="var(--muted,#536772)"/><text x="440" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/2</text><text x="440" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/2</text><path d="M640 172V188M640 352V368" stroke="var(--muted,#536772)"/><text x="640" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/3</text><text x="640" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/3</text><path d="M840 172V188M840 352V368" stroke="var(--muted,#536772)"/><text x="840" y="216" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/4</text><text x="840" y="396" font-size="18" fill="var(--muted,#536772)" text-anchor="middle">11/4</text><circle cx="240" cy="180" r="6" fill="var(--forest,var(--accent,#29564c))"/><circle cx="840" cy="360" r="6" fill="var(--forest,var(--accent,#29564c))"/><text x="240" y="140" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">11/1 起：老李接任 payment-gateway on-call</text><text x="480" y="320" font-size="20" fill="var(--ink,#243b48)" text-anchor="start">11/4 才录入交接通知</text><text x="40" y="452" font-size="18" fill="var(--ink,#243b48)" text-anchor="start">问 11/2 现实该找谁：老李；问 11/2 助手为何找老张：查当时系统已知版本与输入快照。</text></g>
+</svg>
+<figcaption>图：双时间轴把“客观世界何时改变”与“系统何时知道”拆干净，晚到通知才不会把历史审计搅成一锅粥。</figcaption>
+</figure>
 
 <details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+<summary>源码核验：Mem0 与 Graphiti 怎么处理双时间（选读）</summary>
 
-Mem0：20 日收到“12 日起默认用 pnpm”。记录的收到日期是 20 日，规则开始日期是 12 日；应用另存并解释业务日期，不能把收到时间当开始时间。
+### Graphiti：四组时间字段 + `SearchFilters` 显式过滤
 
-Graphiti：这条关系记“12 日生效、20 日录入”。问“15 日规则是什么”与“15 日我们已知道什么”，分别要看生效日期和录入日期。
-
-![本例流程](../../wiki/assets/source-flows/06-02.svg)
-
-### 把 Graphiti 的“某日有效”写成实际过滤
-
-下面给出本地 `SearchFilters` 的构造示例，假设我们只接受开始时间已知的边，查询 9 月 19 日有效的关系。它展示参数与布尔语义，不是保证所有后端都已通过本书实测：
+Graphiti 的 `EntityEdge` 原生带 `valid_at`、`invalid_at`（业务有效轴）和 `created_at`、`expired_at`（系统时间轴），Episode 则带 `reference_time` 作为解析“上周”“1 号起”的锚点。注意：**表里有字段不代表默认 `search()` 会自动帮你筛成严格当前视图**，查询特定日期时要显式传 `SearchFilters`：
 
 ```python
-from datetime import datetime, timezone
-from graphiti_core.search.search_filters import (
-    SearchFilters, DateFilter, ComparisonOperator,
-)
+from datetime import datetime, timedelta, timezone
+from graphiti_core.search.search_filters import ComparisonOperator, DateFilter, SearchFilters
 
-t = datetime(2026, 9, 19, tzinfo=timezone.utc)
-at_time = SearchFilters(
-    valid_at=[[
-        DateFilter(date=t,
-                   comparison_operator=ComparisonOperator.less_than_equal)
-    ]],
+tz = timezone(timedelta(hours=8))
+target = datetime(2026, 11, 2, tzinfo=tz)
+filters_at_day = SearchFilters(
+    valid_at=[[DateFilter(date=target, comparison_operator=ComparisonOperator.less_than_equal)]],
     invalid_at=[
         [DateFilter(comparison_operator=ComparisonOperator.is_null)],
-        [DateFilter(date=t,
-                    comparison_operator=ComparisonOperator.greater_than)],
+        [DateFilter(date=target, comparison_operator=ComparisonOperator.greater_than)],
     ],
 )
-# graphiti 已配置模型与图后端，groups 来自可信授权结果。
-# edges = await graphiti.search(
-#     "Todo 默认包管理器", group_ids=groups, search_filter=at_time
-# )
 ```
 
-每个日期字段的外层列表表示 OR，内层表示 AND；不同字段条件再一起约束查询。这里就是开始不晚于 t，并且结束为空或晚于 t，保证左闭右开。若新边从 18 日生效、旧边在 18 日结束，19 日选择新边；把 t 改为 15 日则选择旧边。
+同一字段的外层列表是 `OR`、内层是 `AND`，合起来就是标准的 `valid_at <= target AND (invalid_at IS NULL OR invalid_at > target)`。
 
-如果允许 `valid_at` 为空，需另加 OR 分支或定义未知时间策略。未知不是自动有效：高风险任务可以要求核实。这个例子仅查现实有效时间；要问“19 日系统当时知道什么”，还要限制 `created_at` 和系统过期状态，并确认保存方式能还原那个版本。两条时间轴不能用一组 valid 条件代替。
+另外在 2026-11 同步的 Graphiti `v0.31.2+`（[graphiti.py](../../sources/repos/graphiti/graphiti_core/graphiti.py)）中，Graphiti 正式引入了 **`SagaNode`** 及其叙事总结能力，可以把围绕同一次故障或长程发版的连续多段 Episode 串成一条主线；同时参考 MCP 和 REST 服务默认收紧为仅监听 `localhost`，减少误暴露内网图库的隐患。
 
-Mem0 的高级 metadata 过滤可以筛选你自行维护的业务日期，但普通 `search(reference_date=t)` 在本地 OSS 会被拒绝。即使后端支持日期比较，应用还需维护新旧记录的结束条件，查询才有正确数据可筛。传入日期参数与实现完整时间语义之间，还有写入裁决和版本保存两段工作。
+### Mem0：开源版 `created_at` 与 `expiration_date` 都不是双时间
 
-18 日才收到“12 日已更换评审人”，录入日是 18 日，业务生效日是 12 日。Mem0 卡片创建时间回答何时进库，应用另存生效信息。Graphiti 的 reference_time 给“昨天”“以后”提供解释基准，不保证所有关系都在材料收到时生效。先把相对日期转换成可核对日期，再检查关系的时间字段。
-
-### Mem0：created_at 不能被当成业务生效日
-
-写入时若没有提供创建值，payload 使用当前 UTC；update 保留原创建时间、更新 `updated_at`。应用可另存 `effective_from` 等业务字段，但需要查询和版本逻辑配合。补录消息不能通过伪装系统创建时间来代替有效时间，否则既丢失录入审计，又未建立正确历史语义。
-
-### Graphiti：reference_time 是相对表达的锚点
-
-Episode 的 `created_at` 来自本次处理时间，`valid_at` 来自 `reference_time`。边提取把该锚点与前序材料交给模型，将“前天”转换为日期；边的现实有效时间仍要看原文。20 日录入“18 日切换”，不能把整份 episode 的时间机械复制到每条边上。
+Mem0 的 `created_at` / `updated_at` 只是系统写入/修改时间，`expiration_date` 只是控制卡片到期后不在默认搜索里展示（类似有效期隐藏），开源本地快照也不支持直接传顶层 `timestamp` 或 `search(reference_date=...)` 做双时间查询。如果业务要支持“晚到通知”的历史回溯，必须在业务外层自己维护 `valid_from / valid_to` 版本表。
 
 </details>
 
-## 三种“冲突”要采取三种动作
+## 别把所有“冲突”都一刀切覆盖：三种冲突走三条路
 
-**状态变化**：旧默认用 npm，新默认用 pnpm。我们关闭旧有效区间，保留历史。**来源分歧**：一份值班记录说已切换，另一份说尚未切换。我们保留两份来源，标明分歧，不能凭哪个更新就删掉另一个。**提取错误**：用户说“只有这次用 pnpm”，系统写成“今后默认用 pnpm”。我们应纠正派生事实，回到原话核对。
+看到新旧两条信息对不上，最偷懒也最危险的做法就是“后写入的直接覆盖先写入的”。其实“冲突”分三种截然不同的情况：
 
-这些情况语义不同，仅靠文字相似度很难区分。MCP Memory Service 的可选矛盾检测使用相似度区间等启发式，能发现需要检查的相关记录，却不等于已经证明它们互相否定。Hippo 的纠正与替代关系也应和价值衰减分开，旧规则价值低不代表它当时不成立。
+1. **真实状态演进**：11 月 1 日老张正式把 on-call 交接给老李 → 关闭旧有效区间（填 `invalid_at`），开启新区间，历史完整保留。
+2. **来源彼此打架**：排班系统写着本周是老李，但运维群公告写着还是老张 → **绝不能按谁晚入库就判谁对！** 必须同时保留两份证据和出处，提示人去核实。
+3. **抽取或录入错误**：原话明明说“老李本周五临时顶班”，模型抽成了“老李永久接任” → 这不是状态演进，必须回到原事件重抽并撤回错误的派生记录。
+
+还有一种假冲突要重点提防：**单次例外与不同职责不是冲突**。
+- “本周五紧急 hotfix 找老张”和“11 月起常规发布找老李”完全兼容，前者绑定本次任务，绝不能把后者的长期规则关掉；
+- “老李负责 `payment-gateway` 的应用发布”和“老王负责 `payment-gateway` 的数据库变更”职责不同，更不能因为都叫“负责人”就互相顶掉！
 
 <details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+<summary>源码与边界：警惕“纯靠相似度猜冲突”（选读）</summary>
 
-Mem0：收到“这次由 Mei 代为评审”，应用给它标本次任务；收到“以后改由 Mei 评审”，才处理长期规则。只看名字不同，无法判断该改哪条记录。
+![三种冲突必须走三种处理路径](../../wiki/assets/rewrite-memory-a/06-01.svg)
 
-Graphiti：前一句连到本次提交任务，后一句才改变 Todo 的长期评审关系。若输入没说明是哪一种，先确认，别直接让 Lin 的关系结束。
+### Graphiti：先语义判矛盾，再做时间窗口运算
 
-![本例流程](../../wiki/assets/source-flows/06-03.svg)
+Graphiti 的 `resolve_extracted_edge()` 先由模型判断是否重复或矛盾，再由 `resolve_edge_contradictions()` 按区间重叠关系把旧边的 `invalid_at` 设为新边的 `valid_at`、把 `expired_at` 记为当前处理时间。时间算术本身很严谨，但前提是上一步模型没有把“临时顶班”误判为“永久矛盾”。
 
-同一句“由 Mei 评审”可能是更换评审人，也可能只针对某次只读排查。Mem0 追加文字后，需要应用或读取逻辑保留这项区别；Graphiti 解析模型也须先判断是否与旧默认矛盾，才决定结束哪条旧关系。日期字段记录裁决结果，不能替代对两句话适用范围的理解。
+### MCP Memory Service：可选的相似度矛盾启发式要慎用
 
-### Mem0：追加保留分歧，裁决仍需应用
-
-两份相反陈述可能各自追加到事实库。`update()` 能显式改正文，却没有替调用者证明哪份来源可信。应用应先标记报告与验证，再决定替代；错误提取需回原事件重新生成。把创建时间最近的事实强行当真，会混淆状态变化、补录和来源分歧。
-
-### Graphiti：时间关闭只作用于已判为矛盾的候选
-
-`resolve_extracted_edge()` 判断重复与矛盾，`resolve_edge_contradictions()` 再检查时间窗口。两区间不重叠时跳过；旧开始早于新开始且确有替代时，把旧 `invalid_at` 设为新 `valid_at`，`expired_at` 记处理时间。时间函数不负责独立判断语义否定，前面的模型裁决仍可能出错。
+翻看 [contradictions.py](../../sources/repos/mcp-memory-service/src/mcp_memory_service/consolidation/contradictions.py)，它的可选矛盾检测默认关闭，开启后会挑出向量相似度落在 `0.4 ~ 0.75` 之间的近邻，按创建时间把旧的标成 `superseded_by`。这种纯靠相似度区间 + 时间先后猜矛盾的启发式非常容易误伤——“老李管应用发布”和“老王管数据库变更”的相似度很可能刚好落在 `0.55`！开启前一定要先预览并配好反例测试。
 
 </details>
 
-## 为什么时间图里还需要认出“同一个 Todo”
+## 实体消歧（Entity Resolution）：端点合错了，时间再准也全线串台
 
-把事实写成关系，可以得到：
+双时间图谱里另一个隐形杀手是**实体消歧**，它同时面临两个方向的坑：
+- **过度合并（同名不同物）**：公司里核心支付组有个 `billing-api`，企业大客户组也有个 `billing-api`。如果实体解析光看名字相同就把它们合并成一个节点 UUID，核心支付组的 on-call 交接立刻就会串台到大客户组！
+- **过度拆分（同物不同名）**：一份文档写 `payment-gateway`，另一份口语写“支付网关”。如果拆成两个毫无关系的节点，交接通知挂在“支付网关”上，发版查 `payment-gateway` 时就根本查不到更新。
 
-```text
-Todo --默认使用--> npm
-Todo --默认使用--> pnpm
-```
+![同名服务消歧与别名归一](../../wiki/assets/rewrite-memory-a/06-02.svg)
 
-每条关系带各自日期和来源。若新消息把 Todo 写成“Todo 服务”，系统要判断是不是同一对象。这叫实体消歧或 entity resolution：为各种名字确定规范身份。
+所以做实体解析时，一定要把**作用域（团队/仓库）、唯一标识（服务 ID/代码仓路径）和上下文**一起塞给解析器，验收时直接核对最终的规范 UUID，不要只盯着界面上显示的名字看。
 
-合并太少会把一个项目拆成多个小图；合并太多会把两个团队的同名项目串起来。Graphiti 在建图时解析实体身份和关系冲突，所以我们应给它同名但不同团队、别名、补录日期等输入做检查，而不是只看图画得好不好看。
+## 什么时候根本不该上知识图谱？
 
-<figure class="lesson-illustration"><img src="../../wiki/assets/illustrations/approval-graph.svg" alt="Todo 经前端组连接到评审人 Lin，两条关系来自两份材料" loading="lazy" width="440"><figcaption>跨材料查询靠同一对象接起证据；日期和本次审批仍需另查。</figcaption></figure>
+知识图谱听着高级，但它的工程账单实打实摆在那里：每写一条消息都要多跑几次 LLM 结构化抽取、做实体消歧、维护图数据库和索引，而且一旦发生同名误合并，拆节点 + 重建摘要的善后成本极高。
 
-找跨段证据和查询历史状态是两个需求。Cognee、HippoRAG 可以利用关系，但不默认采用 Graphiti 的时间维护方式。
+**先别迷信图谱，按这三条标准做决定：**
+- 如果你的研发助手 90% 的查询都是“搜单条发布规程、读个人偏好”，老老实实用“受限混合检索 + 外层版本字段”更稳更便宜；
+- 只有当你真的面临两类纯检索搞不定的高频痛点——**① 跨文档两跳/多跳关联**（文档 A 写服务归属团队，文档 B 写团队审批人，两份文档字面不重合），或者 **② 严格的双时间历史追踪**——再引入图谱（Graphiti / Cognee / HippoRAG）；
+- 引入前，先拿纯检索跑挂的那批真实失败题建基线，固定相同的 Token 预算和回答模型，证明图谱带来的净收益盖得住建图费用和纠错成本。
 
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
+<details class="implementation-notes">
+<summary>实现笔记：图谱的三种不同用途与双时间核验清单（选读）</summary>
 
-Mem0：Alice 的 Todo 用 PostgreSQL，Bob 的 Todo 用 MySQL。查询时应用按用户和项目范围筛选，不能仅凭 Todo 这个名字混取两条记录。
+市面上同样打着“图谱记忆”旗号的项目，底层解决的根本不是同一个问题：
+- **Graphiti（双时间事实图）**：重点在“规范实体 + 双时间事实边 + 来源回溯”，适合解决“什么时间、谁管什么、历史怎么变”。最新 `2026-11` 版本还强化了 `SagaNode` 叙事串联以及 `remove_episode()` 删除后的共享边保护与存活节点摘要重算。
+- **HippoRAG（联想传播图）**：用 OpenIE 从文档抽三元组连成短语-段落图，再用 Personalized PageRank（PPR）把查询种子扩散到没出现查询字面的多跳段落。它主攻“跨文档关联到达”，并不原生维护双时间有效区间或用户权限。
+- **Cognee（异构 Schema 管线图）**：按自定义 Pydantic Schema 把文档、代码、会话塞进关系+图+向量多存储里。同样，它不是开箱即用的双时间冲突裁决器。
+- **Basic / A-MEM / TencentDB CodeGraph**：Basic 的边是人写的 Markdown 链接，A-MEM 的边是模型建议的笔记关联，CodeGraph 的边是代码符号调用关系——同样画成点和线，语义完全不能互换。
 
-Graphiti：两个 Todo 分别连到各自的团队。若误合成同一对象，数据库和评审关系都会混起来；建图时就要确认它们是两个项目。
-
-![本例流程](../../wiki/assets/source-flows/06-04.svg)
-
-Alice 与 Bob 的项目都叫 Todo，文字相同但不能共用评审人。Mem0 的实体关联帮助找涉及某个对象的卡片，仍需正确范围。Graphiti 若把两个 Todo 合成同一编号，边就接到同一对象，错误会延伸到后续查询。身份解析的结果要看编号与来源，不能只看显示名称。
-
-### Mem0：实体关联使用规范文本和近邻匹配
-
-批量链接先对实体名字规范化，优先找精确匹配，否则接受达到实现阈值的语义候选，再合并 `linked_memory_ids`。身份范围参与搜索，但业务项目别名和同名团队仍需仔细限定。错误关联会给别的 Todo 事实加分，虽未修改正文，也会改变后续检索。
-
-### Graphiti：UUID 映射直接改变关系端点
-
-实体 resolution 比较新对象与已存对象，合并后把临时 UUID 映射到规范 UUID。边抽取结果经映射修正，避免 Todo 与 Todo 服务分裂。若把两支团队合并，评审与包管理器关系也跟着串线，错误比单条 boost 更具结构性；回归题应核对端点，而非只看显示名。
-
-</details>
-
-## 晚到的消息为什么不能只按最新一条处理
-
-继续沿着日期推演。19 日有人问默认包管理器，系统还不知道 18 日的变更，于是回答 npm。20 日补录消息后，如果重新问“19 日实际上默认用哪个”，应回答 pnpm；如果问“19 日助手为什么回答 npm”，则应解释当时尚未收到变更。两个问题都提到 19 日，却分别查询现实状态和系统当时的认知。
-
-只有有效区间时，可以纠正对现实历史的回答；要解释过去一次决策，还需要当时可用的记录视图。完整的双时间查询不能仅靠两列日期名实现，还要有保存旧系统版本和执行对应筛选的规则。这里可以先掌握业务问题，再检查所选框架究竟支持哪一种查询，不要求起步就实现全部历史能力。
-
-假设 20 日消息又补充：“18 日只改了新建项目，旧项目仍用 npm。”这不是把所有 pnpm 记录改回 npm，而是发现先前记录的范围过宽。应把新旧项目条件补进事实，核对原来源，并纠正受影响的派生结论。时间、身份和适用范围共同决定一条事实是否回答了当前问题，最新时间只能解决其中一部分。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：19 日记录默认用 npm，20 日补来“12 日已经改pnpm”。应用先核对实际发生日期；不能因为后收到，就认定它描述的是更晚状态。
-
-Graphiti：补录材料会影响 12 日以后的历史视图。应用检查新旧关系的日期区间，确认它是补充旧变化，还是又一次新变更。
-
-![本例流程](../../wiki/assets/source-flows/06-05.svg)
-
-用户 20 日补录“12 日默认已改用 pnpm”，另一条 19 日收到的消息仍讲 npm。按最后入库时间选值会出错。Mem0 需要应用保留原事件和业务版本；Graphiti 即使保存了关系有效期，也要区别“当时现实是什么”与“我们当时已知道什么”。后一个问题还涉及录入时间和历史观察方式。
-
-### Mem0：历史回答需要外层事件和版本
-
-`history()` 可解释某张事实卡何时被更新，却未提供任意业务时点的完整知识视图。19 日用到了旧默认，应用需保存那次请求实际取到和注入的 ID、版本，才能解释当时决策。仅在 20 日把当前文本改好，无法重建全部过去输入。
-
-### Graphiti：双时间字段没有免除查询设计
-
-`expired_at` 保留系统何时使旧边过期，支持分析晚到纠正；但任意“当时知道什么”查询还需结合创建、过期与实际保存版本。抽取器修正节点摘要后，当前 summary 也未必能还原旧摘要。解释一次历史决策时，仍应保留实际候选和输入快照的必要标识。
-
-</details>
-
-## 单次例外不会自动结束长期规则
-
-“今天为了复现仍用 npm”与“以后默认用 pnpm”可以同时成立，因为前者描述一个任务，后者描述默认选择。默认的含义就是没有更具体条件时采用的值。读取时应先找当前任务的显式要求，再在没有例外时使用长期默认，而不必宣布两条记忆冲突。
-
-同样，“Todo 由前端组维护”和“Todo 的移动端由客户端组维护”也可能同时成立。若图里所有维护关系都被当作唯一值，新边就可能错误地关闭旧边。定义关系时需要知道它是否允许多个对象、是否按区域或组件细分。实体抽取模型只能依据输入和结构作判断，应用仍需提供这些业务约束。
-
-当两份来源确实对同一范围、同一时间给出相反陈述，可以返回分歧并请求核实。保留不确定状态，比从两个相近分数中挑一个“真相”更可靠。对即将执行的合并代码，核实当前配置或询问授权者，通常比让历史记录自行裁决更合适。
-
-<details class="source-example">
-<summary>项目例子与源码（选读）</summary>
-
-Mem0：已有“默认用 pnpm”，今天又说“这次先用测试”。应用把新记录限定在今天的任务；明天问默认包管理器，仍取pnpm。
-
-Graphiti：npm 连到今天的只读排查任务，pnpm 连到项目长期默认。前一条不应让后一条结束，否则一次例外就错误改了长期规则。
-
-![本例流程](../../wiki/assets/source-flows/06-06.svg)
-
-“今天用 npm”可以作用于只读排查任务 T1，“以后用 pnpm”作用于项目长期默认。Mem0 的 scope 表示存取范围，应用要规定当前任务记录如何覆盖一般默认。Graphiti 可用任务对象或关系条件保留 T1，不让它结束项目默认边。连的是哪个对象、谈的是哪种用途，要在裁决冲突前确定。
-
-### Mem0：任务 scope 与长期 scope 要有明确读取关系
-
-本次npm可以带任务范围，长期pnpm默认放项目范围。读取时先处理当前显式例外，再读取默认；不能随意把全部规则都锁进 run_id，否则下一会话会看不到长期约束。scope 选择应对应生命周期，SDK 不会自动把任务事实提升为项目默认。
-
-### Graphiti：关系签名不能忽略组件和情境
-
-长期默认与今天修旧项目应使用不同关系或保留任务限定属性。若都抽成唯一的“Todo 使用包管理器”，模型可能将例外当作替代。通过任务节点、组件属性或定制 edge schema 表达边界，再检查 resolution 是否关闭了不该关闭的默认边。
+如果你决定给研发助手上时间与关系能力，上线前至少拿这 6 道必考题跑一遍回归：
+1. 交接前查询（10 月 20 日 → 老张）；
+2. 交接瞬间查询（11 月 1 日 00:00 → 仅老李，无双值）；
+3. 晚到通知后的现实回溯（11 月 4 日补录后问 11 月 2 日现实职责 → 老李）；
+4. 晚到通知前的系统知识审计（11 月 2 日助手为何找老张 → 依赖当时版本或请求快照）；
+5. 单次例外隔离（周五 hotfix 找老张，不关闭老李长期职责）；
+6. 同名隔离 + 别名打通（两个 `billing-api` 不合并，`payment-gateway` 与“支付网关”合并）。
 
 </details>
 
 ## 动手检查
 
-用户 20 日告诉你：“18 日新项目已改用 pnpm；今天为了复现旧问题，仍用 npm。”写下当前默认、当天例外、系统获知日期。若只取创建时间最新的记录，会发生什么？
+11 月 4 日系统收到一条综合通知：“11 月 1 日起 `payment-gateway` 的夜间 on-call 改由老李负责，本周五紧急 hotfix 仍找老张，白天值班安排不变。”
+1. 请列出这三条信息各自的适用范围、生效日与系统获知日；
+2. 事后追问“11 月 2 日夜间现实该找谁”与“11 月 2 日凌晨助手当时知道该找谁”，分别要查什么证据？
 
-答案提示：默认用 pnpm 从 18 日生效；20 日用 npm 是任务例外；20 日是这次获知时间。把所有内容按录入时间排序，可能把当天例外误判成新的永久默认。
+答案提示：夜间 on-call 变更生效日为 11 月 1 日、获知日为 11 月 4 日，且仅限夜间职责，绝不能顺手改掉白天值班；周五 hotfix 仅绑定本次任务，不能关闭老李的长期区间。问 11 月 2 日现实归属查有效时间轴（答案：老李）；问助手当时为何派给老张，必须查系统时间轴上 11 月 2 日已录入的版本（以及当次调用的实际 Prompt 快照）。
 
-<details class="implementation-notes">
-<summary>实现笔记与源码对照（选读）</summary>
-
-## 为什么时间是一等公民
-
-“用户住上海”和“用户住杭州”可能都正确，只是有效时间不同。只保留最新值无法回答“去年住哪”；两条都返回又会让模型困惑。
-
-最小做法是有效时间：
-
-```text
-fact: Alice lives_in Shanghai, valid=[2024-03, 2026-01)
-fact: Alice lives_in Hangzhou, valid=[2026-01, ∞)
-```
-
-更完整的双时间模型还区分：
-
-- **valid time**：现实世界何时为真；
-- **transaction time**：系统何时知道或写入。
-
-这能表达“今天才发现上周已改用 pnpm”。Graphiti 的上下文图将事实边与有效窗口、episode 来源绑定，旧事实失效但不删除。
-
-## Graphiti 写入路径
-
-从源码入口 [`graphiti_core/graphiti.py`](../../sources/repos/graphiti/graphiti_core/graphiti.py) 的 `add_episode()` 可以顺着看到典型图记忆流程：
-
-```text
-episode
- → 抽取 entity / edge
- → entity resolution
- → edge deduplication
- → 处理 temporal contradiction
- → 更新 entity summary
- → 写图和检索索引
-```
-
-项目默认依赖能稳定输出结构化 JSON 的 LLM。README 明确警告：较小或本地模型可能不遵守 schema，导致 ingestion 失败。这项成本常被图检索 demo 隐藏：读取看起来在线，可靠建图仍需要模型、schema 校验和失败恢复。
-
-## 三种冲突
-
-1. **时间变化**：旧值曾为真，新值现在为真。使用 validity/supersession。
-2. **来源分歧**：两个来源同时声称不同事实。并存，保留来源和置信度，等待裁决。
-3. **摘要漂移**：高层总结与底层 episode 不一致。高层视图应可重建，并在评测中核对证据。
-
-不要让 LLM 在没有来源和时间的情况下直接“选真相”。Graphiti 在 entity/edge resolution 中维护事实有效区间；Hippo 保存冲突与 supersession，读取时可排除失效内容；Letta 的 Git 版本允许查看和回滚 memory 文本，但一个 Git commit 时间不是事实 valid time，分支合并也不能自动裁定事实。它们解决的是不同层的变化。
-
-## 用同一条变化检查三种存储
-
-输入“9 月 20 日才得知 Todo 9 月 18 日迁到 Kubernetes”，至少有三种时间：现实变更日、来源消息日、系统录入日。Graphiti 可以把 9 月 18 日作为新边 valid_at，把 9 月 20 日作为系统知道的时间，并保留 episode；抽取是否正确仍要看实际字段输出。
-
-Mem0 的追加事实和 created_at 能保留新消息，但仅按创建日期排序不能完整表达这三个时间。Memobase 可以更新 profile 并写事件，不过若原始 blob 在 flush 后不保留，审计需另设保留策略。Basic Memory 或 Letta 文件可以写明日期和来源，但 Markdown/Git 不会自动执行时间区间筛选。
-
-Cognee 与 HippoRAG 的实体/来源连接帮助回查证据，不能自动等同于 Graphiti 的双时间模型。A-MEM 改邻居 context/tag 也不代表保留旧描述的有效区间。选型时应给每个项目同样的晚到事件、未来生效的包管理器变更和错误纠正输入，核对它保存的字段与当前/历史返回结果。
-
-## HippoRAG 的关联检索
-
-HippoRAG 不是会话记忆产品，而是受海马索引理论启发的非参数长期知识检索。其论文组合 LLM、知识图谱与 Personalized PageRank，将查询实体作为种子，在图上扩散到相关 passage。第一版论文报告在多跳 QA 上相对强基线最高约 20% 提升，并称单步检索相较 IRCoT 便宜 10 至 20 倍、快 6 至 13 倍；这些结论限定于论文数据与配置。
-
-HippoRAG 2 把目标扩展为 factual memory、sense-making 和 associativity，强调持续加入新知识时的整合能力。它适合学习“关联检索机制”，但不是开箱即用的用户画像或多租户 memory API。
-
-## 何时不用图
-
-- 数据小，查询基本单跳；
-- 写入延迟和模型成本严格；
-- 实体定义不稳定；
-- 团队没有图数据库运维能力；
-- 没有评测证明图比混合检索更好。
-
-Cognee 论文的重要结论之一正是：图+LLM 系统的收益对数据集、指标和超参数敏感，不存在一组通用配置。图应由任务证据驱动，而不是架构审美驱动。
-
-## 冲突裁决：模型判断与相似度启发式
-
-Graphiti 根据 episode 内容、关系语义与时间解析边，适合“当时成立、现在变化”的状态。TencentDB L1 dedup 则先在受限范围召回新旧记忆，再批量 LLM 判断 store/相关动作；它不因此自动拥有 Graphiti 的 valid/transaction 双时间边。Memobase/MemoryOS 整合画像是在压缩当前视图，旧值来源是否仍可读需要单独检查。
-
-MCP Service 的 [`consolidation/contradictions.py`](../../sources/repos/mcp-memory-service/src/mcp_memory_service/consolidation/contradictions.py) 是更弱的可选启发式：查近邻，在默认相似度 0.4 到 0.75 区间找候选，按创建时间定旧新，生成 `CONTRADICTED_BY` 与 `superseded_by`；检测和 on-store 需显式开启。它未用模型逐条确认语义否定，两个不同但相关的事实也可能落在同一区间。不能把这个模块写成可靠的“新事实裁定旧事实错误”，应先 dry-run、人审并测误失效。
-
-Hippo 的 conflict/supersession 与 strength 是不同结构：发现矛盾时保留纠正关系，价值衰减不能决定哪条真。A-MEM 的 context/tag 演化只改变理解视图，Letta/Basic 的 Git 保存编辑历史。三者都需要显式记录有效日期，不能从被替换或 commit 时间推断现实状态。
-
-## 图关联：哪些项目真的改变了到达路径
-
-Basic Memory 的 relation 来自笔记显式链接，读取时限制 depth/max_related；A-MEM 的 link 由 LLM 建议，近邻后追加；Hippo graph stream 从强候选种子限跳 BFS，再只给已在池内的 memory 排名，另一 graph-recall 可补池外内容。MCP 的 typed/association edges 多用于连接、巩固与可选关系服务。它们都能叫“图”，但没有自动变成 PPR。
-
-TencentDB Wiki 是文档页面与链接图，CodeGraph 是符号/调用结构；MemOS 的图属于可配置 textual backend。Cognee 通过 schema 组织异构知识；HippoRAG 的 phrase/passages 图用于概率扩散；Graphiti 的事实边承担时间与来源。选择前要先确定你需要“找第二跳”“解释来源”还是“筛历史状态”。
-
-</details>
+<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/rewrite-memory-a/06-overview.svg" alt="双时间知识图谱的四项必查清单：业务有效轴、系统录入轴、实体与来源" loading="lazy"><figcaption>图：历史问题先分清在问哪条时间轴，再核对实体 UUID 和原文出处。</figcaption></figure>
 
 <details class="comparison-reference">
-<summary>项目对照图与速查（选读）</summary>
-
-<figure class="concept-diagram" tabindex="0"><img src="../../wiki/assets/diagrams/06-temporal-graph.svg" alt="九月十八日换包管理器、九月二十日补录，现实时间与系统记录时间不同" loading="lazy"><figcaption>图：有效时间与知道时间必须分开，Git 编辑历史和创建日期不能替代。</figcaption></figure>
+<summary>项目对照速查（选读）</summary>
 
 ## 本章对照结论
 
-| 项目 | 时间/冲突怎样处理 | 图或版本的实际用途 | 不能据此认定 |
-|---|---|---|---|
-| Graphiti | 材料参考日、关系开始与结束日、系统记录时间 | 查询变化中的关系，回查来源，按配置找邻居 | 模型抽取永不误判 |
-| Hippo | 明确记录冲突和替代；另算随时间变化的价值 | 可选的邻域排序或补充搜索 | 价值分能裁定事实真伪 |
-| MCP Service | 可选相似度区间 + 创建时间启发式 | CONTRADICTED_BY、association/typed edges | 已证明语义矛盾或双时间 |
-| TencentDB | L1 候选批量判断、高层归纳 | Wiki 链接、CodeGraph、资产版本 | 所有 L0 至 L3 都是时间图边 |
-| Mem0 | 追加事实、时间 metadata、显式更新 | entity 到 memory 的索引 | entity boost 是完整关系图 |
-| Memobase | profile 合并、事件时间线 | 稳定属性与事件视图 | 原 blob 必然保留 |
-| MemoryOS | 近期 page/长期分析整合 | 主题与连续性连接 | 当前画像包含全部旧值 |
-| Cognee | 随管线/schema 更新；需验配置 | 来源块与异构关系图 | 默认与 Graphiti 同一双时间协议 |
-| HippoRAG | passage/fact provenance 和增量知识 | seeds/PPR 关联召回 | 当前/历史状态自动裁决 |
-| A-MEM | 改描述与 tag/link | 近邻关联网络 | 旧描述有有效区间 |
-| Basic Memory | 正文/语义时间与文件历史 | 人工 relation、URI 展开 | Git 自动提供 as_of 查询 |
-| Letta Code | 提交后，后续提示编译才使用新版本 | 小核心常驻，详细文件按需打开 | 输入更新日等于现实生效日 |
-| MemOS | textual 后端与配置决定 | cube 元数据、图/向量资源 | KV/LoRA 可逐事实时间查询 |
-| Beacon | 动作时间与 observed/inferred | 可审计 session 时间线 | 事件日志已经完成知识冲突裁决 |
-| Hermes Jev Skills | 日期锚定、候选判别 | 不持有长期事实图 | relevance 概率能决定历史真相 |
+| 项目 | 时间与图关联的核心机制 | 落地时最该验证的短板 |
+|---|---|---|
+| Graphiti | 双时间边（`valid_at`/`invalid_at` + `created_at`/`expired_at`）、实体消歧、`SagaNode` | 显式 `SearchFilters` 过滤、同名误合并与基础搜索不自动多跳 |
+| Hippo Memory | 显式 `supersede` + 带 `asOf` 的多跳图召回 | 衰减强度不能替代事实真伪裁决 |
+| MCP Memory Service | `as_of` 历史过滤 + 可选相似度矛盾启发式 | 纯相似度猜冲突容易误伤相关但不矛盾的规则 |
+| TencentDB | L1 冲突判别 + Wiki 链接 / CodeGraph 符号图 | 代码调用关系不是业务审批关系，L1~L3 并非原生双时间边 |
+| Mem0 | `created_at`/`updated_at`、`expiration_date`、实体索引 | 开源版无原生双时间区间，需业务外层维护版本与生效日 |
+| Memobase | 合并当前用户画像 + 事件时间线 | 历史旧值与原聊天 blob 的保留策略 |
+| Cognee | 自定义 Schema 图谱与来源块 | 需按具体管线核对时间语义与跨存储恢复 |
+| HippoRAG | OpenIE 短语-段落图 + PPR 传播 | 擅长多跳到达，不负责双时间历史版本裁决 |
+| Basic Memory / Letta Code | 显式链接 / Git 修订历史 | Git commit 时间是编辑时间，不是业务生效时间 |
+| A-MEM / MemoryOS / MemOS | 邻居链接演化 / 主题页 / 多形态容器 | 不原生提供可按任意业务日期回溯的双时间关系边 |
+| Agent Beacon / Hermes Jev | 动作事件时间线 / 日期锚点判别 | 只提供事件素材或单次判别，不维护长期历史图 |
 
 </details>
-
