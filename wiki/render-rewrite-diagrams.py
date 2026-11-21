@@ -33,12 +33,12 @@ def render():
             continue
         name, layout, title, *items = line.strip().split('|')
         rows = [item.split('~', 1) for item in items]
-        assert layout in ('steps', 'matrix') and len(rows) == 3, name
+        assert layout in ('steps', 'matrix') and len(rows) in (3, 4), name
         group, filename = name.split('/')
         out = ROOT / 'wiki/assets' / f'rewrite-memory-{group}' / f'{filename}.svg'
         out.parent.mkdir(parents=True, exist_ok=True)
         description = '；'.join(f'{label}：{value}' for label, value in rows)
-        height = 440
+        height = 125 + len(rows) * 105
         body = text(30, 42, title, 70, size=24)
         if layout == 'matrix':
             body += text(45, 90, '核对对象', size=16, color='#536772')
@@ -56,7 +56,7 @@ def render():
                 body += f'<rect x="105" y="{y}" width="745" height="85" fill="#e8ede7"/>'
                 body += text(122, y+28, label, 72, size=19)
                 body += text(122, y+57, value, 78, size=18)
-                if i < 2:
+                if i < len(rows) - 1:
                     body += f'<path d="M58 {y+53} V{y+82}" stroke="#285d75" stroke-width="2"/>'
                     body += f'<path d="M52 {y+76} L58 {y+85} L64 {y+76}" fill="none" stroke="#285d75" stroke-width="2"/>'
         svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 {height}" role="img" aria-labelledby="title desc"><title id="title">{escape(title)}</title><desc id="desc">{escape(description)}</desc><rect width="880" height="{height}" fill="#faf8f1"/><g font-family="Noto Sans CJK SC,system-ui,sans-serif">{body}</g></svg>\n'

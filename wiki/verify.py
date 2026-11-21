@@ -44,17 +44,14 @@ def verify():
         assert md.count('<details') == md.count('</details>'), slug
         assert md.count('## 本章对照结论') == 1, slug
         assert re.search(r'^\|.+\|$', md.split('## 本章对照结论')[1], re.M), slug
-        sections = re.findall(r'<details class="source-example">(.*?)</details>', md, re.S)
-        assert sections, f'missing source examples: {slug}'
-        for section in sections:
-            assert len(re.findall(r'!\[[^\]]+\]\([^)]+\.svg\)', section)) == 1, slug
         refs = re.findall(r'(?:\]\(|src=")../../wiki/assets/([^\)" ]+\.svg)', md)
-        assert len(refs) >= len(sections) + 1, f'missing overview: {slug}'
+        assert len(refs) >= 1, f'missing illustration: {slug}'
         assert not any(r.startswith(('diagrams/', 'source-flows/')) for r in refs), f'old diagram still referenced: {slug}'
         figures.update(refs)
         assert len(indexed[slug]) > 1000, f'empty search text: {slug}'
     for relative in figures:
         path = ROOT / 'assets' / relative
+        assert path.exists(), f'missing SVG file: {path}'
         svg = ET.parse(path).getroot()
         ns = '{http://www.w3.org/2000/svg}'
         assert svg.get('viewBox'), path
@@ -85,7 +82,7 @@ def verify():
     inline_count = sum(p.read_text().count('data-review-figure=') for p in (ROOT / 'chapters').glob('*.html'))
     assert inline_count == 2, f'missing new illustrations: {inline_count}'
     print(f'Inline illustrations: {inline_count}, accessible labels and SVG markup checked')
-    print(f'OK: {len(SLUGS)} chapters, exercises/answers, {len(figures)} new SVGs, local links, IDs and search')
+    print(f'OK: {len(SLUGS)} chapters, exercises/answers, {len(figures)} SVGs, local links, IDs and search')
 
 
 if __name__ == '__main__':

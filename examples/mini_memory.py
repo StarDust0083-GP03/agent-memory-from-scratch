@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""用 SQLite 演示实验室预约助手的持久记忆，只依赖 Python 标准库。
+"""用 SQLite 演示发布助手的持久记忆，只依赖 Python 标准库。
 
-教学轨迹，从仓库根目录执行：
-    python3 examples/mini_memory.py --db lab.sqlite remember "光谱仪预约前核对校准证书" --user optics --source calibration-8
-    python3 examples/mini_memory.py --db lab.sqlite recall "光谱仪 校准" --user optics
-    python3 examples/mini_memory.py --db lab.sqlite context "光谱仪 校准" --user optics --budget 60
-    python3 examples/mini_memory.py --db lab.sqlite forget-decayed --user optics
+从仓库根目录执行：
+    python3 examples/mini_memory.py --db dev-assistant.sqlite remember "支付网关发布前核对幂等键" --user linyuan --source release-14
+    python3 examples/mini_memory.py --db dev-assistant.sqlite recall "支付网关 幂等键" --user linyuan
+    python3 examples/mini_memory.py --db dev-assistant.sqlite context "支付网关 幂等键" --user linyuan --budget 60
+    python3 examples/mini_memory.py --db dev-assistant.sqlite forget-decayed --user linyuan
 
 首条命令保存正文并打印随机 ID；换进程查询仍能读到同一 ID 和来源。
 换成未写入的用户应得到空列表。遗忘默认只列候选，--apply 才结束有效期。
-这些命令不连接预约服务，也不检查真实仪器。user_id 由调用者提供，不代表认证。
+这些命令只操作本地 SQLite，不访问实际发布系统。user_id 由调用者提供，不代表认证。
 semantic 字段沿用接口名称，计算的是哈希词袋余弦，未使用语义模型。
 """
 from __future__ import annotations
@@ -269,7 +269,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", default="memory.db", help="本地 SQLite 文件路径")
     commands = parser.add_subparsers(dest="command", required=True)
-    add = commands.add_parser("remember", help="保存预约要求、校准观察或安全检查记录")
+    add = commands.add_parser("remember", help="保存发布约束、故障观察或交接事项")
     add.add_argument("text", help="已经核验、适合保存的正文")
     add.add_argument("--kind", default="episodic")
     add.add_argument("--importance", type=float, default=0.5)

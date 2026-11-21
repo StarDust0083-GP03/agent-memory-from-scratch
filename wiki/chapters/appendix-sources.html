@@ -1,226 +1,214 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>源码与论文索引 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="appendix-sources"><div class="eyebrow">附录</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#从一个问题开始读源码">从一个问题开始读源码</a></li><li><a href="#用纸笔记录三个集合">用纸笔记录三个集合</a></li><li><a href="#用论文学习机制-再核对当前代码">用论文学习机制，再核对当前代码</a></li><li><a href="#给自己的结论留一个可复查的小注释">给自己的结论留一个可复查的小注释</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="源码与论文索引">源码与论文索引</h1><h2 id="从一个问题开始读源码">从一个问题开始读源码</h2><p>借展清单遗漏了“内托尺寸含两侧缓冲层”，但搜索结果里明明出现过这条要求。阅读代码时先带上这次失败的输入、记录 ID 与最终消息：它是在初选外、被排序压下，还是取回后没有装入输入？三个位置需要追不同函数。</p>
-<p>可以先定位 Mem0 的候选构造与评分入口：</p>
-<pre tabindex="0"><code class="hljs">rg -n <span class="hljs-string">&#x27;def (_search_vector_store|_compute_entity_boosts)&#x27;</span> \
-  sources/repos/mem0/mem0/memory/main.py</code></pre><p>找到定义后，记录参数来自谁、返回值交给谁，再沿真正改变集合的调用往下读。异常包装和配置继承可以暂缓，除非它们改变了本次分支。对于 Graphiti，则从问题对应的边开始，核对端点、来源和日期条件，而非先遍历全部节点。</p>
-<details class="source-example">
-<summary>代码入口与结论边界（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/appendix-01.svg" alt="从一次清单漏项定位代码责任"></p>
-<h3 id="mem0-从实际函数与提示双向核对">Mem0：从实际函数与提示双向核对</h3><p>在 <a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/main.py">主流程</a> 中，先确认实际使用的是推断写入、直接保存还是过程摘要分支。提示词描述提取意图，函数的写操作决定哪些记录真的新增或变化。不要仅依据 docstring 中的 CRUD 名称判断整个路径会自动执行更新与删除。</p>
-<p>之后到 <a href="https://github.com/mem0ai/mem0/blob/a39a802/mem0/memory/storage.py">历史存储</a> 查消息、变更和正文分别留下什么。业务记录消失与所有历史副本清除不是同一事件，应独立检查。</p>
-<h3 id="graphiti-从-orchestration-追-maintenance">Graphiti：从 orchestration 追 maintenance</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/graphiti.py">写入编排</a> 将 episode 交给抽取、解析和保存流程。以一份“东馆外借需经文保部复核”的通知为输入，标出材料 ID、规范部门 ID 和许可边 ID；三者不可混用。</p>
-<p>需要解释旧关系何时关闭时，进入 <a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/utils/maintenance/edge_operations.py">边维护</a>，核对 resolved、invalidated、new 集合的成员和写回时机。函数返回某个集合，并不自动证明所有后端操作都已完成。</p>
-</details>
-
-<h2 id="用纸笔记录三个集合">用纸笔记录三个集合</h2><p>设向量路初选为 <code>{R2,R8}</code>，全文路为 <code>{R5,R2}</code>，正确的尺寸要求是 R5。若后续只遍历向量初选加分，R5 根本没有参加排序；若合并两路身份，才会出现 <code>{R2,R5,R8}</code>。先写身份，再看分数，可避免把漏召回误诊为重排失败。</p>
-<p>用同样方法追 MCP 的混合存储、A-MEM 的邻居返回与 Letta 的文件版本：发生过处理的对象，不一定成为最终读取对象。中间集合和最终消费集合都要保留，才能解释一段优化是否产生实际影响。</p>
-<details class="source-example">
-<summary>集合变化与返回对象（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/appendix-02.svg" alt="候选池外与池内失败的区分"></p>
-<h3 id="mem0-semantic-集合决定-candidate-身份">Mem0：semantic 集合决定 candidate 身份</h3><p>对当前快照，分别记录语义搜索、关键词命中和实体关联分数，再核对 candidates 的构造来源。若身份由 semantic results 提供，其他信号只能改变已有成员的得分。explain 说明参加评分的对象，不包含从未入池的漏项。</p>
-<p>换一个 vector store 或升级版本后，应重新跑同一池外样例，不能把本次控制流观察当成所有部署的永久保证。</p>
-<h3 id="graphiti-uuid-并集与各路名次同时保留">Graphiti：UUID 并集与各路名次同时保留</h3><p>在 <a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search.py">搜索实现</a> 中追 <code>edge_search()</code> 的多路结果与 UUID 映射，再查看本次排序方法。RRF 消费名次，cross-encoder 消费截断后的问题与事实文本，它们对候选范围有不同前提。</p>
-<p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_config_recipes.py">搜索配方</a> 说明启用哪些路。基础边搜索、邻域扩展和更复杂的查询组织要区分，不能因为存了图就声称任意问题都会自动走完多跳。</p>
-</details>
-
-<h2 id="用论文学习机制-再核对当前代码">用论文学习机制，再核对当前代码</h2><p>把论文读成可复算的实验：作者怎样定义问题、以什么单位索引、选哪些种子、怎样检索、把结果交给哪个 reader。随后用馆藏对象、外借部门与复核人构造小例，检查该机制需要哪些证据。</p>
-<p>再回当前源码寻找实际路径。HippoRAG 的不同版本可能改变事实与段落种子组织；时间图的字段和过滤也可能超出早期论文图。论文用于理解设计依据，不能替代当前分支和后端的行为核对。</p>
-<details class="source-example">
-<summary>研究设定与实现版本（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/appendix-03.svg" alt="机制、代码和运行结果的证据分层"></p>
-<h3 id="mem0-论文路线与当前-batch-实现分开记">Mem0：论文路线与当前 batch 实现分开记</h3><p>论文实验可能使用特定抽取、更新和评测流程，当前普通批量路径则需检查 additive prompt、embedding 和实体链接等实际操作。记下实验数据、reader、记忆粒度与交付物是 OSS 还是托管服务，再判断哪些结论可迁移。</p>
-<p>如果新通知只生成追加事实，不能用论文中的更新箭头解释旧事实已经结束。运行结果应另存输入、配置与输出，不与阅读笔记混在一起。</p>
-<h3 id="graphiti-时间思想要核对字段和过滤">Graphiti：时间思想要核对字段和过滤</h3><p><a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/edges.py">边字段</a> 允许表达关系的有效时间和系统记录时间，<a href="https://github.com/getzep/graphiti/blob/0de2993/graphiti_core/search/search_filters.py">过滤实现</a> 决定查询如何使用这些信息。</p>
-<p>用“11 月 1 日交接、11 月 4 日才收到通知”分别问现实历史与当时已知状态。即使字段齐全，若查询没有施加对应条件，答案仍可能错误。保存日期和正确使用日期是两项验收。</p>
-</details>
-
-<h2 id="给自己的结论留一个可复查的小注释">给自己的结论留一个可复查的小注释</h2><p>一条技术结论至少附代码提交、入口、实际配置和证据类型。比如“当前同步推断路径中，只观察到某集合参与评分；尚未运行其他后端”。这种范围声明便于后来判断升级使哪条结论失效。</p>
-<p>若真的做了实验，再附材料版本、请求、结果与失败例。不要把“官方宣称”“读到代码”“离线模拟”和“实际服务返回”都写成一个没有条件的“支持”。</p>
-<details class="source-example">
-<summary>可重查的观察记录（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/appendix-04.svg" alt="一条结论需要保存的定位信息"></p>
-<h3 id="mem0-记录分支-provider-与已验证范围">Mem0：记录分支、provider 与已验证范围</h3><p>说明本次采用 <code>infer=True</code> 还是直接写入、同步还是异步入口，以及模型和存储 provider。对于关键词池外漏项、history 中保留旧正文等观察，标出对应函数及测试范围，不扩展成所有托管部署都一样。</p>
-<p>复查时优先重跑最小反例。若配置或候选构造变化，再更新结论，而非只检查同名 API 仍能导入。</p>
-<h3 id="graphiti-记录配置-driver-与对象粒度">Graphiti：记录配置、driver 与对象粒度</h3><p>注明搜索对象是边、节点还是材料，采用哪种 recipe、driver 与时间过滤。移除 episode 的实验还应检查共享来源、事实边和摘要，不能仅确认材料 ID 不再返回。</p>
-<p>把查询结果和模型最终输入分开保存。图中能找到一条关系，不证明它已被本次回答使用，也不证明支持它的原文仍可授权回查。</p>
-</details>
-
-<h2 id="动手检查">动手检查</h2><p>将“这套系统能持续学习”改成一个可失败的问题，并列出至少一个中间对象和一个最终验收结果。</p>
-<p>答案提示：可以问“借展规程经修订并提交后，下一次调用是否读取新版本；旧来源删除时，摘要和缓存是否仍含原内容？”先固定版本和输入，再观察真实读取。仅有 improve 或 delete 方法名无法回答这两个问题。</p>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>源码与论文索引 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="appendix-sources"><div class="eyebrow">附录</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#带着一个具体-bug-去读源码-而不是从第一行顺着往下啃">带着一个具体 Bug 去读源码，而不是从第一行顺着往下啃</a></li><li><a href="#关键源码直达入口-mem0-graphiti-速查">关键源码直达入口（Mem0 &amp; Graphiti 速查）</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="源码与论文索引">源码与论文索引</h1><h2 id="带着一个具体-bug-去读源码-而不是从第一行顺着往下啃">带着一个具体 Bug 去读源码，而不是从第一行顺着往下啃</h2><p>开源记忆项目动辄几万行代码，从 <code>README</code> 跳进 <code>src/</code> 从头翻到尾，看三天也抓不住重点。</p>
+<p>最高效的源码读法，是<strong>手里攥着一个已经复现的真实 Bug</strong>——比如：“<code>payment-gateway</code> 查 <code>PAY-409</code> 时漏了关键复盘，它到底是在写入丢了、初选池外丢了、排序压下去了，还是组装打包切掉了？”</p>
+<p><img src="../assets/rewrite-memory-b/appendix-01.svg" alt="带着具体 Bug 顺藤摸瓜读源码"></p>
+<p>然后只做三步：</p>
+<ol>
+<li><strong>用 <code>rg</code> 直奔改变数据集合的核心函数</strong>，先跳过一堆配置继承和日志包装代码：<pre tabindex="0"><code class="hljs">rg -n <span class="hljs-string">&#x27;def (_search_vector_store|_add_to_vector_store|score_and_rank)&#x27;</span> \
+  sources/repos/mem0/mem0/memory/main.py sources/repos/mem0/mem0/utils/scoring.py</code></pre></li>
+<li><strong>用纸笔盯住三个集合的身份变化</strong>：
+比如向量初选捞出 <code>{R2, R8}</code>，全文捞出 <code>{R5, R2}</code>，目标记录是 <code>R5</code>。进函数体一眼就能看穿：如果循环遍历的是 <code>semantic_results</code>，<code>R5</code> 根本没拿到入场券；如果先建了 UUID 并集字典，集合就会变成 <code>{R2, R5, R8}</code>。<strong>先看谁改集合成员，再看打分公式！</strong></li>
+<li><strong>对照论文、源码和实测，三层证据绝不混用</strong>：<ul>
+<li><strong>论文</strong>解释设计动机和特定学术实验协议；</li>
+<li><strong>锁定 commit 的源码</strong>证明某个分支在默认配置下的真实控制流；</li>
+<li><strong>你自己的实际部署实测</strong>才能证明在你业务语料、模型和后端上的真实延迟与效果。</li>
+</ul>
+</li>
+</ol>
+<h2 id="关键源码直达入口-mem0-graphiti-速查">关键源码直达入口（Mem0 &amp; Graphiti 速查）</h2><p>想亲手复核全书最核心的两条对照实现，直接顺着这几个已按 <strong>2026-11</strong> 快照核验过的入口读：</p>
+<ul>
+<li><strong>Mem0（<code>fff8a6472512</code>，2026-11-18）</strong>：<ul>
+<li>写入与检索主编排：<a href="https://github.com/mem0ai/mem0/blob/fff8a6472512/mem0/memory/main.py">mem0/memory/main.py</a>（核对同步 ADD-only 分阶段追加、<code>infer=False</code> 与 <code>procedural_memory</code>）</li>
+<li>池内加分与 BM25 Sigmoid 归一化：<a href="https://github.com/mem0ai/mem0/blob/fff8a6472512/mem0/utils/scoring.py">mem0/utils/scoring.py</a>（核对 <code>semantic_results</code> 遍历与语义 <code>threshold</code> 硬门槛）</li>
+<li>历史表与消息持久化：<a href="https://github.com/mem0ai/mem0/blob/fff8a6472512/mem0/memory/storage.py">mem0/memory/storage.py</a>（核对删除时写回 <code>prev_value</code> 与历史审计结构）</li>
+</ul>
+</li>
+<li><strong>Graphiti（<code>9b8a46300920</code>，2026-11-20）</strong>：<ul>
+<li>写入编排、<code>SagaNode</code> 与删源重建：<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/graphiti.py">graphiti_core/graphiti.py</a>（核对 <code>add_episode()</code> 与 2026-11 升级后的 <code>remove_episode()</code>）</li>
+<li>边去重与双时间冲突裁决：<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/utils/maintenance/edge_operations.py">graphiti_core/utils/maintenance/edge_operations.py</a></li>
+<li>边字段与时间过滤：<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/edges.py">graphiti_core/edges.py</a>、<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/search/search_filters.py">graphiti_core/search/search_filters.py</a></li>
+<li>混合搜索、配方与 <code>rank_const=1</code> RRF：<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/search/search.py">graphiti_core/search/search.py</a>、<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/search/search_config_recipes.py">graphiti_core/search/search_config_recipes.py</a>、<a href="https://github.com/getzep/graphiti/blob/9b8a46300920/graphiti_core/search/search_utils.py">graphiti_core/search/search_utils.py</a></li>
+</ul>
+</li>
+</ul>
 <details class="implementation-notes">
-<summary>定位资料与引用范围（选读）</summary>
+<summary>全书 16 个开源仓库与 11 篇核心论文完整清单（选读）</summary>
 
-<h2 id="本地源码">本地源码</h2><p>以下路径相对于 <code>sources/repos/</code>，仅提供阅读起点。许可需连同目标模块和当前交付版本核对。</p>
+<h2 id="16-个开源项目源码入口-2026-11-核验">16 个开源项目源码入口（2026-11 核验）</h2><p>以下路径均已核对 2026-11 最新快照（11 个活跃仓同步至 2026-11-09 ~ 2026-11-21，5 个静态/归档仓保留原快照）；在电子书静态站点中点击源码链接会自动跳转到对应锁定 commit 的 GitHub 页面：</p>
 <table>
 <thead>
 <tr>
 <th>项目</th>
-<th>优先查看的对象</th>
-<th>定位位置</th>
-<th>归档许可说明</th>
+<th>锁定日期</th>
+<th>优先阅读的核心入口</th>
+<th>归档许可提示</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Mem0</td>
-<td>事实写读与历史</td>
-<td><code>mem0/memory/main.py</code></td>
+<td><strong>Mem0</strong></td>
+<td>2026-11-18</td>
+<td><code>mem0/memory/main.py</code>、<code>mem0/utils/scoring.py</code>、<code>mem0/memory/storage.py</code></td>
 <td>Apache-2.0</td>
 </tr>
 <tr>
-<td>Letta Code</td>
-<td>文件规则与编译入口</td>
-<td><code>letta-code/src/agent/prompts/letta_root_memfs.md</code></td>
+<td><strong>Graphiti</strong></td>
+<td>2026-11-20</td>
+<td><code>graphiti_core/graphiti.py</code>、<code>graphiti_core/search/search_utils.py</code></td>
 <td>Apache-2.0</td>
 </tr>
 <tr>
-<td>Graphiti</td>
-<td>episode 与关系</td>
-<td><code>graphiti/graphiti_core/graphiti.py</code></td>
+<td><strong>Letta Code</strong></td>
+<td>2026-11-21</td>
+<td><code>src/agent/prompts/letta_root_memfs.md</code></td>
 <td>Apache-2.0</td>
 </tr>
 <tr>
-<td>Cognee</td>
-<td>remember / recall / improve</td>
-<td><code>cognee/cognee/api/v1/</code></td>
-<td>Apache-2.0，按模块复查</td>
+<td><strong>Cognee</strong></td>
+<td>2026-11-20</td>
+<td><code>cognee/api/v1/remember/remember.py</code>、<code>cognee/api/v1/recall/recall.py</code>、<code>cognee/modules/improve/stages.py</code></td>
+<td>Apache-2.0（按模块复查）</td>
 </tr>
 <tr>
-<td>MemOS</td>
-<td>记忆容器与资源模块</td>
-<td><code>memos/src/memos/</code></td>
+<td><strong>MemOS</strong></td>
+<td>2026-11-09</td>
+<td><code>src/memos/mem_cube/general.py</code>、<code>src/memos/mem_scheduler/base_mixins/queue_ops.py</code></td>
 <td>Apache-2.0</td>
 </tr>
 <tr>
-<td>MemoryOS</td>
-<td>页面、主题与长期结果</td>
-<td><code>memoryos/memoryos-pypi/</code></td>
-<td>Apache-2.0</td>
-</tr>
-<tr>
-<td>A-MEM</td>
-<td>描述与邻接演化</td>
-<td><code>a-mem/agentic_memory/memory_system.py</code></td>
+<td><strong>Hippo Memory</strong></td>
+<td>2026-11-21</td>
+<td><code>src/entry/memory.ts</code>、<code>src/entry/sleep.ts</code>、<code>src/domain/search/hybrid.ts</code>、<code>src/domain/graph/recall.ts</code></td>
 <td>MIT</td>
 </tr>
 <tr>
-<td>HippoRAG</td>
-<td>图种子与段落读取</td>
-<td><code>hipporag/src/hipporag/HippoRAG.py</code></td>
-<td>以归档仓库为准</td>
-</tr>
-<tr>
-<td>Memobase</td>
-<td>输入缓冲与画像</td>
-<td><code>memobase/src/server/</code></td>
+<td><strong>MCP Memory Service</strong></td>
+<td>2026-11-20</td>
+<td><code>src/mcp_memory_service/storage/mixins/hybrid.py</code>、<code>src/mcp_memory_service/consolidation/consolidator.py</code></td>
 <td>Apache-2.0</td>
 </tr>
 <tr>
-<td>Hippo Memory</td>
-<td>寿命、反馈与巩固</td>
-<td><code>hippo-memory/src/</code></td>
-<td>MIT</td>
-</tr>
-<tr>
-<td>Basic Memory</td>
-<td>文件解析与上下文</td>
-<td><code>basic-memory/src/basic_memory/</code></td>
+<td><strong>Basic Memory</strong></td>
+<td>2026-11-20</td>
+<td><code>src/basic_memory/markdown/entity_parser.py</code>、<code>src/basic_memory/services/context_service.py</code></td>
 <td>AGPL-3.0</td>
 </tr>
 <tr>
-<td>MCP Memory Service</td>
-<td>多客户端存储接口</td>
-<td><code>mcp-memory-service/src/mcp_memory_service/</code></td>
+<td><strong>Agent Beacon</strong></td>
+<td>2026-11-20</td>
+<td><code>README.md</code>、<code>docs/</code>、各宿主 collector 入口</td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><strong>TencentDB Agent Memory</strong></td>
+<td>2026-11-19</td>
+<td><code>MemoryCore/src/core/record/l1-dedup.ts</code>、<code>MemoryCore/src/core/skill/skill-versioning.ts</code></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><strong>Hermes Jev Skills</strong></td>
+<td>2026-11-12</td>
+<td><code>jevkit/rerank.py</code>、<code>jevkit/search.py</code>、<code>jevkit/memo.py</code></td>
+<td>MIT</td>
+</tr>
+<tr>
+<td><strong>HippoRAG</strong></td>
+<td>2026-09-03</td>
+<td><code>src/hipporag/HippoRAG.py</code></td>
+<td>以归档仓库为准</td>
+</tr>
+<tr>
+<td><strong>MemoryOS</strong></td>
+<td>2026-07-07</td>
+<td><code>memoryos-pypi/updater.py</code>、<code>mid_term.py</code>、<code>retriever.py</code></td>
+<td>以归档仓库为准</td>
+</tr>
+<tr>
+<td><strong>Memobase</strong></td>
+<td>2026-01-11</td>
+<td><code>src/server/api/memobase_server/controllers/buffer.py</code></td>
 <td>Apache-2.0</td>
 </tr>
 <tr>
-<td>Agent Beacon</td>
-<td>动作采集与转发</td>
-<td><code>agent-beacon/endpoint/</code>、<code>docs/</code></td>
+<td><strong>A-MEM</strong></td>
+<td>2025-12-12</td>
+<td><code>agentic_memory/memory_system.py</code></td>
 <td>MIT</td>
 </tr>
 <tr>
-<td>TencentDB Agent Memory</td>
-<td>资产与层级注入</td>
-<td><code>tencent-agent-memory/MemoryCore/</code>、<code>MemoryProxy/</code></td>
-<td>MIT</td>
-</tr>
-<tr>
-<td>Hermes Jev Skills</td>
-<td>候选判别与继续搜索</td>
-<td><code>hermes-jev-skills/jevkit/</code></td>
-<td>MIT</td>
+<td><strong>历史 Letta</strong></td>
+<td>2026-09-10</td>
+<td>仅保留作仓库迁移与早期 V1 协议历史对照</td>
+<td>Apache-2.0</td>
 </tr>
 </tbody></table>
-<p>另有历史 <code>letta-ai/letta</code> 副本用于核对仓库迁移。资料合计 16 仓，并不意味着旧仓仍是当前产品的推荐入口。</p>
-<h2 id="本次扩写的机制证据">本次扩写的机制证据</h2><p>机制核对沿三类变化组织。写入侧查看 Mem0 的批量提取、Memobase 的 buffer/flush、Graphiti 的 resolution 与 Cognee 的管线路由；它们保存和改变的对象并不相同。</p>
-<p>读取侧比较 HippoRAG 的 fact/passage seeds 与 PPR、MCP 混合存储的身份合并、Hermes 的判别和不充分时继续搜索。先确定候选从哪来，再看评分，最后看宿主实际装入的内容。</p>
-<p>长期演化则追 MemoryOS 的 page/session 提升、Hippo 的 outcome 与 sleep、A-MEM 的邻居属性及索引刷新、Letta Code 的文件提交与后续编译。MemOS 的资源与 scheduler、TencentDB 的资产版本、Basic 的文件同步和 Beacon 的采集保真各有独立责任。</p>
-<p>这些说明依赖既有 2026-09-21 资料快照，未重新采集上游维护数据。每章保留更具体的入口和适用条件，不宣称已运行全部模型、后端或长期 benchmark。</p>
-<h2 id="论文原文">论文原文</h2><p>原始 PDF 及其搜索文本分别归档于 <code>sources/papers/pdf/</code> 和 <code>sources/papers/text/</code>。检索标识保持原值，以便回到完整实验设定。</p>
-<table>
+<h2 id="11-篇核心论文清单">11 篇核心论文清单</h2><table>
 <thead>
 <tr>
-<th>标识</th>
-<th>文献与核对重点</th>
+<th>论文编号</th>
+<th>作者与核心贡献</th>
+<th>对应阅读重点</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>arXiv:2310.08560</td>
-<td>Packer 等，MemGPT，有限窗口中的主动上下文管理</td>
+<td><code>arXiv:2310.08560</code></td>
+<td>Packer 等，<strong>MemGPT</strong></td>
+<td>有限上下文窗口中的虚拟上下文与主动换入控制</td>
 </tr>
 <tr>
-<td>arXiv:2402.17753</td>
-<td>Maharana 等，LoCoMo，长对话材料与评测协议</td>
+<td><code>arXiv:2402.17753</code></td>
+<td>Maharana 等，<strong>LoCoMo</strong></td>
+<td>长程多会话对话记忆基准与评测协议</td>
 </tr>
 <tr>
-<td>arXiv:2405.14831</td>
-<td>Gutiérrez 等，HippoRAG，关联图与段落检索</td>
+<td><code>arXiv:2405.14831</code></td>
+<td>Gutiérrez 等，<strong>HippoRAG</strong></td>
+<td>基于知识图谱与 PPR 的神经生物学启发多跳联想检索</td>
 </tr>
 <tr>
-<td>arXiv:2410.10813</td>
-<td>Wu 等，LongMemEval，长期交互中的能力切分</td>
+<td><code>arXiv:2410.10813</code></td>
+<td>Wu 等，<strong>LongMemEval</strong></td>
+<td>拆解信息抽取、多会话推理、时间更新与拒答的长期基准</td>
 </tr>
 <tr>
-<td>arXiv:2501.13956</td>
-<td>Rasmussen 等，Zep，时间知识图的组织</td>
+<td><code>arXiv:2501.13956</code></td>
+<td>Rasmussen 等，<strong>Zep / Graphiti</strong></td>
+<td>面向动态 Agent 的双时间知识图谱架构</td>
 </tr>
 <tr>
-<td>arXiv:2502.12110</td>
-<td>Xu 等，A-MEM，笔记演化与连接</td>
+<td><code>arXiv:2502.12110</code></td>
+<td>Xu 等，<strong>A-MEM</strong></td>
+<td>卡片盒启发的动态笔记描述与邻接网络演化</td>
 </tr>
 <tr>
-<td>arXiv:2502.14802</td>
-<td>Gutiérrez 等，From RAG to Memory，非参数持续学习</td>
+<td><code>arXiv:2502.14802</code></td>
+<td>Gutiérrez 等，<strong>HippoRAG 2</strong></td>
+<td>从 RAG 迈向非参数持续学习（事实记忆、理解与联想）</td>
 </tr>
 <tr>
-<td>arXiv:2504.19413</td>
-<td>Chhikara 等，Mem0，事实记忆及相应实验</td>
+<td><code>arXiv:2504.19413</code></td>
+<td>Chhikara 等，<strong>Mem0</strong></td>
+<td>生产级可扩展对话事实记忆系统设计</td>
 </tr>
 <tr>
-<td>arXiv:2505.24478</td>
-<td>Markovic 等，知识图与 LLM 接口优化</td>
+<td><code>arXiv:2505.24478</code></td>
+<td>Markovic 等，<strong>Cognee</strong></td>
+<td>知识图谱与大模型上下文接口优化</td>
 </tr>
 <tr>
-<td>arXiv:2506.06326</td>
-<td>Kang 等，Memory OS of AI Agent，层级管理</td>
+<td><code>arXiv:2506.06326</code></td>
+<td>Kang 等，<strong>MemoryOS</strong></td>
+<td>面向 AI Agent 的短/中/长期分页与热度提升记忆操作系统</td>
 </tr>
 <tr>
-<td>arXiv:2507.03724</td>
-<td>Li 等，MemOS，记忆资源的统一组织</td>
+<td><code>arXiv:2507.03724</code></td>
+<td>Li 等，<strong>MemOS</strong></td>
+<td>统一调度明文、激活与参数化记忆的操作系统架构</td>
 </tr>
 </tbody></table>
-<h2 id="证据使用约定">证据使用约定</h2><p>论文数值只属于相应数据、模型和评分协议；README 自报结果需明确标作项目报告。未经独立重跑，不将它们写成此次复现。不同 reader、候选池和数据切分的分数不能拼成统一排名。</p>
-<p>维护数据同样有日期。上线前另查当前主仓、发布、安全公告和许可，不能用旧快照替代现在的风险评估。</p>
-<h2 id="进一步阅读顺序">进一步阅读顺序</h2><p>先用 MemGPT 建立窗口与存储的区别，再看短事实写读；跨资料关联需求出现后进入时间图和 HippoRAG。生命周期部分将层级组织、反馈价值与演化笔记分开比较，避免把一切状态变化统称学习。</p>
-<p>随后用 LoCoMo 与 LongMemEval 理解实验单位，最后回到 SDK、服务或运行时的接入合同。研究路线不要求安装所有项目，阅读的目标是解释同一失败在不同机制中会怎样处理。</p>
-<h2 id="按技术问题复核-而不是只读-readme">按技术问题复核，而不是只读 README</h2><p>候选问题追到过滤、身份合并和最终截断；演化问题追到真实写操作及之后的读取；接入问题画出原文、索引、摘要、转发和缓存副本。宣传中的功能名不能代替这些对象关系。</p>
-<p>例如一次共享资料撤回，应分别核对授权集合、旧 ID 回查、派生摘要和客户端缓存。算法论文不能证明删除完整，许可证也不能证明权限实现正确。按证据类别拆开问题，才知道还缺哪种验证。</p>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-b/appendix-overview.svg" alt="阅读观察、离线算例与部署结论分别对应不同证据" loading="lazy"><figcaption>图：从技术主张回到能支持它的证据；尚未验证的条件单独保留。</figcaption></figure>
+<h2 id="动手检查">动手检查</h2><p>如果有人在技术评审会上宣称“我们选的这套记忆框架能够持续自我学习”，请你把这句模糊宣传拆成一个<strong>可证伪、可复现的工程验证问题</strong>，并列出至少一个中间状态检查点和一个最终验收结果。</p>
+<p>答案提示：把它改写为具体可失败的题——“当 <code>payment-gateway</code> 的发版规程修订并写入/提交后，下一次全新会话的 Prompt 是否确实编译或检索到了新版本正文，并且拦住了缺幂等键的配置？同时当旧版含敏感信息的原始记录被删除后，向量、图摘要、历史表和缓存里是否彻底查不到残留？”中间状态查写入版本、检索候选集合与 <code>packed_ids</code>，最终结果查真实工具拦截行为与负面删除搜索；光看文档里有个 <code>improve()</code> 或 <code>delete()</code> 方法名绝不能算通过。</p>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-b/appendix-overview.svg" alt="技术结论的三层证据分界：论文实验、锁定 commit 源码、实际部署实测" loading="lazy"><figcaption>图：做任何技术评审结论时，先标清依据来自论文、源码还是实测，团队才不会踩进营销幻觉。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>跨项目复核入口（选读）</summary>
@@ -228,41 +216,41 @@
 <h2 id="本章对照结论">本章对照结论</h2><table>
 <thead>
 <tr>
-<th>待回答的问题</th>
-<th>要看到的状态</th>
-<th>可选核对对象</th>
-<th>不能据此扩大宣称</th>
+<th>评审要追问的核心问题</th>
+<th>进源码必须盯住的状态</th>
+<th>典型核对入口</th>
+<th>不能偷换的概念</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>原话变成什么</td>
-<td>候选、正文与来源</td>
+<td>原话最后变成了什么</td>
+<td>候选文本、限定词与来源映射</td>
 <td>Mem0、Memobase、Graphiti</td>
-<td>未测后端的质量</td>
+<td>格式合法 ≠ 语义忠实</td>
 </tr>
 <tr>
-<td>为什么没被找到</td>
-<td>各路身份与最终池</td>
-<td>MCP、HippoRAG、Hermes 等</td>
-<td>统一性能胜负</td>
+<td>为什么关键记录没被搜到</td>
+<td>各路原始候选集合与池边界</td>
+<td>Mem0、Graphiti、MCP、HippoRAG</td>
+<td>名字都叫 hybrid ≠ 候选并集</td>
 </tr>
 <tr>
-<td>旧结论何时退出</td>
-<td>有效区间、替代与版本</td>
-<td>Graphiti、MemoryOS、Letta 等</td>
-<td>长期收益必然成立</td>
+<td>旧规程什么时候退场</td>
+<td>有效区间、显式替代与版本号</td>
+<td>Graphiti、Hippo、Letta、MemoryOS</td>
+<td>热度下降 ≠ 现实失效</td>
 </tr>
 <tr>
-<td>删除是否彻底</td>
-<td>原文及所有派生副本</td>
-<td>Basic、MemOS、TencentDB 等</td>
-<td>仅凭 API 的隐私保证</td>
+<td>删除到底有没有清干净</td>
+<td>主库、历史表、摘要、Git 与备份</td>
+<td>Mem0、Graphiti、Basic、MemOS</td>
+<td>调了 delete ≠ 隐私擦除完成</td>
 </tr>
 <tr>
-<td>新任务是否真的改善</td>
-<td>最终输入、动作与结果</td>
-<td>运行时和业务工具共同检查</td>
-<td>教学算例等于生产认证</td>
+<td>记忆有没有真帮上业务</td>
+<td><code>packed_ids</code>、工具调用与无记忆对照</td>
+<td>宿主组装器 + 业务回归集</td>
+<td>检索 Recall 高 ≠ 任务成功率高</td>
 </tr>
 </tbody></table>
 </details>

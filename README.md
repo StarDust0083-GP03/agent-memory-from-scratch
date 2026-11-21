@@ -1,54 +1,50 @@
 # Agent Memory from Scratch
 
-一部讲解 Agent 记忆机制的中文电子书。本次沿用原有章与节的次序，正文、案例、练习和图解重新编写。
+一部用工程师大白话拆透 Agent 长期记忆机制的中文电子书。
 
-前半部以大学共享仪器预约为背景，追踪检查要求如何形成记录、进入检索并影响下一次任务；后半部用博物馆借展资料观察不同项目的证据、关系和生命周期。场景均为虚构教学数据，源码事实仍以归档快照为依据。
+全书围绕开发者每天真实面对的**工程研发助手**（负责代码审查、发布检查、故障排查与 on-call 交接）展开，从“为什么聊天记录不等于记忆”讲起，先用 300 行纯 Python + SQLite 亲手跑通持久化、隔离、版本替代与 Token 预算，再顺着写入、混合检索、双时间图谱、遗忘巩固、Agent 自管理、安全隔离、Jev 判别门控与架构选型，把 **16 个主流开源项目与 11 篇核心论文**的源码边界逐一扒清。
 
-Mem0 与 Graphiti 的说明用于核对两种记忆组织方式，不声称已运行相应线上服务。每章保留练习、答案提示、折叠实现说明与项目对照表。配套 SQLite 程序不依赖模型服务，可独立检查保存、范围筛选和上下文预算。
-
-新版 SVG 由章节直接引用，位于 `wiki/assets/rewrite-memory-a/` 与 `wiki/assets/rewrite-memory-b/`。每幅图围绕对应案例重新表达，不再在构建中生成旧的六格流程模板。验证器检查练习与答案、折叠结构、图覆盖、可访问描述、唯一锚点、资源路径和搜索记录。
+本次重编已将 11 个活跃上游仓库（Mem0、Graphiti、Letta Code、Cognee、MemOS、Hippo Memory、MCP Memory Service、Basic Memory、Agent Beacon、Hermes Jev Skills、TencentDB Agent Memory）的提交锚点与机制分析同步至 **2026-11-21** 快照，同时保留其余 5 个静态/归档仓库作为设计思想与迁移对照。
 
 ## 在线阅读与部署
 
 - 页面：<https://StarDust0083-GP03.github.io/agent-memory-from-scratch/>
 - 代码：<https://github.com/StarDust0083-GP03/agent-memory-from-scratch>
 
-仓库配置的 GitHub Actions 会在推送至 `main` 后构建和校验，再发布 `wiki/`。本次仅修改本地内容，没有执行提交、推送或公开发布。首次使用 Pages 时仍需在仓库设置中选择 GitHub Actions。
+仓库配置的 GitHub Actions 会在推送至 `main` 后自动渲染图解、构建静态阅读页、跑完校验，再发布 `wiki/`。上游源码链接在构建阶段会自动重写为 `sources/maintenance.json` 中对应提交的 GitHub 永久链接，因此离线或线上阅读都不依赖本地克隆的第三方源码。
 
-第三方仓库和全文研究材料不属于公开阅读产物。上游代码链接固定到相应提交，使阅读页面无需依赖本机的第三方克隆目录。
+## 本地阅读与构建
 
-## 本地阅读
-
-准备 Node.js 22 与 Python 3，然后安装锁定的前端构建依赖：
+准备 Node.js 22 与 Python 3，然后安装锁定的构建依赖并生成站点：
 
 ```bash
 npm ci --prefix wiki
 node wiki/build.mjs
 python3 wiki/verify.py
 python3 -m unittest discover -s wiki -p 'test_*.py' -v
+python3 -m unittest discover -s examples -v
 python3 -m http.server 8000 --bind 127.0.0.1
 ```
 
-打开 `http://localhost:8000/wiki/`。章节源稿位于 `book/chapters/`，最小实现位于 `examples/mini_memory.py`，搜索和阅读页面由构建器更新。
+在浏览器打开 `http://localhost:8000/wiki/`。章节源稿位于 `book/chapters/`，图解配置位于 `book/rewrite-diagrams.txt`，零依赖最小实现位于 `examples/mini_memory.py`。
 
-## 本地资料
+生成静态站后，运行 `python3 wiki/export_book.py` 可重建 `exports/agent-memory-from-scratch.epub` 和 `exports/agent-memory-from-scratch.pdf`（A5）。导出需要 Chromium 和中文字体（推荐 Noto Serif CJK SC）。
 
-`sources/repos/` 保存项目学习副本；论文 PDF 和搜索文本分别位于 `sources/papers/pdf/`、`sources/papers/text/`。仓库与论文清单可查 `sources/repos.txt`、`sources/papers/papers.tsv`。
+## 动手跑通最小实现
 
-`sources/maintenance.json` 记录 2026-09-21 的维护快照。内容重写没有刷新该统计，也不将当时的项目状态作为当前在线状态的保证。
-
-## 验证最小实现
+无需配置大模型 API Key，也不需要 GPU，直接用 Python 标准库 + SQLite 即可验证跨进程持久记忆、用户隔离、显式替代与上下文预算：
 
 ```bash
 python3 -m unittest discover -s examples -v
-python3 examples/mini_memory.py --db booking.sqlite remember \
-  "预约光谱仪前核对校准证书覆盖实验日期" --user optics
-python3 examples/mini_memory.py --db booking.sqlite recall \
-  "光谱仪校准" --user optics
+python3 examples/mini_memory.py --db dev-assistant.sqlite remember \
+  "支付网关发布前必须核对幂等键 idempotency_key 配置" --user linyuan --kind procedural --source release-14
+python3 examples/mini_memory.py --db dev-assistant.sqlite recall \
+  "支付网关 幂等键" --user linyuan
 ```
 
-使用练习库，避免把教学命令指向有价值的数据库。命令只操作本地 SQLite，不执行真实预约，也不验证抽取模型的质量。
+建议把练习库建在临时目录中，避免误碰业务数据库。
 
-## 说明
+## 资料与事实边界
 
-不同项目的评测数据、检索粒度、reader 和 judge 条件未必一致，不能把各自公布的分数直接排成统一榜单。教材比较的是机制与边界；实际接入仍需验证权限、时间语义、删除传播和任务效果。
+- `sources/maintenance.json` 记录了 16 个项目的最新锁定提交与维护统计（其中 11 个活跃项目已同步至 2026-11-09 ~ 2026-11-21，5 个静态/研究项目保持原归档快照）。
+- 不同开源项目公布的 Benchmark 分数在数据切分、检索粒度、回答模型和裁判模型上往往不统一，本书不拼凑虚假的“大一统榜单”，只比**数据流、控制边界、失败模式和工程代价**。

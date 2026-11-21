@@ -19,7 +19,7 @@ marked.use({gfm:true,renderer:{
 }});
 const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function layout(title,body,depth='',extra='') {return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>${esc(title)} · Agent Memory from Scratch</title><link rel="stylesheet" href="${depth}assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="${depth}index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="${depth}search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header>${body}</div>${extra}<script src="${depth}assets/wiki.js"></script></body></html>`;}
-const indexBody=`<main id="main" class="book"><div class="eyebrow">从原理到能跑通的代码</div><h1 class="home-title">Agent Memory<br>from Scratch</h1><p class="deck">从共享仪器的预约要求到博物馆借展证据，观察一条记忆怎样被写入、找回、修订和退出上下文。先用记录推演，再对照项目代码核验边界。</p><p class="meta">17 章教程 + 前言与附录 · 16 个源码仓库 · 11 篇论文 · 资料快照 2026-09-21</p><section class="resume" data-resume hidden><div class="meta">上次读到</div><a href="#">继续阅读</a></section><nav class="chapters" aria-label="全书目录">${entries.map(e=>`<a class="chapter-row" href="chapters/${e.slug}.html"><span class="num">${e.slug==='00-preface'?'序':e.slug==='appendix-sources'?'附':e.slug.slice(0,2)}</span><span>${esc(e.title)}</span><span class="arrow">→</span></a>`).join('')}</nav><p class="source-note">正文与图解已重新编写，章节顺序沿用原书。资料快照仍是事实核对依据；虚构案例和离线实验不代表第三方服务的实测结果。</p></main>`;
+const indexBody=`<main id="main" class="book"><div class="eyebrow">从原理到能跑通的代码</div><h1 class="home-title">Agent Memory<br>from Scratch</h1><p class="deck">以一个每天帮你做代码审查、发布检查、故障排查和 on-call 交接的工程研发助手为主线，拆透 Agent 记忆怎么写、怎么搜、怎么随时间演化、怎么防注入与隔离权限。先讲清大白话原理，再扒开 16 个开源项目源码逐一核验边界。</p><p class="meta">17 章教程 + 前言与附录 · 16 个开源仓库 · 11 篇核心论文 · 同步 2026-11-21 上游快照</p><section class="resume" data-resume hidden><div class="meta">上次读到</div><a href="#">继续阅读</a></section><nav class="chapters" aria-label="全书目录">${entries.map(e=>`<a class="chapter-row" href="chapters/${e.slug}.html"><span class="num">${e.slug==='00-preface'?'序':e.slug==='appendix-sources'?'附':e.slug.slice(0,2)}</span><span>${esc(e.title)}</span><span class="arrow">→</span></a>`).join('')}</nav><p class="source-note">2026-11 重编版：全书采用研发工程真实场景与大白话重写，并同步 Mem0、Graphiti、Letta Code、Cognee、MemOS、MCP Memory Service 等 11 个活跃仓库截至 2026-11-21 的最新提交。</p></main>`;
 writeFileSync(join(out,'index.html'),layout('目录',indexBody));
 const searchDocs=[];
 for(const entry of entries){
@@ -30,15 +30,15 @@ for(const entry of entries){
     const kind=/\.[^/]+$/.test(file)?'blob':'tree';
     return `](${source.remote.replace(/\.git$/,'')}/${kind}/${source.head}${file?'/'+file:''})`;
   });
-  md=md.replace('](../../examples/mini_memory.py)','](https://github.com/StarDust0083-GP03/agent-memory-from-scratch/blob/main/examples/mini_memory.py)');
-  md=md.replace(/\]\(([^)]+)\.md(#[^)]+)?\)/g,']($1.html$2)');
+  md=md.replaceAll('](../../examples/mini_memory.py)','](https://github.com/StarDust0083-GP03/agent-memory-from-scratch/blob/main/examples/mini_memory.py)');
+  md=md.replace(/\]\(((?!https?:\/\/)[^)]+)\.md(#[^)]+)?\)/g,']($1.html$2)');
   // Chapter-authored SVGs replace the former shared diagram templates.
   for (const match of md.matchAll(/!\[[^\]]*\]\(\.\.\/\.\.\/wiki\/assets\/([^)]+)\)/g)) {
     if (!readFileSync(join(out,'assets',match[1]),'utf8').includes('<svg'))
       throw new Error(`Invalid chapter illustration: ${match[1]}`);
   }
   const teaching=md.replace(/<details class="implementation-notes">[\s\S]*?<\/details>/g,'');
-  const headings=[...teaching.matchAll(/^##\s+(.+)$/gm)].map(x=>x[1]);
+  const headings=[...teaching.replace(/^```[\s\S]*?^```/gm,'').matchAll(/^##\s+(.+)$/gm)].map(x=>x[1]);
   const html=marked.parse(md).replace(/src="\.\.\/\.\.\/wiki\/assets\//g,'src="../assets/');
   const toc=headings.length?`<details class="toc"><summary>本章目录</summary><ol>${headings.map(h=>{const id=h.toLowerCase().replace(/[^\p{Letter}\p{Number}]+/gu,'-').replace(/^-|-$/g,'');return `<li><a href="#${id}">${esc(h)}</a></li>`}).join('')}</ol></details>`:'';
   const prev=entries[entry.index-2],next=entries[entry.index];

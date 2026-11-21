@@ -1,212 +1,116 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>选型与演进路线 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="17-selection"><div class="eyebrow">第 17 章</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#用你的失败-决定下一步学哪种技术">用你的失败，决定下一步学哪种技术</a></li><li><a href="#起步-把你能解释的数据路径跑通">起步：把你能解释的数据路径跑通</a></li><li><a href="#第二个问题-记了-但找不准">第二个问题：记了，但找不准</a></li><li><a href="#第三个问题-需要关系-历史或长期整理">第三个问题：需要关系、历史或长期整理</a></li><li><a href="#多人共享时-先建立可见范围">多人共享时，先建立可见范围</a></li><li><a href="#给试用设一个能否通过的条件">给试用设一个能否通过的条件</a></li><li><a href="#按借展助手的实际缺陷选择机制">按借展助手的实际缺陷选择机制</a></li><li><a href="#怎样判断一次升级应该撤回">怎样判断一次升级应该撤回</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="选型与演进路线">选型与演进路线</h1><h2 id="用你的失败-决定下一步学哪种技术">用你的失败，决定下一步学哪种技术</h2><p>借展助手可能出现四种失败：清单遗漏长期单位约定，签署人散在两份文档而查不到，停用内托方案仍被推荐，西馆资料混入东馆请求。它们对应字段读取、跨来源连接、版本纠正与权限隔离，不需要同一种升级。</p>
-<p>先保留一条失败记录：当前输入、必要来源、候选、最终消息和实际输出。能指出第一处偏离预期的位置，再选择改变机制。若西馆资料已经越权进入候选，加更好的重排只会更有效地利用泄漏资料。</p>
-<p>本章的路线和试用条件围绕教学借展场景展开，不是对所有项目进行统一排名，也不表示已经运行了各候选部署。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-01.svg" alt="四种失败指向不同第一步"></p>
-<h3 id="mem0-选择-sdk-的理由应落在事实管线上">Mem0：选择 SDK 的理由应落在事实管线上</h3><p>现有应用只需把“内托含两侧缓冲层”提取成短事实并下次查回时，SDK 是合理起点。试用看正文是否忠实、候选是否覆盖、过滤是否可信以及模型费用。</p>
-<p>若毫米约定总被问题搜索漏掉，可先增加直接字段读取，不急着换系统。SDK 小不代表业务无需版本、授权和组装责任，这些应写进接入清单。</p>
-<h3 id="graphiti-选择时间图的理由应落在关系失败上">Graphiti：选择时间图的理由应落在关系失败上</h3><p>同名部门、跨文档许可和晚到变更为时间图提供更直接理由。采用时还需模型、driver、索引、实体解析与日期查询，成本应与显式关系表比较。</p>
-<p>先用两份许可资料加一次代签变化验证：规范对象正确、历史区间正确、原文可回查。若这些失败没有改善，图形结构更丰富本身不构成迁移理由。</p>
-</details>
-
-<h2 id="起步-把你能解释的数据路径跑通">起步：把你能解释的数据路径跑通</h2><p>小型馆内助手可从少量人工审核记录开始：保存、读取、替代与删除都有明确入口，原文有稳定 ID，最终消息有预算。基础权限从第一天就存在，不因原型简单而搜索全库。</p>
-<p>需要程序化事实可试 Mem0，需要直接画像可研究 Memobase，需要馆员编辑知识可试 Basic。更简单的 SQL 表或现有运行时 store 也应留下对照。</p>
-<p>准备一组回归题，包含单位、回执例外、内托计算和未知许可。每次增加自动提取或重排后重跑，确认没有以新功能破坏已经正确的行为。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-02.svg" alt="最小对照保留可解释路径"></p>
-<h3 id="mem0-用直接保存建立最短-baseline">Mem0：用直接保存建立最短 baseline</h3><p>可先将审核文字用 <code>infer=False</code> 保存，固定身份与源 ID，按 filters 读取，再观察真正送给模型的内容。之后开启推断，对比条件是否被丢掉。</p>
-<p>提前跑清 update、delete 与 history 的含义，尤其删除可能保留旧正文。最短 baseline 也要有数据治理，不能把接口名称直接当成隐私承诺。</p>
-<h3 id="graphiti-从极小-episode-集验证关系模型">Graphiti：从极小 episode 集验证关系模型</h3><p>只加入执壶登记、部门外借许可和一次代签通知，逐个核对 episode、部门 UUID、边来源与有效时间，再问当前和历史签署人。</p>
-<p>先固定 schema 和搜索配方，不同时开启所有扩展与社区。代码片段只有接口形状，真正试用还需配置模型与图后端，保存实际输出后再谈通过。</p>
-</details>
-
-<h2 id="第二个问题-记了-但找不准">第二个问题：记了，但找不准</h2><p>原文正确却搜不准时，先区分精确编号、不同措辞、候选截断和组装遗漏。全文能补 <code>CR-208</code>，向量能匹配“缓冲空间”，混合候选才有比较意义。</p>
-<p>正确来源已在池里但排名差时，再试 cross-encoder 或 Jev。先以 shadow 记录新排序，不影响用户输入，观察它会误删哪些必要资料，以及费用是否值得。</p>
-<p>一次只改变候选、排序或预算之一。若同时换 reader、扩大池和开启生命周期，改善和退化都会难以归因，回滚也难恢复干净对照。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-03.svg" alt="找不准先定位候选阶段"></p>
-<h3 id="mem0-先定位-a-是池外还是排低">Mem0：先定位 A 是池外还是排低</h3><p>记录 semantic、keyword 和实体关联 IDs，判断目标卡是池外还是排低。池外记录无法由末端 reranker 创造，可扩大初选或追加受限查询。</p>
-<p>配置 provider 后还要核对是否启用 <code>rerank=True</code> 以及是否触发降级。若卡片已返回却被宿主截去，应修打包，不继续调整底层权重。</p>
-<h3 id="graphiti-先固定边搜索-再增加扩展">Graphiti：先固定边搜索，再增加扩展</h3><p>先固定边 BM25、cosine 与 RRF，再按需要启用 BFS。许可边时间过滤错了，应先修目标日期；规范部门错了，应回写入阶段修身份。</p>
-<p>增加邻域可能放大同名错误。只有候选正确而覆盖不足时，扩展才可能提供收益；正确结果未进入 prompt，则不是图搜索算法能够修复的问题。</p>
-</details>
-
-<h2 id="第三个问题-需要关系-历史或长期整理">第三个问题：需要关系、历史或长期整理</h2><p>跨文档许可可以先用显式链接或关系表；对象与文档规模增长后，再比较 Graphiti、Cognee 与 HippoRAG。要问过去由谁签署，需同时处理有效时间，不能只增加遍历跳数。</p>
-<p>近期问答太多可研究 MemoryOS 的页面和主题，旧提醒价值差异可研究 Hippo，笔记解释需随报告变化可研究 A-MEM。多形态资源与异步任务需要统一治理时再看 MemOS，而非为一个单位字段引入完整资源层。</p>
-<p>Letta Code 属于运行时选择，让 Agent 主动读取历史并修改后续规则。它改变工具控制与长期文件状态，试用要看实际调用、提交和编译，不只比较一次 search 得分。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-04.svg" alt="复杂机制对应不同状态需求"></p>
-<h3 id="mem0-长期版本可由外层补-成本需明确">Mem0：长期版本可由外层补，成本需明确</h3><p>少量关系的当前值，可由事实表加明确版本解决。metadata 能保存生效日期，读取策略仍要实现；普通追加不会自动消解所有旧默认。</p>
-<p>如果外层开始自行维护大量别名、关系、时间冲突与来源链，应比较图框架的总体成本。对比对象是整条写读纠错路径，不是数据库字段数量。</p>
-<h3 id="graphiti-时间字段与关系解析形成完整链的一部分">Graphiti：时间字段与关系解析形成完整链的一部分</h3><p><code>reference_time</code> 辅助解释时间，resolution 维护关系，过滤选择目标区间，episode 提供回查。任一环节缺失都可能答成错误历史。</p>
-<p>生命周期衰减和 Skill 审核并不因使用时间图自动完成。可以保留独立人审规则与价值治理，避免把所有长期行为都归到边失效上。</p>
-</details>
-
-<h2 id="多人共享时-先建立可见范围">多人共享时，先建立可见范围</h2><p>多人使用时，先定义私有会话、共享规程与审核后 Skill 的边界。谁可共享、谁可撤销、撤销如何清缓存，要在开放读取之前落实。</p>
-<p>TencentDB 面向资产与 Loadout，Cognee 和 MCP 也有各自服务授权；Basic 可承载人审资料。Beacon 补行动证据，Hermes 补候选判断，但它们不能代替可见集合或长期后端。</p>
-<p>可先做一个很小的组合：原生工具日志、审核笔记、授权检索和统一组装。不必每类都安装独立平台，能解释数据与故障如何交接更重要。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-05.svg" alt="共享前先验证允许集合"></p>
-<h3 id="mem0-共享范围不能用任意客户端-metadata-代替">Mem0：共享范围不能用任意客户端 metadata 代替</h3><p>客户端 metadata 可以表达项目名，不能证明它有访问权。服务按当前身份决定私有、项目与团队集合，按 ID 操作也核验归属。</p>
-<p>跨会话共享不应通过删除所有 filters 实现。撤权时处理固定卡片引用和注入缓存，并测试不同客户端是否具有不同允许集合。</p>
-<h3 id="graphiti-组分区与共享策略一起设计">Graphiti：组分区与共享策略一起设计</h3><p>不同馆可分独立 group，共享资料通过审核导入或授权多组查询，不直接把同名部门合并。caller 允许集合先于多 group 参数构造。</p>
-<p>查询后的来源全文同样受限。若某关系可公开而原文含私人附件，应另行限定回查，不能以边已返回为由开放整份材料。</p>
-</details>
-
-<h2 id="给试用设一个能否通过的条件">给试用设一个能否通过的条件</h2><p>试用条件可以写得很具体：十道题中所需规则必须进入最终输入；回执例外不改变长期单位；另一馆资料不进入候选；依赖中断时不绕过身份；删除后按规定不再读到派生私信。</p>
-<p>再设费用、等待与恢复预算。并非所有指标都要追求最大，馆内能维护的方案才有实际价值。许可证、主仓迁移和 OSS 与托管边界也应在试用期间核对。</p>
-<p>维护弱的项目可以只借鉴机制，而不直接依赖其代码。试用结束应交实际中间结果和失败记录，不能仅交一份接口已通的截图。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-06.svg" alt="试用通过不等于接口可调用"></p>
-<h3 id="mem0-试用合同涵盖普通与失败路径">Mem0：试用合同涵盖普通与失败路径</h3><p>覆盖普通提取、回执例外、未来单位变更、精确编号、同义重复、实体清理、删除历史和模型超时。每题有源输入、预期卡片及最终使用状态。</p>
-<p>固定后端与 provider 后再测费用和 p95。托管 benchmark 不能替这些本地结果，更新或删除的辅助状态也不能只凭成功返回验收。</p>
-<h3 id="graphiti-试用合同覆盖身份-时间与来源">Graphiti：试用合同覆盖身份、时间与来源</h3><p>同馆别名正确合并，跨馆同名不合并；迟到代签通知保留正确区间，单次委托不关闭永久职务；两跳来源确实返回并支持外借用途。</p>
-<p>再测试共享来源移除、摘要影响、driver 中断和重建。可视化能画图只覆盖少数路径，不能代替这些身份、时间与恢复结果。</p>
-</details>
-
-<p><a id="给-atlas-做一次有理由的选型"></a></p>
-<h2 id="按借展助手的实际缺陷选择机制">按借展助手的实际缺陷选择机制</h2><p>设博物馆最初只有一个登记员和十二条审核过的包装约定。主要失败是清单生成时忘了两侧缓冲层。可以把规则放进 SQL 或项目笔记，按项目直接读并明确注入，无须自动衰减或全图传播。</p>
-<p>后来精确装箱单号常漏，先增加全文候选；若正确记录已入池却排低，再试模型重排，每次保留上一版对照。不能把补一个编号查询顺手变成更换所有存储。</p>
-<p>再后来，许可散在多部门文件，需要两跳与历史日期。可以先维护几条显式关系，对象增长后比较图框架或 PPR。加入第二个馆时立即做身份与资产隔离，不等待某个阶段编号。</p>
-<p>这条演进路线从借展资料中可复查的失败出发。每个新增组件都应对应一个已保存的缺陷，而非假定未来一定需要所有机制。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-07.svg" alt="借展助手的按需演进"></p>
-<p><a id="mem0-atlas-初期可以只采用少量路径"></a></p>
-<h3 id="mem0-从审核事实与直接读取起步">Mem0：从审核事实与直接读取起步</h3><p>起步可只用审核事实和直接读取，再为经历增加 search。推断提取、实体评分与重排逐项引入，始终保留无自动提取对照。</p>
-<p>如果许可靠两次受限查询已足够，记录调用费用并与显式关系表比较。不要仅因可接入图，就把格式偏好和所有简单规则一起搬迁。</p>
-<h3 id="graphiti-批准链和变更出现后再验证迁移">Graphiti：批准链和变更出现后再验证迁移</h3><p>迁移先在独立图按时间加入许可原材料，核对部门规范身份、来源与变更区间，保持组装器、权限和 reader 尽量不变。</p>
-<p>旧事实卡不能直接改名为边就算结构完成。需要确认哪份源支持哪些关系、旧当前值如何映射为历史，并用同一失败题决定迁哪些资料、保留哪些简单读取。</p>
-</details>
-
-<h2 id="怎样判断一次升级应该撤回">怎样判断一次升级应该撤回</h2><p>试用前还应写撤回条件。图找回了第二跳，却增加跨馆串线，应暂停自动建图或缩小 schema；不能用平均正确率提高为身份错误开脱。</p>
-<p>衰减省了输入却隐藏低频安全规则，云重排降低 token 却违反外发政策，平台功能多却无法恢复部分失败，都可能使净收益为负。撤掉额外机制可以保留原始来源、显式审核关系与实验结果，以后仍可重新验证。</p>
-<p>回滚不等于回到没有治理。授权、当前状态和删除责任仍在，实验产生的摘要、强化或缓存也要清理，避免表面关闭开关，副作用继续影响基线。</p>
-<details class="source-example">
-<summary>源码路径与适用范围（选读）</summary>
-
-<p><img src="../assets/rewrite-memory-b/17-selection-08.svg" alt="撤回机制也要清理副作用"></p>
-<h3 id="mem0-复杂评分无收益时回到可解释读取">Mem0：复杂评分无收益时回到可解释读取</h3><p>若额外评分未减少实际漏项，先撤回它，保留审核事实与源材料。实体 boost 增噪、云模型费用过高都可成为撤回理由。</p>
-<p>回滚范围要包括 payload 更新、实体链接与应用缓存。history 提供审计，不自动恢复全部状态，实验写回不得继续留在简单对照中。</p>
-<h3 id="graphiti-关系误合并无法控制时先缩小自动化">Graphiti：关系误合并无法控制时先缩小自动化</h3><p>误合并无法稳定控制时，可保留原 episode，暂用较窄 schema 或人工审核关系，关闭无收益的扩展。必要时从源事件重建，并核对旧边区间与摘要。</p>
-<p>安全失败应独立设门槛。多答对几题不能抵消另馆私有规程被读取，撤回自动化也不意味着删掉已核验历史。</p>
-</details>
-
-<h2 id="动手检查">动手检查</h2><p>选一项真实缺陷，完成三项记录：需要哪份来源支持正确输出，第一次偏离发生在哪个状态，只改变哪个机制检验假设。</p>
-<p>答案提示：若正确来源未入候选，试验初选或补取；若已入池却未进消息，试验打包；若已进消息但动作仍错，检查使用与验证。若无法指出候选与最终输入的区别，先补观测。试验通过后将用例加入回归集，保留源材料与预期条件。下一次模型、索引或配置升级仍要重跑，而非只检查新功能。</p>
-<details class="implementation-notes">
-<summary>实现细节与复查入口（选读）</summary>
-
-<h2 id="按场景选-不按榜单选">按场景选，不按榜单选</h2><table>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Agent Memory from Scratch 中文电子书"><title>选型与演进路线 · Agent Memory from Scratch</title><link rel="stylesheet" href="../assets/wiki.css"></head><body><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="topbar"><a class="brand" href="../index.html">Agent Memory</a><span class="spacer"></span><a class="control hide-mobile" href="../search.html">搜索</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></header><main id="main" class="book" data-chapter="17-selection"><div class="eyebrow">第 17 章</div><details class="toc"><summary>本章目录</summary><ol><li><a href="#别按-谁火-选型-按你的-真实失败-选下一步">别按“谁火”选型，按你的“真实失败”选下一步</a></li><li><a href="#动手买单前-先看看你现有的-agent-运行时是不是已经给了一半">动手买单前，先看看你现有的 Agent 运行时是不是已经给了一半</a></li><li><a href="#按真实验收驱动的四阶段演进路线">按真实验收驱动的四阶段演进路线</a></li><li><a href="#比-什么时候升级-更重要的-是-什么时候果断撤回">比“什么时候升级”更重要的，是“什么时候果断撤回”</a></li><li><a href="#场景速配表-不同需求从哪起步最省心">场景速配表：不同需求从哪起步最省心</a></li><li><a href="#动手检查">动手检查</a></li><li><a href="#本章对照结论">本章对照结论</a></li></ol></details><article class="content"><h1 id="选型与演进路线">选型与演进路线</h1><h2 id="别按-谁火-选型-按你的-真实失败-选下一步">别按“谁火”选型，按你的“真实失败”选下一步</h2><p>读完前面十六章，你可能发现自己手头攒了一桌子工具：SQLite、Mem0、Memobase、Graphiti、Cognee、HippoRAG、MemoryOS、Hippo、A-MEM、MemOS、Letta Code、Basic Memory、MCP、Agent Beacon、TencentDB、Hermes Jev……</p>
+<p><strong>最容易把项目做死的方式，就是在第一天就把五个框架全装进架构图里。</strong></p>
+<p>架构选型只有一条第一性原理：<strong>拿你现在真实发生的失败，决定下一步只加哪一个最小组件。</strong> 看看研发助手最常见的四种失败，它们需要的解法完全不一样：</p>
+<ol>
+<li><strong>每次生成 PR 都忘了林远要求“中文 + 先给 diff”</strong> → 这是<strong>跨主题稳定偏好漏召回</strong>，加一张按用户直读的配置表或稳定画像就解决了，根本不需要上图谱！</li>
+<li><strong>搜 <code>PAY-409</code> 报错码搜不到，但库里明明存着</strong> → 这是<strong>精确标识符掉在向量初选池外</strong>，把检索升级成“全文 + 向量独立并集”，别急着换更贵的重排模型。</li>
+<li><strong>停用的老发版流程一直被推荐，或者问 11 月 2 日谁值班答错了</strong> → 这是<strong>版本替代与双时间缺失</strong>，给规程加显式版本号/生效区间，真有高频历史交接再引入双时间图。</li>
+<li><strong>核心支付组和大客户组两个 <code>billing-api</code> 串台了</strong> → 这是<strong>身份与租户隔离缺失</strong>，立刻修鉴权和硬过滤，加再牛的重排器只会更精准地泄漏别人家机密。</li>
+</ol>
+<h2 id="动手买单前-先看看你现有的-agent-运行时是不是已经给了一半">动手买单前，先看看你现有的 Agent 运行时是不是已经给了一半</h2><p>如果你已经在用像 <strong>LangGraph</strong> 这样的 Agent 编排框架，先别急着另起炉灶，把运行时自带的两种状态分清：</p>
+<ul>
+<li><strong>Checkpointer（线程快照）</strong>：存单个对话线程（Thread）的执行状态，负责断点续跑、人工审批暂停恢复和单会话回溯；</li>
+<li><strong>Store（跨线程存储）</strong>：存跨会话的键值对象（还支持可选语义索引），少量结构化的用户偏好和项目配置直接放 Store 里往往就够用。</li>
+</ul>
+<p>先盘点清楚现有底座盖住了什么，只为<strong>真的盖不住的缺口</strong>（比如自动结构化抽取、双时间图、跨宿主 Trace 采集或团队多资产 ACL）引入外部记忆组件。</p>
+<h2 id="按真实验收驱动的四阶段演进路线">按真实验收驱动的四阶段演进路线</h2><p>这套路线不是强制购物清单——如果你从第一天起核心业务就是多团队共享或强历史审计，完全可以直接补齐对应设计；它真正定义的是<strong>风险与验收的递进顺序</strong>。</p>
+<p><img src="../assets/rewrite-memory-b/17-01.svg" alt="按真实失败驱动的四阶段演进路线"></p>
+<h3 id="阶段-1-跑通完全可解释的最小可控基线">阶段 1：跑通完全可解释的最小可控基线</h3><ul>
+<li><strong>做法</strong>：少量人工审核过的团队规程 + 个人偏好表（SQL / 本地 SQLite / Basic Markdown / Mem0 <code>infer=False</code> 均可），第一天就把<strong>服务端鉴权隔离、原始来源 ID、显式版本替代、Token 预算组装器和合规删除</strong>立住。</li>
+<li><strong>验收</strong>：攒出第 14 章那 10 道核心真题并跑绿，留作后续所有升级的永久对照组。</li>
+</ul>
+<h3 id="阶段-2-补齐混合并集检索与精排反馈">阶段 2：补齐混合并集检索与精排反馈</h3><ul>
+<li><strong>触发信号</strong>：精确报错码（<code>PAY-409</code>）漏召回，或噪声候选把关键规程挤出 Top-5。</li>
+<li><strong>做法</strong>：上“全文 + 向量独立并集”（如 SQLite FTS5 + 向量、MCP Memory Service）；确认必要证据都进了候选池只是排太靠后时，再在 <code>shadow</code> 模式下试点本地 Cross-Encoder 或 Hermes Jev（有注入风险或需充分性补查时优先考虑 Jev）。</li>
+<li><strong>验收</strong>：固定相同 Token 预算和回答模型，验证全齐率提升，且拆开 <code>selected / packed / used / outcome</code> 埋点。</li>
+</ul>
+<h3 id="阶段-3-应对规模膨胀-引入分层与受控生命周期">阶段 3：应对规模膨胀，引入分层与受控生命周期</h3><ul>
+<li><strong>触发信号</strong>：库里积累了几百条过时记录，同义重复开始淹没新规程，或需要跨会话沉淀编码经验。</li>
+<li><strong>做法</strong>：按痛点对症选型——编码 Agent 想人类可读、Git 审计自演化，重点看 <strong>Letta Code（MemFS）</strong> 或 <strong>Hippo Memory</strong>；托管开箱即用可评估 <strong>Mem0（User Profiles + Dream）</strong>；跨 20+ IDE 采集动作轨迹补 <strong>Agent Beacon</strong>。</li>
+<li><strong>验收</strong>：所有自动巩固和遗忘先跑 <code>dry-run</code>，必须通过“低频高危灾难回滚规程不丢失”和“单次例外不污染长期规则”两项反例测试。</li>
+</ul>
+<h3 id="阶段-4-跨文档多跳-双时间历史与多团队资产治理">阶段 4：跨文档多跳、双时间历史与多团队资产治理</h3><ul>
+<li><strong>触发信号</strong>：大量两跳审批链、频繁人员交接与晚到通知，或多团队多 Agent 共享知识库。</li>
+<li><strong>做法</strong>：双时间与关系演化优先试用 <strong>Graphiti</strong>；异构文档/代码/会话统一数据工程平台评估 <strong>Cognee</strong>；纯多跳段落联想参考 <strong>HippoRAG</strong>；企业级多团队 ACL × Loadout 与代理注入评估 <strong>TencentDB Agent Memory</strong>。</li>
+<li><strong>验收</strong>：同名服务零串台、晚到通知双时间轴全过、撤权扫清所有缓存与直读旁路、故障断网可安全重放。</li>
+</ul>
+<h2 id="比-什么时候升级-更重要的-是-什么时候果断撤回">比“什么时候升级”更重要的，是“什么时候果断撤回”</h2><p>上线任何复杂记忆组件之前，先把<strong>撤回条件</strong>白纸黑字写下来：</p>
+<ul>
+<li>上了图谱后多答对两道两跳题，却出现一次跨组同名误合并越权 → <strong>立刻暂停自动建图</strong>，收窄 Schema 或退回显式关系表；</li>
+<li>开了自动衰减省了 20% Token，却把半年用一次的核心回滚规程藏没了 → <strong>立刻关掉无保护衰减</strong>；</li>
+<li>接入某平台后发现跨库部分失败无法恢复，或者出现供应链安全告警 → <strong>果断切回可控基线</strong>。</li>
+</ul>
+<p>撤回升级时记住一件事：<strong>不仅要关开关，还要清理实验产生的派生摘要、强化计数和缓存污染</strong>，保证你的基线干干净净。</p>
+<h2 id="场景速配表-不同需求从哪起步最省心">场景速配表：不同需求从哪起步最省心</h2><table>
 <thead>
 <tr>
-<th>需求</th>
-<th>可先尝试的起点</th>
-<th>引入更多组件的证据</th>
+<th>你的真实场景</th>
+<th>推荐的最简起点</th>
+<th>值得继续往上加组件的信号</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>少量用户约定</td>
-<td>显式字段、SQL 或运行时 store</td>
-<td>搜索与维护成本确实增长</td>
+<td>只有十几条团队规程 + 个人偏好</td>
+<td>SQL 偏好表 + Markdown / 现有运行时 Store</td>
+<td>规则膨胀到人工维护不过来、频繁漏召回</td>
 </tr>
 <tr>
-<td>快速事实 SDK</td>
-<td>Mem0</td>
-<td>核对池边界及实际模型费用</td>
+<td>想给现有业务快速接短事实记忆</td>
+<td>Mem0（先从 <code>infer=False</code> 基线对比自动抽取）</td>
+<td>核清 OSS 池边界与费用；需画像/巩固再评托管或外层补齐</td>
 </tr>
 <tr>
-<td>稳定画像读取</td>
-<td>Memobase 的结构思路</td>
-<td>合并正确且能承担维护</td>
+<td>编码 Agent 个人/小团队跨工具共享经验</td>
+<td>Letta Code（MemFS）或 Hippo Memory / Basic Memory</td>
+<td>需要跨 20+ 宿主动作 Trace 时补 Agent Beacon</td>
 </tr>
 <tr>
-<td>时变许可关系</td>
-<td>Graphiti 或显式版本关系表</td>
-<td>对象和历史解析收益明确</td>
+<td>高频人员交接、晚到通知、双时间审计</td>
+<td>Graphiti（先拿极小 Episode 集验消歧与区间）</td>
+<td>显式关系表维护成本已明显高于图库运维成本</td>
 </tr>
 <tr>
-<td>异构知识平台</td>
-<td>Cognee</td>
-<td>loader、schema 与运维可接管</td>
+<td>异构文档 + 代码 + 会话的企业知识管线</td>
+<td>Cognee（务必启用 v1.6.8+ 安全路径拦截）</td>
+<td>团队具备图+向量+关系三库运维与恢复能力</td>
 </tr>
 <tr>
-<td>主动改写长期规则</td>
-<td>Letta Code</td>
-<td>修改审核、commit 和编译可控</td>
+<td>多客户端共享记忆与统一接入协议</td>
+<td>MCP Memory Service（v13.0+ 每 store 隔离）</td>
+<td>确实有多个异构客户端需要复用同一套后端</td>
 </tr>
 <tr>
-<td>人机笔记</td>
-<td>Basic Memory</td>
-<td>文件同步与许可证可接受</td>
-</tr>
-<tr>
-<td>多客户端服务</td>
-<td>MCP Memory Service</td>
-<td>共享接口确实减少重复工作</td>
-</tr>
-<tr>
-<td>跨宿主动作证据</td>
-<td>Beacon</td>
-<td>原生日志不足且可安全采集</td>
-</tr>
-<tr>
-<td>团队资产治理</td>
+<td>多团队多 Agent 共享资产、ACL 与 Skill 版本</td>
 <td>TencentDB Agent Memory</td>
-<td>ACL、Loadout 与内容服务需要统一</td>
+<td>存在跨部门权限隔离、Loadout 编排与统一撤权需求</td>
 </tr>
 <tr>
-<td>遗忘与反馈研究</td>
-<td>Hippo</td>
-<td>独立消融与维护接替可承担</td>
-</tr>
-<tr>
-<td>多形态资源研究</td>
-<td>MemOS</td>
-<td>文本先通过，再单测 KV 或参数</td>
-</tr>
-<tr>
-<td>图与演化研究</td>
-<td>HippoRAG、A-MEM</td>
-<td>固定对照显示机制收益</td>
+<td>检索后防提示注入、压缩噪音、判断证据够不够</td>
+<td>本地 Cross-Encoder 或 Hermes Jev Skills（先 shadow）</td>
+<td>确认上游候选池已覆盖，只是精排/安全/补查卡脖子</td>
 </tr>
 </tbody></table>
-<p>维护状态决定试用投入，不直接决定算法胜负。表中起点是候选，不是采购列表。</p>
-<h3 id="先看运行时是否已经给了你一半">先看运行时是否已经给了你一半</h3><p>若宿主已经是 LangGraph，先分清 checkpointer 与 store。checkpointer 保存某个 thread 的图状态，服务会话恢复；store 保存跨 thread 的键值，并可配置 embedding 语义索引。明确用户约定可能直接放 store，无需另建一套记忆服务。</p>
-<p>第三方可补结构化抽取、关系时间、关联传播、巩固或自管理长期规则。先列出已有机制覆盖哪些数据，再对剩余失败选组件，避免把短期恢复、跨会话查回与知识推理混成一个选择。</p>
-<h2 id="四阶段演进">四阶段演进</h2><p>演进阶段按验收依赖组织：先能解释存取与治理，再引入能证明收益的自动化。阶段不要求顺序安装指定产品，已有时间关系或多人共享需求可以直接进入对应设计，但基础授权不可跳过。</p>
-<h3 id="阶段-1-可控事实库">阶段 1：可控事实库</h3><p>保存、读取、替代、删除都有可检查结果，记录用户、来源、生效日期和预算。先手工确认十个案例，再扩到几十或上百题，标出必要事实与未知行为。</p>
-<p>留一条不用自动提取的路径，帮助定位 extractor 的影响。多人场景立即加入隔离和撤权测试，简单事实库也不能牺牲这些边界。</p>
-<h3 id="阶段-2-混合检索与反馈">阶段 2：混合检索与反馈</h3><p>精确编号与不同措辞造成漏项时，比较全文和向量的独立候选并集。先记录候选身份，再评排序；正确候选排低后才值得加入模型重排。</p>
-<p>反馈注明来自检索命中、实际成功还是人工纠正，避免将选中次数当作价值。新排序先 shadow，测得减少哪些失败后再启用。</p>
-<h3 id="阶段-3-层级和生命周期">阶段 3：层级和生命周期</h3><p>历史增长影响使用时，区分近期会话、具体经历和稳定知识，再增加主题整理、描述更新或价值机制。低频关键规则和一次明确纠正是必要反例。</p>
-<p>Skill 或高层规则先离线回放与审核，不直接让一次总结控制后续工具。整理后仍须能回来源、删除和重建，节省 token 不能以失去治理为代价。</p>
-<h3 id="阶段-4-关系与共享资料">阶段 4：关系与共享资料</h3><p>跨文档与历史问题需要关系、身份和有效时间一起验证。团队共享按实际需求提前设计可见集合，不必等前三阶段都做完。</p>
-<p>资产版本与多 Agent 交换只有在确实需要时增加。每条共享知识说明谁拥有、谁审核、谁可撤销，以及撤销如何影响缓存和后续输入。</p>
-<h2 id="最终检查表">最终检查表</h2><p>可将上线检查组织成五项证据：当前主仓与许可证、实际交付物与配置、分层评测与简单对照、授权与删除测试、失败恢复与唯一组装责任。</p>
-<p>每项都应有可回查材料，例如实际 commit、所用 provider、逐题结果、拒绝日志与删除回放，而非一排没有依据的勾选框。模型、embedding、schema 与 prompt 版本同时记录，原文到派生可追踪。</p>
-<p>不使用记忆的 baseline 仍应保留。它帮助判断新增模型调用和运维成本是否真的减少返工，也能在复杂机制撤回后维持可解释工作流。</p>
-<h2 id="同一失败类型-候选路线如何取舍">同一失败类型，候选路线如何取舍</h2><p>偏好漏掉时，比较直接字段与按问题检索，Memobase、MemoryOS、Letta core 或高层注入各有更新代价。跨文档缺规程时，比较显式链接、受限二次查询、图和 PPR，固定语料与预算。</p>
-<p>旧规则太多时，比较版本替代、简单到期、Hippo 价值、MCP 巩固、MemoryOS 提升与 A-MEM 描述演化，分别测错误强化和误遗忘。仅有候选噪音时，作用域和去重可能已足够。</p>
-<p>团队共享应围绕授权数据面选择服务，人审资料可放文件，采集与判别是互补层。运行时、SDK、后端和候选工具可以组合，但最终只有一个地方掌握完整输入预算与来源。</p>
-<h2 id="阶段是验收顺序-不是强制购买顺序">阶段是验收顺序，不是强制购买顺序</h2><p>验收顺序服务于风险，不规定购买顺序。数据绝不外发时，第一天就排除云判别；许可历史是核心需求时，可以直接试时间图；只需跨任务字段时，也可以长期停在简单 store。</p>
-<p>每次升级留下一个更简单的对照和一个证明新增机制必要的失败集。保留它的理由应是具体错误减少且治理可承担，撤回它也应有数据与清理范围，不靠项目热度或架构外观决定。</p>
+<details class="implementation-notes">
+<summary>上线前拿证据说话的五项最终检查表（选读）</summary>
+
+<p>不要交一份空泛的“勾选框”，上线评审时把下面五份可复查的真材料拍在桌上：</p>
+<ol>
+<li><strong>锁定版本与安全账单</strong>：精确仓库 URL、commit hash、洁净包版本与哈希、开源许可证（重点留意 AGPL-3.0 等分发条款）以及 OSS vs 托管功能边界；</li>
+<li><strong>交付契约与架构边界图</strong>：写明谁留原始日志、谁管唯一写入主权、谁做服务端鉴权、谁是唯一的最终 Prompt 组装器；</li>
+<li><strong>10 题真失败回归 + 无记忆对照报告</strong>：逐题给出写入、检索、打包、回答和 Token/延迟数据，证明净收益大于成本；</li>
+<li><strong>两条负面安全演练日志</strong>：跨租户同名服务零越权日志（覆盖全出口）+ 含哨兵串的隐私删除与备份恢复重放验收记录；</li>
+<li><strong>故障演练与撤回预案</strong>：断模型、断权限服务、跨存储部分失败的真实演练记录，以及收益为负时的干净回滚步骤。</li>
+</ol>
 </details>
 
-<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-b/17-selection-09.svg" alt="演进按验收需求而非产品数量" loading="lazy"><figcaption>图：演进按验收需求而非产品数量。各行分别验收，不能用某一行的成功替代其他结果。</figcaption></figure>
+<h2 id="动手检查">动手检查</h2><p>挑一条你当前正在做（或准备做）的 AI 应用里最真实的一个“忘事/答错”缺陷，写出三行诊断卡：</p>
+<ol>
+<li>答对这件事缺一不可的<strong>原始来源</strong>是什么？</li>
+<li>第一次偏离预期发生在<strong>写入、检索初选、重排打包、还是模型使用</strong>哪一层？</li>
+<li>你打算<strong>只改哪一个最小机制</strong>来验证假设，并保留什么对照组防止改出新退化？</li>
+</ol>
+<p>答案提示：如果连候选列表和最终 Prompt 里到底装了什么都说不清，<strong>第一步根本不该选任何新框架，而是先补齐最小观测日志</strong>！明确首次偏离层之后，再按“写入错改提取与留底、池外漏改全文并集、池内排低试重排、打包丢改原子化与预算、用错改提示与工具硬约束”精准下手，每次只动一处并拿回归集和无记忆基线对照验收。</p>
+<figure class="concept-diagram" tabindex="0"><img src="../assets/rewrite-memory-b/17-overview.svg" alt="上线前拿证据说话的五项验收：源码维护核验、基线消融对照、安全撤回与恢复" loading="lazy"><figcaption>图：好的记忆架构不是堆出来的，而是靠真实失败一步步验出来的——每一步都进可攻、退可守。</figcaption></figure>
 
 <details class="comparison-reference">
 <summary>横向查阅表（选读）</summary>
@@ -214,109 +118,72 @@
 <h2 id="本章对照结论">本章对照结论</h2><table>
 <thead>
 <tr>
-<th>候选</th>
-<th>引入目的</th>
-<th>应保留的简单对照</th>
-<th>试用交付物</th>
+<th>候选方案</th>
+<th>引入它的最硬理由</th>
+<th>必须保留的极简对照</th>
+<th>试用结项必须交出的硬材料</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>Mem0</td>
-<td>自动事实与 SDK 接入</td>
-<td>审核文本加 SQL / FTS</td>
-<td>提取、池边界、删除和费用</td>
+<td>快速接入短事实 SDK（托管补 Profile/Dream）</td>
+<td>审核文本 + SQL / FTS5</td>
+<td>抽取保真、池外 <code>PAY-409</code>、删除历史与费用</td>
 </tr>
 <tr>
 <td>Memobase</td>
-<td>稳定 profile 与事件</td>
-<td>显式用户字段</td>
-<td>flush、例外、并发与维护方案</td>
-</tr>
-<tr>
-<td>MemoryOS</td>
-<td>主题与长期提升</td>
-<td>近期窗口加固定画像</td>
-<td>归组、冷纠正与提升消融</td>
+<td>学习 buffer/flush 与画像热读取思想</td>
+<td>显式用户配置表</td>
+<td><code>flush</code> 延迟、例外防污、并发锁与自维护方案</td>
 </tr>
 <tr>
 <td>Graphiti</td>
-<td>关系、时间与来源</td>
-<td>带有效期关系表</td>
-<td>同名、迟到与历史许可结果</td>
+<td>跨文档关系、双时间历史与 <code>SagaNode</code></td>
+<td>带有效期的关系表</td>
+<td>同名消歧、晚到交接、删源重建与图库运维账本</td>
 </tr>
 <tr>
 <td>Cognee</td>
-<td>多类数据管线</td>
-<td>固定分块与混合检索</td>
-<td>route、schema、恢复成本</td>
+<td>异构文档/代码/会话统一 Schema 管线</td>
+<td>固定分块 + 混合检索</td>
+<td>路由对比、SSRF 防护、跨三库中断恢复</td>
 </tr>
 <tr>
 <td>HippoRAG</td>
-<td>关联段落检索</td>
-<td>dense / BM25 / hybrid</td>
-<td>同预算第二跳与建图费用</td>
-</tr>
-<tr>
-<td>A-MEM</td>
-<td>描述和链接演化</td>
-<td>静态笔记近邻</td>
-<td>邻居差异与最终返回 ID</td>
-</tr>
-<tr>
-<td>Hippo</td>
-<td>生命周期与 outcome</td>
-<td>静态评分加简单到期</td>
-<td>误强化、低频保护与恢复</td>
-</tr>
-<tr>
-<td>MemOS</td>
-<td>容器、队列与资源</td>
-<td>单文本后端加任务队列</td>
-<td>实际模块、兼容和积压</td>
+<td>跨文档无字面重合的多跳段落联想</td>
+<td>BM25 / Dense / Hybrid</td>
+<td>同预算第二跳净收益与建图开销</td>
 </tr>
 <tr>
 <td>Letta Code</td>
-<td>主动读写长期上下文</td>
-<td>固定 core 加历史工具</td>
-<td>调用、提交与后续编译</td>
+<td>Agent 自管理 MemFS + Git 透明审计</td>
+<td>固定核心 + 历史搜索工具</td>
+<td><code>commit</code> 编译生效、worktree 隔离与主动调用率</td>
 </tr>
 <tr>
-<td>Basic</td>
-<td>人审文件知识</td>
-<td>普通 Markdown 加搜索</td>
-<td>同步、重命名、重建和合规</td>
+<td>Hippo / MemoryOS / A-MEM</td>
+<td>衰减反馈 / 分层页搬运 / 邻居演化</td>
+<td>静态评分 + 显式版本替代</td>
+<td>独立时间回放消融、低频高危保护与误强化测试</td>
 </tr>
 <tr>
-<td>MCP Service</td>
-<td>统一多客户端接口</td>
-<td>单客户端本地库</td>
-<td>每路过滤、同步和故障恢复</td>
+<td>MemOS</td>
+<td>统一容器与异步调度（探索 KV/LoRA）</td>
+<td>单文本库 + 标准消息队列</td>
+<td>洁净版本安全核验、队列延迟与资源兼容性</td>
 </tr>
 <tr>
-<td>TencentDB</td>
-<td>共享资产治理</td>
-<td>小范围共享笔记加 ACL</td>
-<td>撤销、资产版本和注入一致</td>
+<td>Basic / MCP / TencentDB</td>
+<td>Markdown 真相源 / 多端协议 / 团队 ACL</td>
+<td>普通文档库 + 轻量鉴权</td>
+<td>同步冲突、每 store 隔离、撤权全旁路拒绝</td>
 </tr>
 <tr>
-<td>Beacon</td>
-<td>跨宿主动作采集</td>
-<td>原生日志</td>
-<td>覆盖、fidelity、去重与脱敏</td>
-</tr>
-<tr>
-<td>Hermes</td>
-<td>候选选择与继续搜索</td>
-<td>本地重排加确定性规则</td>
-<td>shadow、外发、费用和回退</td>
-</tr>
-<tr>
-<td>历史 Letta</td>
-<td>复现旧协议</td>
-<td>当前运行时对照</td>
-<td>固定归档版本及适用范围</td>
+<td>Beacon / Hermes</td>
+<td>跨宿主动作 Trace / 检索后防注入与充分性闸门</td>
+<td>原生日志 / 本地 Cross-Encoder</td>
+<td><code>fidelity</code> 覆盖、外发脱敏、<code>shadow</code> 对比与降级</td>
 </tr>
 </tbody></table>
 </details>
-
 </article><nav class="pager" aria-label="章节导航"><a href="16-jev.html"><small>上一章</small>Jev：把生成问题改写为判别问题</a><a href="appendix-sources.html"><small>下一章</small>源码与论文索引</a></nav></main><div class="toolbar" role="group" aria-label="阅读工具"><a class="control" href="../index.html" aria-label="返回目录">目录</a><button class="control" data-size="-1" aria-label="减小字号">A−</button><button class="control" data-size="1" aria-label="增大字号">A＋</button></div></div><script src="../assets/wiki.js"></script></body></html>
